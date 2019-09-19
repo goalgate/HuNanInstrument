@@ -1,0 +1,58 @@
+<?xml version="1.0" encoding="utf-8"?>
+<RelativeLayout
+    xmlns:android="http://schemas.android.com/apk/res/android"
+    android:orientation="vertical"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent">
+
+    <RelativeLayout
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_centerVertical="true"
+        android:layout_centerHorizontal="true">
+
+        <RelativeLayout
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:background="@drawable/small_wireframe"
+            android:layout_centerInParent="true">
+
+            <TextView
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="设     置"
+                android:textColor="@color/divider"
+                android:textSize="18sp"
+                android:layout_marginLeft="75dp"
+                android:layout_marginTop="8dp"/>
+
+            <Button
+
+                android:id="@+id/btn_ServerInput"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:background="@drawable/increase_bg"
+                android:text="服务器设置"
+                android:textColor="@color/primary_light"
+                android:textSize="24sp"
+                android:layout_marginTop="45dp"
+                android:layout_marginLeft="110dp"
+                />
+
+            <Button
+            android:id="@+id/btn_StaticIP"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:background="@drawable/delete_bg"
+            android:text="静态IP设置"
+            android:textColor="@color/primary_light"
+            android:textSize="24sp"
+            android:layout_marginTop="45dp"
+            android:layout_marginLeft="116dp"
+            android:layout_toRightOf="@id/btn_ServerInput"
+            />
+        </RelativeLayout>
+
+    </RelativeLayout>
+
+</RelativeLayout>

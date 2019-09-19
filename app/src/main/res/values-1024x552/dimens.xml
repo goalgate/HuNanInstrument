@@ -1,0 +1,14 @@
+<?xml version="1.0" encoding="utf-8"?> 
+<resources>
+    <dimen name="activity_horizontal_margin">16dp</dimen>
+    <dimen name="activity_vertical_margin">16dp</dimen>
+    <dimen name="infoTextSize">22px</dimen>
+    <drawable name="iv_wendu">@drawable/newui_wendu_1024x600</drawable>
+    <drawable name="iv_shidu">@drawable/newui_shidu_1024x600</drawable>
+    <drawable name="iv_krq1">@drawable/newui_krq1_1024x600</drawable>
+    <drawable name="iv_wifi">@drawable/newui_wifi</drawable>
+    <drawable name="iv_wifi1">@drawable/newui_wifi1</drawable>
+    <drawable name="iv_setting">@drawable/newui_shezhi</drawable>
+    <drawable name="iv_mj">@drawable/newui_mj</drawable>
+    <drawable name="iv_mj1">@drawable/newui_mj1</drawable>
+</resources>

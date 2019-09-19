@@ -1,0 +1,79 @@
+<?xml version="1.0" encoding="utf-8"?>
+<RelativeLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent">
+
+    <RelativeLayout
+        android:layout_width="@dimen/y126"
+        android:layout_height="@dimen/x97"
+        android:layout_alignParentLeft="true"
+        android:layout_alignParentBottom="true"
+        android:visibility="gone">
+
+        <com.baidu.aip.face.AutoTexturePreviewView
+            android:id="@+id/preview_view2"
+            android:layout_width="match_parent"
+            android:layout_height="match_parent"
+            android:layout_margin="4dp" />
+    </RelativeLayout>
+
+
+    <RelativeLayout
+        android:layout_width="@dimen/y305"
+        android:layout_height="@dimen/x260"
+        android:layout_centerInParent="true">
+
+        <com.baidu.aip.face.AutoTexturePreviewView
+            android:id="@+id/preview_view1"
+            android:layout_width="match_parent"
+            android:layout_height="match_parent"
+            android:layout_margin="4dp" />
+
+        <com.baidu.aip.face.AutoTexturePreviewView
+            android:id="@+id/preview_view"
+            android:layout_width="match_parent"
+            android:layout_height="match_parent"
+            android:layout_margin="4dp" />
+
+        <TextureView
+            android:id="@+id/texture_view"
+            android:layout_width="match_parent"
+            android:layout_height="match_parent"
+            android:layout_centerInParent="true" />
+
+        <ImageView
+            android:id="@+id/iv_personRect"
+            android:layout_width="match_parent"
+            android:layout_height="match_parent"
+            android:layout_centerHorizontal="true"
+            android:layout_alignParentBottom="true"
+            android:src="@drawable/personrect2"
+            android:layout_margin="4dp"/>
+    </RelativeLayout>
+
+    <RelativeLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:id="@+id/lay_info"
+        android:layout_marginBottom="@dimen/x6"
+        android:layout_alignParentBottom="true">
+
+        <TextView
+            android:id="@+id/tv_info"
+            android:text="等待用户操作..."
+            android:textColor="@color/primary_text"
+            android:textSize="25px"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:gravity="center"/>
+
+        <TextView
+            android:id="@+id/tv_timer"
+            android:text="等待用户操作..."
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:visibility="gone"
+            android:gravity="center"/>
+
+    </RelativeLayout>
+</RelativeLayout>
