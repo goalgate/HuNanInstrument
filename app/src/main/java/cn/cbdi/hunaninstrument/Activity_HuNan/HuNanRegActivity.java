@@ -150,6 +150,7 @@ public class HuNanRegActivity extends RxActivity implements IFaceView, IIDCardVi
         idp.IDCardPresenterSetView(null);
         AppInit.getInstrumentConfig().stopReadCard();
         fp.FaceSetNoAction();
+        sp.WhiteLighrOff();
         fp.setIdentifyStatus(FEATURE_DATAS_UNREADY);
     }
 

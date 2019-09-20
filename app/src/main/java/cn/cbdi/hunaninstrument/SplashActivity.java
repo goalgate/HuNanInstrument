@@ -69,7 +69,7 @@ public class SplashActivity extends RxActivity {
                         .observeOn(AndroidSchedulers.mainThread())
                         .compose(SplashActivity.this.<Long>bindUntilEvent(ActivityEvent.DESTROY))
                         .subscribe((l) -> {
-                            if (AppInit.getInstrumentConfig().getDev_prefix().equals("800100")) {
+                            if (AppInit.getInstrumentConfig().getDev_prefix().startsWith("800")) {
                                 if (config.getBoolean("firstStart", true)) {
                                     ActivityUtils.startActivity(getPackageName(), getPackageName() + ".StartActivity");
                                     return;

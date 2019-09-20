@@ -208,6 +208,7 @@ public class HuNanMainActivity2 extends BaseActivity implements NormalWindow.Opt
     public void onResume() {
         super.onResume();
         fp.FaceIdentify_model();
+        tv_daid.setText(config.getString("daid"));
         DoorOpenOperation.getInstance().setmDoorOpenOperation(DoorOpenOperation.DoorOpenState.Locking);
         iv_lock.setImageBitmap(BitmapFactory.decodeResource(getResources(), R.drawable.iv_mj));
 //        sp.relay(ISwitching.Relay.relay_D5, ISwitching.Hex.H0, true);

@@ -83,9 +83,6 @@ public class WZWManager {
         //        }
     }
 
-    public void hideNavBar(boolean hide){
-        manager.hideNavBar(hide);
-    }
 
     public void setDhcpIpAddress(Context context) {
         manager.setDhcpIpAddress(context);

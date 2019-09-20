@@ -75,10 +75,10 @@ public class Alert_IP {
             public void onItemClick(Object o, int position) {
                 if (position == 0) {
                     if (ipCheckBox.isChecked()) {
-                        if (RegexUtils.isIP(et_Static_ip.getText().toString()) ||
-                                RegexUtils.isIP(et_Static_mask.getText().toString()) ||
-                                RegexUtils.isIP(et_Static_gateway.getText().toString()) ||
-                                RegexUtils.isIP(et_Static_dns1.getText().toString()) ||
+                        if (RegexUtils.isIP(et_Static_ip.getText().toString()) &&
+                                RegexUtils.isIP(et_Static_mask.getText().toString()) &&
+                                RegexUtils.isIP(et_Static_gateway.getText().toString()) &&
+                                RegexUtils.isIP(et_Static_dns1.getText().toString()) &&
                                 RegexUtils.isIP(et_Static_dns2.getText().toString())) {
                             staticIP.put("Static_ip", et_Static_ip.getText().toString());
                             staticIP.put("Static_mask", et_Static_mask.getText().toString());

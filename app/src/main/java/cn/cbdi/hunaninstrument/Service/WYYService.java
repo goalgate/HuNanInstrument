@@ -109,7 +109,7 @@ public class WYYService extends Service implements ISwitchView {
     }
 
     private void CopySourceFile() {
-        if (config.getBoolean("CopySourceFile", true)) {
+        if (config.getBoolean("CopySourceFileVer1", true)) {
             Observable.create((emitter) -> {
                 emitter.onNext(ApkUtils.copyfile(
                         new File(ApkUtils.getSourceApkPath(WYYService.this, UpdateConstant.TEST_PACKAGENAME)),
@@ -123,7 +123,7 @@ public class WYYService extends Service implements ISwitchView {
                         Boolean status = (boolean) l;
                         if (status) {
                             ToastUtils.showLong("源文件复制成功");
-                            config.put("CopySourceFile", false);
+                            config.put("CopySourceFileVer1", false);
                             autoUpdate();
                         } else {
                             ToastUtils.showLong("源文件复制失败");

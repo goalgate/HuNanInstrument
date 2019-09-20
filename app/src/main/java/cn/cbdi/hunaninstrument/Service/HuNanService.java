@@ -244,7 +244,7 @@ public class HuNanService extends Service implements ISwitchView {
     }
 
     private void CopySourceFile() {
-        if (config.getBoolean("CopySourceFile", true)) {
+        if (config.getBoolean("CopySourceFileVer1", true)) {
             Observable.create((emitter) -> {
                 emitter.onNext(ApkUtils.copyfile(
                         new File(ApkUtils.getSourceApkPath(HuNanService.this, UpdateConstant.TEST_PACKAGENAME)),
@@ -258,7 +258,7 @@ public class HuNanService extends Service implements ISwitchView {
                         Boolean status = (boolean) l;
                         if (status) {
                             ToastUtils.showLong("源文件复制成功");
-                            config.put("CopySourceFile", false);
+                            config.put("CopySourceFileVer1", false);
                             autoUpdate();
                         } else {
                             ToastUtils.showLong("源文件复制失败");
@@ -373,8 +373,6 @@ public class HuNanService extends Service implements ISwitchView {
                         public void onNext(@NonNull String s) {
                             Log.e("信息提示", bean.getMethod());
                             reUploadBeanDao.delete(bean);
-
-
                         }
 
                         @Override

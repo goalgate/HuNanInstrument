@@ -75,6 +75,9 @@ public abstract class BaseActivity extends RxActivity implements IFaceView, IIDC
     @BindView(R.id.texture_view)
     public TextureView textureView;
 
+    @BindView(R.id.tv_daid)
+    public TextView tv_daid;
+
     public SwitchPresenter sp = SwitchPresenter.getInstance();
 
     public FacePresenter fp = FacePresenter.getInstance();
@@ -130,6 +133,8 @@ public abstract class BaseActivity extends RxActivity implements IFaceView, IIDC
         AppInit.getInstrumentConfig().stopReadCard();
         fp.FaceSetNoAction();
         fp.setIdentifyStatus(FEATURE_DATAS_UNREADY);
+        sp.WhiteLighrOff();
+
     }
 
 

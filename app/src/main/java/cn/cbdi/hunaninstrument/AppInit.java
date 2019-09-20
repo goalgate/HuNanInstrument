@@ -66,7 +66,7 @@ public class AppInit extends Application {
 
         instance = this;
 
-        InstrumentConfig = new HebeiConfig();
+        InstrumentConfig = new HuNanConfig();
 
 //        Lg.setIsSave(true);
 

@@ -27,17 +27,17 @@ public class HuNanConfig extends BaseConfig{
 
     @Override
     public String getDev_prefix() {
-        return null;
+        return "";
     }
 
     @Override
     public String getPersonInfoPrefix() {
-        return null;
+        return "";
     }
 
     @Override
     public String getUpDataPrefix() {
-        return null;
+        return "";
     }
 
 //    @Override
