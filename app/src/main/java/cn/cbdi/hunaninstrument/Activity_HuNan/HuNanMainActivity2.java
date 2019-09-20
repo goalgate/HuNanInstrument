@@ -568,6 +568,7 @@ public class HuNanMainActivity2 extends BaseActivity implements NormalWindow.Opt
                     @Override
                     public void onNext(String s) {
                         if (s.equals("true")) {
+                            sp.greenLight();
                             tv_info.setText("巡检员" + cg_User1.getKeeper().getName() + "巡检成功");
                         } else if (s.equals("false")) {
                             tv_info.setText("巡检失败");

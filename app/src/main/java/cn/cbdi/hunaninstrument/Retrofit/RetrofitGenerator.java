@@ -62,8 +62,8 @@ public class RetrofitGenerator {
         Retrofit retrofit = new Retrofit.Builder()
                 .addConverterFactory(GsonConverterFactory.create(gson))
                 .addCallAdapterFactory(RxJava2CallAdapterFactory.create())
-                .baseUrl(AppInit.getInstrumentConfig().getServerId()).client(client).build();
-//                .baseUrl(SPUtils.getInstance("config").getString("ServerId")).client(client).build();
+//                .baseUrl(AppInit.getInstrumentConfig().getServerId()).client(client).build();
+                .baseUrl(SPUtils.getInstance("config").getString("ServerId")).client(client).build();
         return retrofit.create(serviceClass);
     }
 
