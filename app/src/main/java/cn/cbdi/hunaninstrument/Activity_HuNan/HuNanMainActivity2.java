@@ -275,7 +275,8 @@ public class HuNanMainActivity2 extends BaseActivity implements NormalWindow.Opt
                                     mdaosession.insertOrReplace(new Employer(cardInfo.cardId(), Integer.valueOf(type)));
                                     tv_info.setText("该人员尚未登记人脸信息");
                                     sp.redLight();
-
+                                }else if (s.equals("noUnitId")) {
+                                    tv_info.setText("该设备还未在系统上备案");
                                 }
                             } catch (IOException e) {
                                 e.printStackTrace();
