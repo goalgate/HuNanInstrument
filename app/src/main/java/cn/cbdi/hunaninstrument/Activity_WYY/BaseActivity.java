@@ -83,6 +83,8 @@ public abstract class BaseActivity extends RxActivity implements IFaceView, IIDC
     @BindView(R.id.texture_view)
     public TextureView textureView;
 
+    @BindView(R.id.tv_daid)
+    public TextView tv_daid;
     @Override
     public void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);

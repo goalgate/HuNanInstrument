@@ -23,7 +23,6 @@ import java.util.concurrent.TimeUnit;
 
 import cn.cbdi.hunaninstrument.AppInit;
 import cn.cbdi.hunaninstrument.Config.BaseConfig;
-import cn.cbdi.hunaninstrument.Config.HebeiConfig;
 import cn.cbdi.hunaninstrument.Config.HuNanConfig;
 import cn.cbdi.hunaninstrument.Config.WYYConfig;
 import cn.cbdi.hunaninstrument.R;
@@ -143,8 +142,8 @@ public class Alert_Server {
 
                                 }
                             });
-                }else if (AppInit.getInstrumentConfig().getClass().getName().equals(HebeiConfig.class.getName())){
-                    new ServerConnectionUtil().post(url + AppInit.getInstrumentConfig().getUpDataPrefix() + "daid=" + config.getString("devid") + "&dataType=test", url
+                }else {
+                    new ServerConnectionUtil().post(url + AppInit.getInstrumentConfig().getUpDataPrefix() + "daid=" + config.getString("daid") + "&dataType=test", url
                             , new ServerConnectionUtil.Callback() {
                                 @Override
                                 public void onResponse(String response) {
@@ -213,7 +212,8 @@ public class Alert_Server {
             etName.setText(config.getString("ServerId"));
             DAInfo di = new DAInfo();
             try {
-                di.setId(config.getString("devid"));
+//                di.setId(config.getString("devid"));
+                di.setId(config.getString("daid"));
                 di.setName(ins_type.getName());
                 di.setModel(ins_type.getModel());
                 di.setPower(ins_type.getPower());

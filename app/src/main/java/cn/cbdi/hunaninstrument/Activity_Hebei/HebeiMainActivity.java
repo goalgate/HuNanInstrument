@@ -291,6 +291,9 @@ public class HebeiMainActivity extends BaseActivity implements NormalWindow.Opti
                                     }
                                     tv_info.setText("该人员尚未登记人脸信息");
                                     sp.redLight();
+                                } else if (s.equals("noUnitId")) {
+                                    sp.redLight();
+                                    tv_info.setText("该设备还未在系统上备案");
                                 }
                             } catch (NullPointerException e) {
                                 e.printStackTrace();

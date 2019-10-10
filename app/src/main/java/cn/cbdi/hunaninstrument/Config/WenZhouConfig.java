@@ -1,13 +1,12 @@
 package cn.cbdi.hunaninstrument.Config;
 
-import cn.cbdi.hunaninstrument.Function.Func_Face.mvp.Module.HuNanFaceImpl;
+import cn.cbdi.hunaninstrument.Function.Func_Face.mvp.Module.HuNanFaceImpl3;
 import cn.cbdi.hunaninstrument.Function.Func_Face.mvp.Module.IFace;
-import cn.cbdi.hunaninstrument.Function.Func_Face.mvp.Module.WYYFaceImpl;
 import cn.cbdi.hunaninstrument.Function.Func_IDCard.mvp.presenter.IDCardPresenter;
-import cn.cbdi.hunaninstrument.Service.HuNanService;
-import cn.cbdi.hunaninstrument.Service.WYYService;
+import cn.cbdi.hunaninstrument.Service.HeBeiService;
 
-public class WYYConfig extends BaseConfig{
+public class WenZhouConfig extends BaseConfig{
+
     @Override
     public boolean isFace() {
         return true;
@@ -15,7 +14,7 @@ public class WYYConfig extends BaseConfig{
 
     @Override
     public boolean isTemHum() {
-        return true;
+        return false;
     }
 
     @Override
@@ -25,7 +24,7 @@ public class WYYConfig extends BaseConfig{
 
     @Override
     public String getDev_prefix() {
-        return "";
+        return "800100";
     }
 
     @Override
@@ -35,12 +34,12 @@ public class WYYConfig extends BaseConfig{
 
     @Override
     public String getUpDataPrefix() {
-         return "da_gzmb_updata?";
+        return "da_gzmb_updata?";
     }
 
     @Override
     public String getServerId() {
-        return "http://yzbyun.wxhxp.cn:81/";
+        return "http://119.29.111.172:7012/";
     }
 
     @Override
@@ -50,17 +49,17 @@ public class WYYConfig extends BaseConfig{
 
     @Override
     public String getModel() {
-        return "CBDI-P-IC";
+        return "CBDI-DA-01";
     }
 
     @Override
     public String getName() {
-        return "剧毒库房采集器";
+        return "防爆采集器";
     }
 
     @Override
     public String getProject() {
-        return "WYY";        //危运云平台
+        return "WenZhouFB";        //温州防爆
     }
 
     @Override
@@ -95,46 +94,48 @@ public class WYYConfig extends BaseConfig{
 
     @Override
     public void readCard() {
+        IDCardPresenter.getInstance().readCard();
         IDCardPresenter.getInstance().ReadIC();
-
     }
 
     @Override
     public void stopReadCard() {
+        IDCardPresenter.getInstance().stopReadCard();
         IDCardPresenter.getInstance().StopReadIC();
     }
 
     @Override
     public boolean fingerprint() {
-        return true;
+        return false;
     }
 
     @Override
     public Class getServiceName() {
-        return WYYService.class;
+        return HeBeiService.class;
     }
 
     @Override
     public String getMainActivity() {
-        return ".Activity_WYY.WYYMainActivity";
+        return ".Activity_Hebei.HebeiMainActivity";
     }
 
     @Override
     public String getAddActivity() {
-        return ".Activity_WYY.WYYAddActvity";
+        return ".Activity_Hebei.HeBeiRegActivity";
     }
 
     @Override
     public boolean TouchScreen() {
-        return true;
+        return false;
     }
 
     @Override
     public boolean MenKongSuo() {
         return false;
     }
+
     @Override
     public IFace getFaceImpl() {
-        return new WYYFaceImpl();
+        return new HuNanFaceImpl3();
     }
 }

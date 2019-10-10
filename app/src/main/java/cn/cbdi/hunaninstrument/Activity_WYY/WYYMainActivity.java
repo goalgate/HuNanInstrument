@@ -147,6 +147,8 @@ public class WYYMainActivity extends BaseActivity implements SuperWindow.OptionT
 
     }
 
+
+
     private void UIReady() {
         setGestures();
         disposableTips = RxTextView.textChanges(tv_info)
@@ -244,6 +246,7 @@ public class WYYMainActivity extends BaseActivity implements SuperWindow.OptionT
     @Override
     public void onResume() {
         super.onResume();
+        tv_daid.setText(config.getString("daid"));
         fp.FaceIdentify_model();
         cg_User1 = new SceneFingerprintUser();
         cg_User2 = new SceneFingerprintUser();

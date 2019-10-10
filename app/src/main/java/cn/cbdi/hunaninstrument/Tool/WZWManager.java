@@ -7,6 +7,7 @@ import com.ys.myapi.MyManager;
 
 import cn.cbdi.hunaninstrument.AppInit;
 import cn.cbdi.hunaninstrument.Config.HuNanConfig;
+import cn.cbdi.hunaninstrument.Config.WYYConfig;
 
 public class WZWManager {
 
@@ -43,11 +44,11 @@ public class WZWManager {
 
 
     public void reboot() {
-        if (AppInit.getInstrumentConfig().getClass().getName().equals(HuNanConfig.class.getName())) {
+        if (AppInit.getInstrumentConfig().getClass().getName().equals(WYYConfig.class.getName())) {
+            manager.reboot();
+        } else {
             Intent intent = new Intent("com.xs.reboot");
             AppInit.getContext().sendBroadcast(intent);
-        } else {
-            manager.reboot();
         }
 
         //        if (Integer.parseInt(Build.VERSION.INCREMENTAL.substring(Build.VERSION.INCREMENTAL.indexOf(".20") +

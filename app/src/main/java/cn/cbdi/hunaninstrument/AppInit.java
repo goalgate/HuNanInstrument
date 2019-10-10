@@ -16,6 +16,7 @@ import cn.cbdi.hunaninstrument.Config.BaseConfig;
 import cn.cbdi.hunaninstrument.Config.HebeiConfig;
 import cn.cbdi.hunaninstrument.Config.HuNanConfig;
 import cn.cbdi.hunaninstrument.Config.WYYConfig;
+import cn.cbdi.hunaninstrument.Config.WenZhouConfig;
 import cn.cbdi.hunaninstrument.Function.Func_Face.mvp.Module.HuNanFaceImpl;
 import cn.cbdi.hunaninstrument.Function.Func_Face.mvp.Module.FaceImpl5;
 import cn.cbdi.hunaninstrument.Function.Func_Face.mvp.Module.IFace;
@@ -66,7 +67,7 @@ public class AppInit extends Application {
 
         instance = this;
 
-        InstrumentConfig = new HuNanConfig();
+        InstrumentConfig = new WenZhouConfig();
 
 //        Lg.setIsSave(true);
 

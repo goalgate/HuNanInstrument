@@ -42,7 +42,6 @@ public class Alert_Message {
         this.context = context;
     }
 
-
     private AlertView messageAlert;
     private TextView msg_daid;
     private TextView msg_ip;
@@ -107,7 +106,8 @@ public class Alert_Message {
 
         if (AppInit.getInstrumentConfig().getClass().getName().equals(WYYConfig.class.getName())) {
             msg_iccard.setText("请放置IC卡进行判断");
-        } else if (AppInit.getInstrumentConfig().getClass().getName().equals(HuNanConfig.class.getName())) {
+//        } else if (AppInit.getInstrumentConfig().getClass().getName().equals(HuNanConfig.class.getName())) {
+        } else {
             msg_iccard.setText("请放置卡片进行判断");
         }
         if (Lock.getInstance().getState().equals(Lock.LockState.STATE_Lockup)) {
