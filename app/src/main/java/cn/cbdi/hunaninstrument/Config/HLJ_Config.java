@@ -1,12 +1,12 @@
 package cn.cbdi.hunaninstrument.Config;
 
-import cn.cbdi.hunaninstrument.Function.Func_Face.mvp.Module.HeBeiFaceImpl;
 import cn.cbdi.hunaninstrument.Function.Func_Face.mvp.Module.HuNanFaceImpl3;
 import cn.cbdi.hunaninstrument.Function.Func_Face.mvp.Module.IFace;
 import cn.cbdi.hunaninstrument.Function.Func_IDCard.mvp.presenter.IDCardPresenter;
 import cn.cbdi.hunaninstrument.Service.HeBeiService;
 
-public class HebeiConfig extends BaseConfig {
+public class HLJ_Config extends BaseConfig {
+
     @Override
     public boolean isFace() {
         return true;
@@ -39,7 +39,7 @@ public class HebeiConfig extends BaseConfig {
 
     @Override
     public String getServerId() {
-        return "http://211.90.38.12:8081/";
+        return "http://221.207.254.111:100/";
     }
 
     @Override
@@ -59,7 +59,7 @@ public class HebeiConfig extends BaseConfig {
 
     @Override
     public String getProject() {
-        return "HeBeiFB";        //河北防爆
+        return "HLJFB";        //黑龙江防爆
     }
 
     @Override
@@ -141,11 +141,11 @@ public class HebeiConfig extends BaseConfig {
 
     @Override
     public boolean XungengCanOpen() {
-        return true;
+        return false;
     }
 
     @Override
     public boolean isHongWai() {
-            return false;
+        return false;
     }
 }

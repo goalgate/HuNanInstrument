@@ -1,4 +1,4 @@
-package cn.cbdi.hunaninstrument.Activity_Hebei;
+package cn.cbdi.hunaninstrument.Activity_SX;
 
 import android.graphics.BitmapFactory;
 import android.os.Bundle;
@@ -23,7 +23,6 @@ import butterknife.BindView;
 import cn.cbdi.hunaninstrument.Activity_HuNan.HuNanMainActivity;
 import cn.cbdi.hunaninstrument.AppInit;
 import cn.cbdi.hunaninstrument.Bean.Employer;
-import cn.cbdi.hunaninstrument.Bean.FingerprintUser;
 import cn.cbdi.hunaninstrument.Bean.Keeper;
 import cn.cbdi.hunaninstrument.Bean.ReUploadBean;
 import cn.cbdi.hunaninstrument.Bean.ReUploadWithBsBean;
@@ -39,6 +38,7 @@ import cn.cbdi.hunaninstrument.Function.Func_IDCard.mvp.presenter.IDCardPresente
 import cn.cbdi.hunaninstrument.Function.Func_IDCard.mvp.view.IIDCardView;
 import cn.cbdi.hunaninstrument.Function.Func_Switch.mvp.presenter.SwitchPresenter;
 import cn.cbdi.hunaninstrument.R;
+import cn.cbdi.hunaninstrument.State.LockState.Lock;
 import cn.cbdi.hunaninstrument.State.OperationState.DoorOpenOperation;
 import cn.cbdi.hunaninstrument.Tool.ActivityCollector;
 import cn.cbdi.hunaninstrument.Tool.MediaHelper;
@@ -46,13 +46,12 @@ import cn.cbdi.hunaninstrument.greendao.DaoSession;
 import io.reactivex.Observable;
 import io.reactivex.android.schedulers.AndroidSchedulers;
 import io.reactivex.disposables.Disposable;
-import io.reactivex.functions.Consumer;
 
 import static cn.cbdi.hunaninstrument.Function.Func_Face.mvp.Module.FaceImpl2.FEATURE_DATAS_UNREADY;
 
 public abstract class BaseActivity extends RxActivity implements IFaceView, IIDCardView {
 
-    protected String TAG = HebeiMainActivity.class.getSimpleName();
+    protected String TAG = SXMainActivity.class.getSimpleName();
 
     DaoSession mdaosession = AppInit.getInstance().getDaoSession();
 
@@ -221,6 +220,7 @@ public abstract class BaseActivity extends RxActivity implements IFaceView, IIDC
         iv_lock.setImageBitmap(BitmapFactory.decodeResource(getResources(), R.drawable.iv_mj));
         cg_User1 = new SceneKeeper();
         cg_User2 = new SceneKeeper();
+        Lock.getInstance().setState(Lock.LockState.STATE_Lockup);
         DoorOpenOperation.getInstance().setmDoorOpenOperation(DoorOpenOperation.DoorOpenState.Locking);
     }
 

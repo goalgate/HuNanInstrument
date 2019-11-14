@@ -15,7 +15,6 @@ import com.baidu.aip.entity.User;
 import com.blankj.utilcode.util.AppUtils;
 import com.blankj.utilcode.util.FileIOUtils;
 import com.blankj.utilcode.util.SPUtils;
-import com.blankj.utilcode.util.TimeUtils;
 import com.blankj.utilcode.util.ToastUtils;
 import com.cundong.utils.PatchUtils;
 
@@ -31,7 +30,6 @@ import java.text.SimpleDateFormat;
 import java.util.Date;
 import java.util.HashMap;
 import java.util.List;
-import java.util.Map;
 import java.util.Random;
 import java.util.Timer;
 import java.util.TimerTask;
@@ -43,7 +41,6 @@ import cn.cbdi.hunaninstrument.Bean.Keeper;
 import cn.cbdi.hunaninstrument.Bean.ReUploadBean;
 import cn.cbdi.hunaninstrument.Bean.ReUploadWithBsBean;
 import cn.cbdi.hunaninstrument.EventBus.AlarmEvent;
-import cn.cbdi.hunaninstrument.EventBus.CloseDoorEvent;
 import cn.cbdi.hunaninstrument.EventBus.LockUpEvent;
 import cn.cbdi.hunaninstrument.EventBus.NetworkEvent;
 import cn.cbdi.hunaninstrument.EventBus.PassEvent;
@@ -70,19 +67,17 @@ import io.reactivex.android.schedulers.AndroidSchedulers;
 import io.reactivex.annotations.NonNull;
 import io.reactivex.disposables.Disposable;
 import io.reactivex.schedulers.Schedulers;
-import okhttp3.ResponseBody;
 
 import static cn.cbdi.hunaninstrument.Tool.Update.UpdateConstant.MANUAL_PATH;
 import static cn.cbdi.hunaninstrument.Tool.Update.UpdateConstant.SIGN_MD5;
 
-public class HeBeiService extends Service implements ISwitchView {
+public class SXService extends Service implements ISwitchView {
 
     private String TAG = HuNanService.class.getSimpleName();
 
     SimpleDateFormat formatter = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss");
 
     SimpleDateFormat url_timeformatter = new SimpleDateFormat("yyyy-MM-dd%20HH:mm:ss");
-
 
     HashMap<String, String> paramsMap = new HashMap<String, String>();
 
@@ -93,7 +88,6 @@ public class HeBeiService extends Service implements ISwitchView {
     DaoSession mdaoSession = AppInit.getInstance().getDaoSession();
 
     ServerConnectionUtil connectionUtil = new ServerConnectionUtil();
-
 
     String Last_Value;
 
@@ -149,29 +143,32 @@ public class HeBeiService extends Service implements ISwitchView {
     public void onGetPassEvent(PassEvent event) {
         Lock.getInstance().setState(Lock.LockState.STATE_Unlock);
         Lock.getInstance().doNext();
-        Observable.timer(120, TimeUnit.SECONDS).subscribeOn(Schedulers.newThread())
-                .subscribe(new Observer<Long>() {
-                    @Override
-                    public void onSubscribe(Disposable d) {
-                        unlock_noOpen = d;
-                    }
+        if(!AppInit.getInstrumentConfig().isHongWai()){
+            Observable.timer(120, TimeUnit.SECONDS).subscribeOn(Schedulers.newThread())
+                    .subscribe(new Observer<Long>() {
+                        @Override
+                        public void onSubscribe(Disposable d) {
+                            unlock_noOpen = d;
+                        }
 
-                    @Override
-                    public void onNext(Long aLong) {
-                        Lock.getInstance().setState(Lock.LockState.STATE_Lockup);
-                        sp.buzz(SwitchImpl.Hex.H2);
-                        EventBus.getDefault().post(new LockUpEvent());
-                    }
+                        @Override
+                        public void onNext(Long aLong) {
+                            Lock.getInstance().setState(Lock.LockState.STATE_Lockup);
+                            sp.buzz(SwitchImpl.Hex.H2);
+                            EventBus.getDefault().post(new LockUpEvent());
+                        }
 
-                    @Override
-                    public void onError(Throwable e) {
+                        @Override
+                        public void onError(Throwable e) {
 
-                    }
+                        }
 
-                    @Override
-                    public void onComplete() {
-                    }
-                });
+                        @Override
+                        public void onComplete() {
+                        }
+                    });
+        }
+
     }
 
     @Override
@@ -188,88 +185,91 @@ public class HeBeiService extends Service implements ISwitchView {
 
     @Override
     public void onSwitchingText(String value) {
-//        if (value.startsWith("AAAAAA")) {
-//            if ((Last_Value == null || Last_Value.equals(""))) {
-//                Last_Value = value;
-//            }
-//            if (!value.equals(Last_Value)) {
-//                Last_Value = value;
-//                if (Last_Value.equals("AAAAAA000000000000")) {
-//                    if (Lock.getInstance().getState().equals(Lock.LockState.STATE_Lockup)) {
-//                        Lock.getInstance().doNext();
-//                        alarmRecord();
-//                    }
-//                }
-//            }
-//        }
-        Lg.e("switchValue", value);
-        if ((Last_Value == null || Last_Value.equals(""))) {
+        if (AppInit.getInstrumentConfig().isHongWai()) {
             if (value.startsWith("AAAAAA")) {
-                Last_Value = value;
-                if (value.equals("AAAAAA000000000000")) {
-                    Door.getInstance().setMdoorState(Door.DoorState.State_Open);
-                    Door.getInstance().doNext();
-                    alarmRecord();
+                if ((Last_Value == null || Last_Value.equals(""))) {
+                    Last_Value = value;
                 }
-            }
-        } else {
-            if (value.startsWith("AAAAAA") && value.endsWith("000000")) {
                 if (!value.equals(Last_Value)) {
                     Last_Value = value;
                     if (Last_Value.equals("AAAAAA000000000000")) {
-                        if (Door.getInstance().getMdoorState().equals(Door.DoorState.State_Close)) {
-                            Door.getInstance().setMdoorState(Door.DoorState.State_Open);
-                            Door.getInstance().doNext();
-                            if (Lock.getInstance().getState().equals(Lock.LockState.STATE_Lockup)) {
-                                alarmRecord();
-                            }
-                        }
-                        if (unlock_noOpen != null) {
-                            unlock_noOpen.dispose();
-                        }
-                        if (rx_delay != null) {
-                            rx_delay.dispose();
-                        }
-                    } else if (Last_Value.equals("AAAAAA000001000000")) {
-                        if (Lock.getInstance().getState().equals(Lock.LockState.STATE_Unlock)) {
-                            final String closeDoorTime = formatter.format(new Date(System.currentTimeMillis()));
-                            Observable.timer(10, TimeUnit.SECONDS).subscribeOn(Schedulers.newThread())
-                                    .subscribe(new Observer<Long>() {
-                                        @Override
-                                        public void onSubscribe(Disposable d) {
-                                            rx_delay = d;
-                                        }
-
-                                        @Override
-                                        public void onNext(Long aLong) {
-                                            Lock.getInstance().setState(Lock.LockState.STATE_Lockup);
-                                            Door.getInstance().setMdoorState(Door.DoorState.State_Close);
-                                            sp.buzz(SwitchImpl.Hex.H2);
-                                            if (unlock_noOpen != null) {
-                                                unlock_noOpen.dispose();
-                                            }
-                                            CloseDoorRecord(closeDoorTime);
-                                            EventBus.getDefault().post(new LockUpEvent());
-                                        }
-
-                                        @Override
-                                        public void onError(Throwable e) {
-
-                                        }
-
-                                        @Override
-                                        public void onComplete() {
-
-                                        }
-                                    });
-                        } else {
-                            Door.getInstance().setMdoorState(Door.DoorState.State_Close);
+                        if (Lock.getInstance().getState().equals(Lock.LockState.STATE_Lockup)) {
+                            Lock.getInstance().doNext();
+                            alarmRecord();
                         }
                     }
                 }
+            }
+        } else {
+            Lg.e("switchValue", value);
+            if ((Last_Value == null || Last_Value.equals(""))) {
+                if (value.startsWith("AAAAAA")) {
+                    Last_Value = value;
+                    if (value.equals("AAAAAA000000000000")) {
+                        Door.getInstance().setMdoorState(Door.DoorState.State_Open);
+                        Door.getInstance().doNext();
+                        alarmRecord();
+                    }
+                }
             } else {
-                if (value.startsWith("BBBBBB") && value.endsWith("C1EF")) {
-                    THSwitchValue = value;
+                if (value.startsWith("AAAAAA") && value.endsWith("000000")) {
+                    if (!value.equals(Last_Value)) {
+                        Last_Value = value;
+                        if (Last_Value.equals("AAAAAA000000000000")) {
+                            if (Door.getInstance().getMdoorState().equals(Door.DoorState.State_Close)) {
+                                Door.getInstance().setMdoorState(Door.DoorState.State_Open);
+                                Door.getInstance().doNext();
+                                if (Lock.getInstance().getState().equals(Lock.LockState.STATE_Lockup)) {
+                                    alarmRecord();
+                                }
+                            }
+                            if (unlock_noOpen != null) {
+                                unlock_noOpen.dispose();
+                            }
+                            if (rx_delay != null) {
+                                rx_delay.dispose();
+                            }
+                        } else if (Last_Value.equals("AAAAAA000001000000")) {
+                            if (Lock.getInstance().getState().equals(Lock.LockState.STATE_Unlock)) {
+                                final String closeDoorTime = formatter.format(new Date(System.currentTimeMillis()));
+                                Observable.timer(10, TimeUnit.SECONDS).subscribeOn(Schedulers.newThread())
+                                        .subscribe(new Observer<Long>() {
+                                            @Override
+                                            public void onSubscribe(Disposable d) {
+                                                rx_delay = d;
+                                            }
+
+                                            @Override
+                                            public void onNext(Long aLong) {
+                                                Lock.getInstance().setState(Lock.LockState.STATE_Lockup);
+                                                Door.getInstance().setMdoorState(Door.DoorState.State_Close);
+                                                sp.buzz(SwitchImpl.Hex.H2);
+                                                if (unlock_noOpen != null) {
+                                                    unlock_noOpen.dispose();
+                                                }
+                                                CloseDoorRecord(closeDoorTime);
+                                                EventBus.getDefault().post(new LockUpEvent());
+                                            }
+
+                                            @Override
+                                            public void onError(Throwable e) {
+
+                                            }
+
+                                            @Override
+                                            public void onComplete() {
+
+                                            }
+                                        });
+                            } else {
+                                Door.getInstance().setMdoorState(Door.DoorState.State_Close);
+                            }
+                        }
+                    }
+                } else {
+                    if (value.startsWith("BBBBBB") && value.endsWith("C1EF")) {
+                        THSwitchValue = value;
+                    }
                 }
             }
         }
@@ -327,7 +327,7 @@ public class HeBeiService extends Service implements ISwitchView {
         ReUploadBeanDao reUploadBeanDao = mdaoSession.getReUploadBeanDao();
         List<ReUploadBean> list1 = reUploadBeanDao.queryBuilder().list();
         for (final ReUploadBean bean : list1) {
-            RetrofitGenerator.getHebeiApi().withDataRs(bean.getMethod(), config.getString("key"), bean.getContent())
+            RetrofitGenerator.getSxApi().withDataRs(bean.getMethod(), config.getString("key"), bean.getContent())
                     .subscribeOn(Schedulers.single())
                     .unsubscribeOn(Schedulers.single())
                     .observeOn(Schedulers.single())
@@ -427,7 +427,7 @@ public class HeBeiService extends Service implements ISwitchView {
         if (config.getBoolean("CopySourceFileVer1", true)) {
             Observable.create((emitter) -> {
                 emitter.onNext(ApkUtils.copyfile(
-                        new File(ApkUtils.getSourceApkPath(HeBeiService.this, UpdateConstant.TEST_PACKAGENAME)),
+                        new File(ApkUtils.getSourceApkPath(SXService.this, UpdateConstant.TEST_PACKAGENAME)),
                         new File(UpdateConstant.ORIGINAL_APK_PATH),
                         true));
             })
@@ -452,7 +452,7 @@ public class HeBeiService extends Service implements ISwitchView {
         HashMap<String, String> map = (HashMap<String, String>) paramsMap.clone();
         map.put("dataType", "updatePersion");
         map.put("persionType", String.valueOf(3));
-        RetrofitGenerator.getHebeiApi().GeneralPersionInfo(map)
+        RetrofitGenerator.getSxApi().GeneralPersionInfo(map)
                 .subscribeOn(Schedulers.io())
                 .unsubscribeOn(Schedulers.io())
                 .observeOn(AndroidSchedulers.mainThread())
@@ -485,7 +485,7 @@ public class HeBeiService extends Service implements ISwitchView {
                     @Override
                     public void onComplete() {
                         map.put("persionType", String.valueOf(2));
-                        RetrofitGenerator.getHebeiApi().GeneralPersionInfo(map)
+                        RetrofitGenerator.getSxApi().GeneralPersionInfo(map)
                                 .subscribeOn(Schedulers.io())
                                 .unsubscribeOn(Schedulers.io())
                                 .observeOn(AndroidSchedulers.mainThread())
@@ -517,7 +517,7 @@ public class HeBeiService extends Service implements ISwitchView {
                                     @Override
                                     public void onComplete() {
                                         map.put("persionType", String.valueOf(1));
-                                        RetrofitGenerator.getHebeiApi().GeneralPersionInfo(map)
+                                        RetrofitGenerator.getSxApi().GeneralPersionInfo(map)
                                                 .subscribeOn(Schedulers.io())
                                                 .unsubscribeOn(Schedulers.io())
                                                 .observeOn(AndroidSchedulers.mainThread())
@@ -571,7 +571,7 @@ public class HeBeiService extends Service implements ISwitchView {
 
     private void syncFace() {
         if (config.getBoolean("syncFace", true)) {
-            RetrofitGenerator.getHebeiApi().getAllFace("getAllFace", paramsMap.get("daid"), paramsMap.get("pass"))
+            RetrofitGenerator.getSxApi().getAllFace("getAllFace", paramsMap.get("daid"), paramsMap.get("pass"))
                     .subscribeOn(Schedulers.io())
                     .unsubscribeOn(Schedulers.io())
                     .observeOn(AndroidSchedulers.mainThread())
@@ -631,7 +631,6 @@ public class HeBeiService extends Service implements ISwitchView {
         }
     }
 
-
     private void mapInit() {
         SafeCheck safeCheck = new SafeCheck();
         safeCheck.setURL(config.getString("ServerId"));
@@ -642,7 +641,7 @@ public class HeBeiService extends Service implements ISwitchView {
     private void testNet() {
         HashMap<String, String> map = (HashMap<String, String>) paramsMap.clone();
         map.put("dataType", "test");
-        RetrofitGenerator.getHebeiApi().GeneralUpdata(map)
+        RetrofitGenerator.getSxApi().GeneralUpdata(map)
                 .subscribeOn(Schedulers.io())
                 .unsubscribeOn(Schedulers.io())
                 .observeOn(AndroidSchedulers.mainThread())
@@ -677,7 +676,7 @@ public class HeBeiService extends Service implements ISwitchView {
     private void checkOnline() {
         HashMap<String, String> map = (HashMap<String, String>) paramsMap.clone();
         map.put("dataType", "checkOnline");
-        RetrofitGenerator.getHebeiApi().GeneralUpdata(map)
+        RetrofitGenerator.getSxApi().GeneralUpdata(map)
                 .subscribeOn(Schedulers.io())
                 .unsubscribeOn(Schedulers.io())
                 .observeOn(AndroidSchedulers.mainThread())
@@ -709,7 +708,7 @@ public class HeBeiService extends Service implements ISwitchView {
         HashMap<String, String> map = (HashMap<String, String>) paramsMap.clone();
         map.put("dataType", "closeDoor");
         map.put("time", time);
-        RetrofitGenerator.getHebeiApi().GeneralUpdata(map)
+        RetrofitGenerator.getSxApi().GeneralUpdata(map)
                 .subscribeOn(Schedulers.io())
                 .unsubscribeOn(Schedulers.io())
                 .observeOn(AndroidSchedulers.mainThread())
@@ -743,7 +742,7 @@ public class HeBeiService extends Service implements ISwitchView {
         map.put("dataType", "alarm");
         map.put("alarmType", String.valueOf(1));
         map.put("time", formatter.format(new Date(System.currentTimeMillis())));
-        RetrofitGenerator.getHebeiApi().GeneralUpdata(map)
+        RetrofitGenerator.getSxApi().GeneralUpdata(map)
                 .subscribeOn(Schedulers.io())
                 .unsubscribeOn(Schedulers.io())
                 .observeOn(AndroidSchedulers.mainThread())
@@ -777,7 +776,7 @@ public class HeBeiService extends Service implements ISwitchView {
         map.put("tem", String.valueOf(last_mTemperature));
         map.put("hum", String.valueOf(last_mHumidity));
         map.put("time", formatter.format(new Date(System.currentTimeMillis())));
-        RetrofitGenerator.getHebeiApi().GeneralUpdata(map)
+        RetrofitGenerator.getSxApi().GeneralUpdata(map)
                 .subscribeOn(Schedulers.io())
                 .unsubscribeOn(Schedulers.io())
                 .observeOn(AndroidSchedulers.mainThread())

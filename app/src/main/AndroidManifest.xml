@@ -51,6 +51,16 @@
             android:theme="@style/ImageTranslucentTheme"></activity>
 
         <activity
+            android:name=".Activity_SX.SXMainActivity"
+            android:launchMode="singleTask"
+            android:theme="@style/ImageTranslucentTheme"></activity>
+
+        <activity
+            android:name=".Activity_SX.SXRegActivity"
+            android:launchMode="standard"
+            android:theme="@style/ImageTranslucentTheme"></activity>
+
+        <activity
             android:name=".Activity_byyj.RegActivity"
             android:theme="@style/ImageTranslucentTheme"></activity>
 
@@ -74,6 +84,7 @@
         <service android:name=".Service.HuNanService"></service>
         <service android:name=".Service.WYYService"></service>
         <service android:name=".Service.HeBeiService"></service>
+        <service android:name=".Service.SXService"></service>
 
         <receiver android:name=".BroadcastReceiver.BootBroadcastReceiver">
             <intent-filter>

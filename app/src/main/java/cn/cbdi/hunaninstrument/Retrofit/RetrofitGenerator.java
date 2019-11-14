@@ -10,6 +10,7 @@ import java.util.concurrent.TimeUnit;
 import cn.cbdi.hunaninstrument.AppInit;
 import cn.cbdi.hunaninstrument.Retrofit.ConnectApi.HNMBYApi;
 import cn.cbdi.hunaninstrument.Retrofit.ConnectApi.HebeiApi;
+import cn.cbdi.hunaninstrument.Retrofit.ConnectApi.SXApi;
 import cn.cbdi.hunaninstrument.Retrofit.ConnectApi.WYYConnectApi;
 import okhttp3.Interceptor;
 import okhttp3.OkHttpClient;
@@ -32,11 +33,15 @@ public class RetrofitGenerator {
 
     private static HebeiApi hebeiApi;
 
+    private static SXApi sxApi;
+
     private HNMBYApi testHnmbyApi;
 
     private WYYConnectApi testWyyConnectApi;
 
     private HebeiApi testHebeiApi;
+
+    private SXApi testSXApi;
 
     private static OkHttpClient.Builder okHttpClient = new OkHttpClient.Builder();
     private static Gson gson = new GsonBuilder()
@@ -115,10 +120,25 @@ public class RetrofitGenerator {
         return testHebeiApi;
     }
 
-    public static HebeiApi getHebeiApi(){
+    public static HebeiApi getHebeiApi() {
         if (hebeiApi == null) {
             hebeiApi = createService(HebeiApi.class);
         }
         return hebeiApi;
+    }
+
+
+    public static SXApi getSxApi(){
+        if(sxApi == null){
+            sxApi = createService(SXApi.class);
+        }
+        return sxApi;
+    }
+
+    public SXApi getSXApi(String url) {
+        if (testSXApi == null) {
+            testSXApi = createService(SXApi.class, url);
+        }
+        return testSXApi;
     }
 }

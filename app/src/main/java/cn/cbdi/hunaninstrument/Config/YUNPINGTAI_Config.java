@@ -1,12 +1,11 @@
 package cn.cbdi.hunaninstrument.Config;
 
-import cn.cbdi.hunaninstrument.Function.Func_Face.mvp.Module.HeBeiFaceImpl;
-import cn.cbdi.hunaninstrument.Function.Func_Face.mvp.Module.HuNanFaceImpl3;
 import cn.cbdi.hunaninstrument.Function.Func_Face.mvp.Module.IFace;
+import cn.cbdi.hunaninstrument.Function.Func_Face.mvp.Module.WYYFaceImpl;
 import cn.cbdi.hunaninstrument.Function.Func_IDCard.mvp.presenter.IDCardPresenter;
-import cn.cbdi.hunaninstrument.Service.HeBeiService;
+import cn.cbdi.hunaninstrument.Service.WYYService;
 
-public class HebeiConfig extends BaseConfig {
+public class YUNPINGTAI_Config extends BaseConfig{
     @Override
     public boolean isFace() {
         return true;
@@ -24,7 +23,7 @@ public class HebeiConfig extends BaseConfig {
 
     @Override
     public String getDev_prefix() {
-        return "800100";
+        return "";
     }
 
     @Override
@@ -39,7 +38,7 @@ public class HebeiConfig extends BaseConfig {
 
     @Override
     public String getServerId() {
-        return "http://211.90.38.12:8081/";
+        return "http://yzbyun.wxhxp.cn:81/";
     }
 
     @Override
@@ -49,17 +48,17 @@ public class HebeiConfig extends BaseConfig {
 
     @Override
     public String getModel() {
-        return "CBDI-DA-01";
+        return "CBDI-P-IC";
     }
 
     @Override
     public String getName() {
-        return "防爆采集器";
+        return "剧毒库房采集器";
     }
 
     @Override
     public String getProject() {
-        return "HeBeiFB";        //河北防爆
+        return "WYY";        //危运云平台
     }
 
     @Override
@@ -94,49 +93,47 @@ public class HebeiConfig extends BaseConfig {
 
     @Override
     public void readCard() {
-        IDCardPresenter.getInstance().readCard();
         IDCardPresenter.getInstance().ReadIC();
+
     }
 
     @Override
     public void stopReadCard() {
-        IDCardPresenter.getInstance().stopReadCard();
         IDCardPresenter.getInstance().StopReadIC();
     }
 
     @Override
     public boolean fingerprint() {
-        return false;
+        return true;
     }
 
     @Override
     public Class getServiceName() {
-        return HeBeiService.class;
+        return WYYService.class;
     }
 
     @Override
     public String getMainActivity() {
-        return ".Activity_Hebei.HebeiMainActivity";
+        return ".Activity_WYY.WYYMainActivity";
     }
 
     @Override
     public String getAddActivity() {
-        return ".Activity_Hebei.HeBeiRegActivity";
+        return ".Activity_WYY.WYYAddActvity";
     }
 
     @Override
     public boolean TouchScreen() {
-        return false;
+        return true;
     }
 
     @Override
     public boolean MenKongSuo() {
         return false;
     }
-
     @Override
     public IFace getFaceImpl() {
-        return new HuNanFaceImpl3();
+        return new WYYFaceImpl();
     }
 
     @Override
@@ -146,6 +143,7 @@ public class HebeiConfig extends BaseConfig {
 
     @Override
     public boolean isHongWai() {
-            return false;
+        return false;
     }
+
 }

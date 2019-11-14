@@ -137,4 +137,14 @@ public class WYYConfig extends BaseConfig{
     public IFace getFaceImpl() {
         return new WYYFaceImpl();
     }
+
+    @Override
+    public boolean XungengCanOpen() {
+        return true;
+    }
+
+    @Override
+    public boolean isHongWai() {
+        return false;
+    }
 }

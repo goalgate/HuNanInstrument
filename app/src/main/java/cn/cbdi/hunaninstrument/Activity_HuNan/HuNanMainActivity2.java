@@ -231,7 +231,7 @@ public class HuNanMainActivity2 extends BaseActivity implements NormalWindow.Opt
         if (disposableTips != null) {
             disposableTips.dispose();
         }
-        stopService(intent);
+//        stopService(intent);
     }
 
     @Override

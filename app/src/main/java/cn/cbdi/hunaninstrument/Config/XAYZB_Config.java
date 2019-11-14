@@ -1,12 +1,13 @@
 package cn.cbdi.hunaninstrument.Config;
 
-import cn.cbdi.hunaninstrument.Function.Func_Face.mvp.Module.HeBeiFaceImpl;
 import cn.cbdi.hunaninstrument.Function.Func_Face.mvp.Module.HuNanFaceImpl3;
 import cn.cbdi.hunaninstrument.Function.Func_Face.mvp.Module.IFace;
 import cn.cbdi.hunaninstrument.Function.Func_IDCard.mvp.presenter.IDCardPresenter;
 import cn.cbdi.hunaninstrument.Service.HeBeiService;
+import cn.cbdi.hunaninstrument.Service.SXService;
 
-public class HebeiConfig extends BaseConfig {
+public class XAYZB_Config extends BaseConfig {
+
     @Override
     public boolean isFace() {
         return true;
@@ -14,7 +15,7 @@ public class HebeiConfig extends BaseConfig {
 
     @Override
     public boolean isTemHum() {
-        return true;
+        return false;
     }
 
     @Override
@@ -29,17 +30,17 @@ public class HebeiConfig extends BaseConfig {
 
     @Override
     public String getPersonInfoPrefix() {
-        return "da_gzmb_persionInfo?";
+        return "cjy/s/fbcjy_updata?";
     }
 
     @Override
     public String getUpDataPrefix() {
-        return "da_gzmb_updata?";
+        return "cjy/s/fbcjy_updata?";
     }
 
     @Override
     public String getServerId() {
-        return "http://211.90.38.12:8081/";
+        return "http://xajy.snaq.cn:8884/";
     }
 
     @Override
@@ -59,7 +60,7 @@ public class HebeiConfig extends BaseConfig {
 
     @Override
     public String getProject() {
-        return "HeBeiFB";        //河北防爆
+        return "XAYZB";        //西安易制爆
     }
 
     @Override
@@ -111,17 +112,17 @@ public class HebeiConfig extends BaseConfig {
 
     @Override
     public Class getServiceName() {
-        return HeBeiService.class;
+        return SXService.class;
     }
 
     @Override
     public String getMainActivity() {
-        return ".Activity_Hebei.HebeiMainActivity";
+        return ".Activity_SX.SXMainActivity";
     }
 
     @Override
     public String getAddActivity() {
-        return ".Activity_Hebei.HeBeiRegActivity";
+        return ".Activity_SX.SXRegActivity";
     }
 
     @Override
@@ -141,11 +142,11 @@ public class HebeiConfig extends BaseConfig {
 
     @Override
     public boolean XungengCanOpen() {
-        return true;
+        return false;
     }
 
     @Override
     public boolean isHongWai() {
-            return false;
+        return true;
     }
 }

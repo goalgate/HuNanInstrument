@@ -63,5 +63,9 @@ public abstract class BaseConfig {
 
     public abstract IFace getFaceImpl();
 
+    public abstract boolean XungengCanOpen();
+
+    public abstract boolean isHongWai();
+
 
 }

@@ -13,8 +13,10 @@ import com.squareup.leakcanary.LeakCanary;
 //import cn.cbdi.cbsdmonitor.greendao.DaoMaster;
 //import cn.cbdi.cbsdmonitor.greendao.DaoSession;
 import cn.cbdi.hunaninstrument.Config.BaseConfig;
+import cn.cbdi.hunaninstrument.Config.HLJ_Config;
 import cn.cbdi.hunaninstrument.Config.HebeiConfig;
 import cn.cbdi.hunaninstrument.Config.HuNanConfig;
+import cn.cbdi.hunaninstrument.Config.NMGYZB_Config;
 import cn.cbdi.hunaninstrument.Config.WYYConfig;
 import cn.cbdi.hunaninstrument.Config.WenZhouConfig;
 import cn.cbdi.hunaninstrument.Function.Func_Face.mvp.Module.HuNanFaceImpl;
@@ -67,7 +69,7 @@ public class AppInit extends Application {
 
         instance = this;
 
-        InstrumentConfig = new WenZhouConfig();
+        InstrumentConfig = new WYYConfig();
 
 //        Lg.setIsSave(true);
 

@@ -147,4 +147,14 @@ public class HuNanConfig extends BaseConfig{
     public IFace getFaceImpl() {
         return new HuNanFaceImpl3();
     }
+
+    @Override
+    public boolean XungengCanOpen() {
+        return true;
+    }
+
+    @Override
+    public boolean isHongWai() {
+        return false;
+    }
 }
