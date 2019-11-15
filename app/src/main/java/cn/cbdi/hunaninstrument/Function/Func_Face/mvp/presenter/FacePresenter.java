@@ -8,10 +8,7 @@ import com.baidu.aip.entity.User;
 import com.baidu.aip.face.AutoTexturePreviewView;
 import com.baidu.aip.manager.FaceSDKManager;
 import com.blankj.utilcode.util.ToastUtils;
-
-//import cn.cbdi.hunaninstrument.Function.Func_Face.mvp.Module.FaceImpl2;
 import cn.cbdi.hunaninstrument.AppInit;
-import cn.cbdi.hunaninstrument.Function.Func_Face.mvp.Module.HuNanFaceImpl;
 import cn.cbdi.hunaninstrument.Function.Func_Face.mvp.Module.IFace;
 import cn.cbdi.hunaninstrument.Function.Func_Face.mvp.view.IFaceView;
 import cn.cbdi.drv.card.ICardInfo;

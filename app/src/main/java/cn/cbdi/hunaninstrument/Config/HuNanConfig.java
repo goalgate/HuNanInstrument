@@ -1,9 +1,6 @@
 package cn.cbdi.hunaninstrument.Config;
 
-import android.app.Service;
 
-import cn.cbdi.hunaninstrument.Function.Func_Face.mvp.Module.HuNanFaceImpl;
-import cn.cbdi.hunaninstrument.Function.Func_Face.mvp.Module.HuNanFaceImpl2;
 import cn.cbdi.hunaninstrument.Function.Func_Face.mvp.Module.HuNanFaceImpl3;
 import cn.cbdi.hunaninstrument.Function.Func_Face.mvp.Module.IFace;
 import cn.cbdi.hunaninstrument.Function.Func_IDCard.mvp.presenter.IDCardPresenter;

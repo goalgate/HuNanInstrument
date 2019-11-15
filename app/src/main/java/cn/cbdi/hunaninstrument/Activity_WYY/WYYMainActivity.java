@@ -26,9 +26,7 @@ import android.widget.TextView;
 import com.bigkoo.alertview.AlertView;
 import com.bigkoo.alertview.OnItemClickListener;
 import com.blankj.utilcode.util.ActivityUtils;
-import com.blankj.utilcode.util.AppUtils;
-import com.blankj.utilcode.util.NetworkUtils;
-import com.blankj.utilcode.util.SPUtils;
+
 import com.blankj.utilcode.util.TimeUtils;
 import com.blankj.utilcode.util.ToastUtils;
 import com.jakewharton.rxbinding2.widget.RxTextView;
@@ -270,7 +268,6 @@ public class WYYMainActivity extends BaseActivity implements SuperWindow.OptionT
         super.onDestroy();
         EventBus.getDefault().unregister(this);
         stopService(intent);
-        AppInit.getMyManager().unBindAIDLService(AppInit.getContext());
         disposableTips.dispose();
     }
 
@@ -349,6 +346,7 @@ public class WYYMainActivity extends BaseActivity implements SuperWindow.OptionT
     public void onText(String msg) {
         if ("请确认指纹是否已登记".equals(msg)) {
             tv_info.setText("请确认指纹是否已登记,再重试");
+            sp.redLight();
         } else if ("松开手指".equals(msg)) {
             tv_info.setText(msg);
         }
@@ -541,6 +539,7 @@ public class WYYMainActivity extends BaseActivity implements SuperWindow.OptionT
             if (DoorOpenOperation.getInstance().getmDoorOpenOperation().equals(DoorOpenOperation.DoorOpenState.Locking)) {
                 cg_User1.setScenePhoto(bmp);
                 DoorOpenOperation.getInstance().doNext();
+                sp.greenLight();
                 tv_info.setText(String.format("管理员%s打卡成功,指纹ID:%s\n请继续管理员操作", cg_User1.getUser().getName(), cg_User1.getUser().getFingerprintId()));
                 Observable.timer(60, TimeUnit.SECONDS).subscribeOn(Schedulers.newThread())
                         .compose(this.<Long>bindUntilEvent(ActivityEvent.PAUSE))
@@ -572,6 +571,7 @@ public class WYYMainActivity extends BaseActivity implements SuperWindow.OptionT
                     checkChange.dispose();
                 }
                 DoorOpenOperation.getInstance().doNext();
+                sp.greenLight();
                 tv_info.setText(String.format("管理员%s打卡成功,指纹ID:%s\n设备已撤防", cg_User2.getUser().getName(), cg_User2.getUser().getFingerprintId()));
                 cg_User2.setScenePhoto(bmp);
             }
@@ -653,9 +653,7 @@ public class WYYMainActivity extends BaseActivity implements SuperWindow.OptionT
                         } catch (Exception e) {
                             e.printStackTrace();
                         }
-
                     }
-
                 });
     }
 
@@ -816,7 +814,6 @@ public class WYYMainActivity extends BaseActivity implements SuperWindow.OptionT
                                                 config.put("key", DESX.encrypt(jsonKey.toString()));
                                                 ToastUtils.showLong("设备数据更新成功");
                                                 fpp.fpIdentify();
-
                                             });
 //
                                 } else {

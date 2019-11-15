@@ -1,10 +1,8 @@
 package cn.cbdi.hunaninstrument.Config;
 
-import cn.cbdi.hunaninstrument.Function.Func_Face.mvp.Module.HuNanFaceImpl;
 import cn.cbdi.hunaninstrument.Function.Func_Face.mvp.Module.IFace;
 import cn.cbdi.hunaninstrument.Function.Func_Face.mvp.Module.WYYFaceImpl;
 import cn.cbdi.hunaninstrument.Function.Func_IDCard.mvp.presenter.IDCardPresenter;
-import cn.cbdi.hunaninstrument.Service.HuNanService;
 import cn.cbdi.hunaninstrument.Service.WYYService;
 
 public class WYYConfig extends BaseConfig{

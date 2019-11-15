@@ -25,6 +25,7 @@ import cn.cbdi.hunaninstrument.AppInit;
 import cn.cbdi.hunaninstrument.Config.BaseConfig;
 import cn.cbdi.hunaninstrument.Config.HuNanConfig;
 import cn.cbdi.hunaninstrument.Config.WYYConfig;
+import cn.cbdi.hunaninstrument.Config.YUNPINGTAI_Config;
 import cn.cbdi.hunaninstrument.R;
 import cn.cbdi.hunaninstrument.Retrofit.RetrofitGenerator;
 import cn.cbdi.hunaninstrument.Tool.DAInfo;
@@ -70,7 +71,7 @@ public class Alert_Server {
                 } else {
                     url = etName.getText().toString();
                 }
-                if (AppInit.getInstrumentConfig().getClass().getName().equals(WYYConfig.class.getName())) {
+                if (AppInit.getInstrumentConfig().getClass().getName().equals(WYYConfig.class.getName())||AppInit.getInstrumentConfig().getClass().getName().equals(YUNPINGTAI_Config.class.getName())) {
                     new RetrofitGenerator().getWyyConnectApi(url).withDataRs("testNet", config.getString("key"),null)
                             .subscribeOn(Schedulers.io())
                             .unsubscribeOn(Schedulers.io())

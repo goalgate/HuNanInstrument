@@ -50,7 +50,7 @@ import io.reactivex.disposables.Disposable;
 import io.reactivex.schedulers.Schedulers;
 import okhttp3.ResponseBody;
 
-import static cn.cbdi.hunaninstrument.Function.Func_Face.mvp.Module.HuNanFaceImpl.FEATURE_DATAS_UNREADY;
+import static cn.cbdi.hunaninstrument.Function.Func_Face.mvp.Module.HuNanFaceImpl3.FEATURE_DATAS_UNREADY;
 import static cn.cbdi.hunaninstrument.Function.Func_Face.mvp.presenter.FacePresenter.FaceResultType.IMG_MATCH_IMG_Error;
 import static cn.cbdi.hunaninstrument.Function.Func_Face.mvp.presenter.FacePresenter.FaceResultType.IMG_MATCH_IMG_False;
 import static cn.cbdi.hunaninstrument.Function.Func_Face.mvp.presenter.FacePresenter.FaceResultType.IMG_MATCH_IMG_True;

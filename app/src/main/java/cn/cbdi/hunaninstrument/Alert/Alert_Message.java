@@ -24,6 +24,7 @@ import java.io.InputStreamReader;
 import cn.cbdi.hunaninstrument.AppInit;
 import cn.cbdi.hunaninstrument.Config.HuNanConfig;
 import cn.cbdi.hunaninstrument.Config.WYYConfig;
+import cn.cbdi.hunaninstrument.Config.YUNPINGTAI_Config;
 import cn.cbdi.hunaninstrument.Function.Func_IDCard.mvp.presenter.IDCardPresenter;
 import cn.cbdi.hunaninstrument.R;
 import cn.cbdi.hunaninstrument.State.DoorState.Door;
@@ -104,9 +105,8 @@ public class Alert_Message {
             msg_network.setText("连接网络失败，请检查网线连接状态");
         }
 
-        if (AppInit.getInstrumentConfig().getClass().getName().equals(WYYConfig.class.getName())) {
+        if (AppInit.getInstrumentConfig().getClass().getName().equals(WYYConfig.class.getName())||AppInit.getInstrumentConfig().getClass().getName().equals(YUNPINGTAI_Config.class.getName())) {
             msg_iccard.setText("请放置IC卡进行判断");
-//        } else if (AppInit.getInstrumentConfig().getClass().getName().equals(HuNanConfig.class.getName())) {
         } else {
             msg_iccard.setText("请放置卡片进行判断");
         }

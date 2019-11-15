@@ -1,6 +1,5 @@
 package cn.cbdi.hunaninstrument.Config;
 
-import cn.cbdi.hunaninstrument.Function.Func_Face.mvp.Module.HeBeiFaceImpl;
 import cn.cbdi.hunaninstrument.Function.Func_Face.mvp.Module.HuNanFaceImpl3;
 import cn.cbdi.hunaninstrument.Function.Func_Face.mvp.Module.IFace;
 import cn.cbdi.hunaninstrument.Function.Func_IDCard.mvp.presenter.IDCardPresenter;

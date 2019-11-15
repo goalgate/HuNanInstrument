@@ -139,12 +139,13 @@ public abstract class BaseActivity extends RxActivity implements IFaceView, IIDC
         AppInit.getInstrumentConfig().stopReadCard();
         fp.FaceSetNoAction();
         fp.setIdentifyStatus(FEATURE_DATAS_UNREADY);
+        sp.WhiteLighrOff();
+
     }
 
     @Override
     protected void onDestroy() {
         super.onDestroy();
-        sp.WhiteLighrOff();
         idp.idCardClose();
         fpp.fpClose();
         MediaHelper.mediaRealese();

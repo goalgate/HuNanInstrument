@@ -4,11 +4,13 @@ import android.graphics.Bitmap;
 import android.util.Log;
 
 import cn.cbdi.drv.card.CardInfo3;
+import cn.cbdi.drv.card.CardInfoRk123x;
 import cn.cbdi.drv.card.ICardInfo;
 import cn.cbdi.drv.card.ICardState;
 import cn.cbdi.drv.card.ReadCard;
 import cn.cbdi.drv.card.ReadCard2;
 import cn.cbdi.hunaninstrument.AppInit;
+import cn.cbdi.hunaninstrument.Config.YUNPINGTAI_Config;
 import cn.cbdi.log.Lg;
 
 /**
@@ -25,7 +27,10 @@ public class IDCardImpl implements IIDCard {
     public void onOpen(IIdCardListener listener) {
         mylistener = listener;
         try {
-            if (AppInit.getMyManager().getAndroidDisplay().startsWith("rk3368")) {
+            if(AppInit.getInstrumentConfig().getClass().getName().equals(YUNPINGTAI_Config.class.getName())){
+                cardInfo = new CardInfoRk123x("/dev/ttyS1", m_onCardState);
+            }
+            else if (AppInit.getMyManager().getAndroidDisplay().startsWith("rk3368")) {
                 cardInfo = new ReadCard2(115200,"/dev/ttyS0", m_onCardState);
             } else if (AppInit.getMyManager().getAndroidDisplay().startsWith("rk3288")) {
                 cardInfo = new ReadCard2(115200, "/dev/ttyS1", m_onCardState);

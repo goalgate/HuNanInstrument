@@ -26,10 +26,7 @@ import io.reactivex.Observable;
 import io.reactivex.android.schedulers.AndroidSchedulers;
 import io.reactivex.functions.Consumer;
 
-import static cn.cbdi.hunaninstrument.Function.Func_Face.mvp.Module.HuNanFaceImpl.FEATURE_DATAS_UNREADY;
-
-//import static cn.cbdi.hunaninstrument.Function.Func_Face.mvp.Module.FaceImpl4.FEATURE_DATAS_UNREADY;
-//import static cn.cbdi.hunaninstrument.Function.Func_Face.mvp.Module.FaceImpl3.FEATURE_DATAS_UNREADY;
+import static cn.cbdi.hunaninstrument.Function.Func_Face.mvp.Module.HuNanFaceImpl3.FEATURE_DATAS_UNREADY;
 
 public abstract class BaseActivity extends RxActivity implements IFaceView, IIDCardView {
 

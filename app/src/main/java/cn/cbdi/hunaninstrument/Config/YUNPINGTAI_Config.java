@@ -1,7 +1,10 @@
 package cn.cbdi.hunaninstrument.Config;
 
+import cn.cbdi.hunaninstrument.Function.Func_Face.mvp.Module.HuNanFaceImpl3;
 import cn.cbdi.hunaninstrument.Function.Func_Face.mvp.Module.IFace;
 import cn.cbdi.hunaninstrument.Function.Func_Face.mvp.Module.WYYFaceImpl;
+import cn.cbdi.hunaninstrument.Function.Func_Face.mvp.Module.YUNFaceImpl;
+import cn.cbdi.hunaninstrument.Function.Func_Face.mvp.Module.YUNFaceImpl2;
 import cn.cbdi.hunaninstrument.Function.Func_IDCard.mvp.presenter.IDCardPresenter;
 import cn.cbdi.hunaninstrument.Service.WYYService;
 
@@ -37,8 +40,11 @@ public class YUNPINGTAI_Config extends BaseConfig{
     }
 
     @Override
-    public String getServerId() {
-        return "http://yzbyun.wxhxp.cn:81/";
+//    public String getServerId() {
+//        return "http://yzbyun.wxhxp.cn:81/";
+//    }
+        public String getServerId() {
+        return "http://192.168.11.21:8231/";
     }
 
     @Override
@@ -133,7 +139,7 @@ public class YUNPINGTAI_Config extends BaseConfig{
     }
     @Override
     public IFace getFaceImpl() {
-        return new WYYFaceImpl();
+        return new YUNFaceImpl2();
     }
 
     @Override

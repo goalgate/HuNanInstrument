@@ -47,6 +47,7 @@ import java.util.concurrent.TimeUnit;
 import cn.cbdi.drv.card.ICardInfo;
 import cn.cbdi.hunaninstrument.AppInit;
 import cn.cbdi.hunaninstrument.Bean.Keeper;
+import cn.cbdi.hunaninstrument.Config.HuNanConfig;
 import cn.cbdi.hunaninstrument.Function.Func_Face.mvp.presenter.FacePresenter;
 import cn.cbdi.hunaninstrument.Function.Func_IDCard.mvp.presenter.IDCardPresenter;
 import cn.cbdi.hunaninstrument.Function.Func_Switch.mvp.presenter.SwitchPresenter;
@@ -58,9 +59,7 @@ import io.reactivex.disposables.Disposable;
 import io.reactivex.functions.Consumer;
 import io.reactivex.schedulers.Schedulers;
 
-
-public class HuNanFaceImpl2 implements IFace {
-
+public class YUNFaceImpl implements IFace {
     boolean reg_status = false;
 
     private final static double livnessScore = 0.0;
@@ -90,7 +89,7 @@ public class HuNanFaceImpl2 implements IFace {
     private AutoTexturePreviewView mPreviewView1;
     TextureView textureView;
 
-    IFaceListener listener;
+    IFace.IFaceListener listener;
 
     private ExecutorService es = Executors.newSingleThreadExecutor();
 
@@ -102,7 +101,7 @@ public class HuNanFaceImpl2 implements IFace {
     }
 
     @Override
-    public void CameraPreview(Context context, AutoTexturePreviewView previewView, AutoTexturePreviewView previewView1, TextureView textureView, IFaceListener listener) {
+    public void CameraPreview(Context context, AutoTexturePreviewView previewView, AutoTexturePreviewView previewView1, TextureView textureView, IFace.IFaceListener listener) {
         this.listener = listener;
         startCameraPreview(context, previewView, previewView1, textureView);
 
@@ -125,7 +124,7 @@ public class HuNanFaceImpl2 implements IFace {
     }
 
     @Override
-    public void IMG_to_IMG(final Bitmap bmp1, final Bitmap bmp2,boolean register) {
+    public void IMG_to_IMG(final Bitmap bmp1, final Bitmap bmp2, boolean register) {
         es.submit(new Runnable() {
             @Override
             public void run() {
@@ -138,6 +137,10 @@ public class HuNanFaceImpl2 implements IFace {
                         handler.post(new Runnable() {
                             @Override
                             public void run() {
+                                if(register){
+                                    reg_status = false;
+                                    action = FacePresenter.FaceAction.Reg_ACTION;
+                                }
                                 listener.onText(FacePresenter.FaceResultType.IMG_MATCH_IMG_Score, String.valueOf((int) FaceApi.getInstance().match(bytes1, bytes2)));
                             }
                         });
@@ -146,6 +149,8 @@ public class HuNanFaceImpl2 implements IFace {
                             @Override
                             public void run() {
                                 listener.onText(FacePresenter.FaceResultType.IMG_MATCH_IMG_Score, "0");
+                                listener.onText(FacePresenter.FaceResultType.IMG_MATCH_IMG_False, "系统上登记照片无法提取人脸特征,请更改照片");
+
                             }
                         });
                     }
@@ -154,6 +159,8 @@ public class HuNanFaceImpl2 implements IFace {
                         @Override
                         public void run() {
                             listener.onText(FacePresenter.FaceResultType.IMG_MATCH_IMG_Score, "0");
+                            listener.onText(FacePresenter.FaceResultType.IMG_MATCH_IMG_False, "系统上登记照片无法提取人脸特征,请更改照片");
+
                         }
                     });
                 }
@@ -173,13 +180,10 @@ public class HuNanFaceImpl2 implements IFace {
         action = FacePresenter.FaceAction.No_ACTION;
     }
 
-
-
     @Override
     public void setIdentifyStatus(int i) {
         identityStatus = i;
     }
-
 
     @Override
     public void FaceIdentify_model() {
@@ -188,7 +192,7 @@ public class HuNanFaceImpl2 implements IFace {
 
     @Override
     public void FaceIdentify() {
-        IDCardPresenter.getInstance().stopReadCard();
+//        IDCardPresenter.getInstance().stopReadCard();
         action = FacePresenter.FaceAction.Identify_ACTION;
         outOfIdentifyTime = Observable.timer(10, TimeUnit.SECONDS)
                 .observeOn(AndroidSchedulers.mainThread())
@@ -198,11 +202,12 @@ public class HuNanFaceImpl2 implements IFace {
                         action = FacePresenter.FaceAction.No_ACTION;
                         listener.onText(FacePresenter.FaceResultType.Identify_non, "尝试获取人脸超时,请重试");
                         MediaHelper.play(MediaHelper.Text.searchFace_outofTime);
-                        IDCardPresenter.getInstance().readCard();
+//                        IDCardPresenter.getInstance().readCard();
 
                     }
                 });
     }
+
 
     @Override
     public void FaceReg(ICardInfo cardInfo) {
@@ -213,7 +218,7 @@ public class HuNanFaceImpl2 implements IFace {
 
     @Override
     public void FaceReg(ICardInfo cardInfo, Bitmap bitmap) {
-        IDCardPresenter.getInstance().stopReadCard();
+//        IDCardPresenter.getInstance().stopReadCard();
         action = FacePresenter.FaceAction.Headphoto_MATCH_IMG;
         outOfRegTime = Observable.timer(20, TimeUnit.SECONDS)
                 .observeOn(AndroidSchedulers.mainThread())
@@ -224,7 +229,7 @@ public class HuNanFaceImpl2 implements IFace {
                         MediaHelper.play(MediaHelper.Text.searchFace_outofTime);
                         reg_status = true;
                         action = FacePresenter.FaceAction.No_ACTION;
-                        IDCardPresenter.getInstance().readCard();
+//                        IDCardPresenter.getInstance().readCard();
                     }
                 });
         this.InputBitmap = bitmap;
@@ -269,7 +274,7 @@ public class HuNanFaceImpl2 implements IFace {
 
 
     @Override
-    public void PreviewCease(CeaseListener ceaseListener) {
+    public void PreviewCease(IFace.CeaseListener ceaseListener) {
         Camera1PreviewManager.getInstance().stopPreview();
         Camera1PreviewManager.getInstance().release();
         AnotherPreviewManager.getInstance().stopPreview();
@@ -323,6 +328,7 @@ public class HuNanFaceImpl2 implements IFace {
         Camera1PreviewManager.getInstance().startPreview(context, previewView1, mWidth, mHeight, new CameraDataCallback() {
             @Override
             public void onGetCameraData(int[] data, Camera camera, int width, int height) {
+//                global_bitmap = Bitmap.createBitmap(data, width, height, Bitmap.Config.ARGB_8888);
                 if (!reg_status) {
                     dealCameraData(data, width, height);
                 }
@@ -378,22 +384,13 @@ public class HuNanFaceImpl2 implements IFace {
                 case No_ACTION:
                     break;
                 case Reg_ACTION:
-                    if(outOfRegTime!=null){
+                    if (outOfRegTime != null) {
                         outOfRegTime.dispose();
                     }
                     action = FacePresenter.FaceAction.No_ACTION;
-                    reg_status = true;
+//                    reg_status = true;
                     headphotoBW = FaceCropper.getFace(model.getImageFrame().getArgb(), model.getFaceInfo(), model.getImageFrame().getWidth());
                     register(model.getFaceInfo(), model.getImageFrame(), InputCardInfo);
-                    IDCardPresenter.getInstance().readCard();
-//                    headphotoRGB = FaceCropper.getFace(model.getImageFrame().getArgb(), model.getFaceInfo(), model.getImageFrame().getWidth());
-////                    action = FacePresenter.FaceAction.No_ACTION;
-//                    if (Img_match_Img(model.getFaceInfo(), model.getImageFrame())) {
-//                        reg_status = false;
-//                        register(model.getFaceInfo(), model.getImageFrame(), InputCardInfo);
-//                    } else {
-////                        action = FacePresenter.FaceAction.Reg_ACTION;
-//                    }
                     break;
                 case Headphoto_MATCH_IMG:
                     headphotoRGB = FaceCropper.getFace(model.getImageFrame().getArgb(), model.getFaceInfo(), model.getImageFrame().getWidth());
@@ -402,10 +399,11 @@ public class HuNanFaceImpl2 implements IFace {
                         action = FacePresenter.FaceAction.Reg_ACTION;
                     } else {
                         action = FacePresenter.FaceAction.No_ACTION;
-                        IDCardPresenter.getInstance().readCard();
-                        if(outOfRegTime!=null){
+//                        IDCardPresenter.getInstance().readCard();
+                        if (outOfRegTime != null) {
                             outOfRegTime.dispose();
-                        }                    }
+                        }
+                    }
                     break;
                 case Identify_ACTION:
                     identity(model.getImageFrame(), model.getFaceInfo());
@@ -532,10 +530,10 @@ public class HuNanFaceImpl2 implements IFace {
             rectF.left = left;
             rectF.right = right;
         }
-        if (!reg_status) {
-            rectF.left += 25.0;
-            rectF.right+= 25.0;
-        }
+//        if (!reg_status) {
+//            rectF.left -= 5.0;
+//            rectF.right -= 5.0;
+//        }
     }
 
     private boolean Img_match_Img(FaceInfo faceInfo, ImageFrame imageFrame) {
@@ -630,13 +628,16 @@ public class HuNanFaceImpl2 implements IFace {
                     feature.setFeature(bytes);
                     user.getFeatureList().add(feature);
                     if (FaceApi.getInstance().userAdd(user)) {
-                        Keeper keeper = new Keeper(cardInfo.cardId().toUpperCase(),
-                                cardInfo.name(),
-                                FileUtils.bitmapToBase64(InputBitmap),
-                                FileUtils.bitmapToBase64(headphotoRGB),
-                                FileUtils.bitmapToBase64(headphotoBW),
-                                user.getUserId(), bytes);
-                        AppInit.getInstance().getDaoSession().getKeeperDao().insertOrReplace(keeper);
+                        if (AppInit.getInstrumentConfig().getClass().getName().equals(HuNanConfig.class.getName())) {
+                            Keeper keeper = new Keeper(cardInfo.cardId().toUpperCase(),
+                                    cardInfo.name(),
+                                    FileUtils.bitmapToBase64(InputBitmap),
+                                    FileUtils.bitmapToBase64(headphotoRGB),
+                                    FileUtils.bitmapToBase64(headphotoBW),
+                                    user.getUserId(), bytes);
+                            AppInit.getInstance().getDaoSession().getKeeperDao().insertOrReplace(keeper);
+                        }
+
                         handler.post(new Runnable() {
                             @Override
                             public void run() {
@@ -695,7 +696,7 @@ public class HuNanFaceImpl2 implements IFace {
         int[] landmarks = faceInfo.landmarks;
         final IdentifyRet identifyRet = FaceApi.getInstance().identity(argb, rows, cols, landmarks, "1");
         if (identifyRet.getScore() < 80) {
-            if(outOfIdentifyTime!=null){
+            if (outOfIdentifyTime != null) {
                 outOfIdentifyTime.dispose();
             }
             identityStatus = IDENTITY_IDLE;
@@ -705,12 +706,12 @@ public class HuNanFaceImpl2 implements IFace {
                     action = FacePresenter.FaceAction.No_ACTION;
                     listener.onText(FacePresenter.FaceResultType.Identify_non, "系统没有找到相关人脸信息");
                     MediaHelper.play(MediaHelper.Text.identify_non);
-                    IDCardPresenter.getInstance().readCard();
+//                    IDCardPresenter.getInstance().readCard();
                 }
             });
             return;
         } else {
-            if(outOfIdentifyTime!=null){
+            if (outOfIdentifyTime != null) {
                 outOfIdentifyTime.dispose();
             }
             identityStatus = IDENTITY_IDLE;
@@ -722,7 +723,7 @@ public class HuNanFaceImpl2 implements IFace {
                         FaceSetNoAction();
                         listener.onText(FacePresenter.FaceResultType.Identify_non, "系统没有找到相关人脸信息");
                         MediaHelper.play(MediaHelper.Text.identify_non);
-                        IDCardPresenter.getInstance().readCard();
+//                        IDCardPresenter.getInstance().readCard();
 
                     }
                 });
@@ -731,7 +732,7 @@ public class HuNanFaceImpl2 implements IFace {
                     @Override
                     public void run() {
                         FaceSetNoAction();
-                        IDCardPresenter.getInstance().readCard();
+//                        IDCardPresenter.getInstance().readCard();
                         listener.onBitmap(FacePresenter.FaceResultType.Identify, global_bitmap);
                         listener.onBitmap(FacePresenter.FaceResultType.headphoto, scene_Bitmap);
                         listener.onText(FacePresenter.FaceResultType.Identify, String.valueOf((int) identifyRet.getScore()));
@@ -834,5 +835,5 @@ public class HuNanFaceImpl2 implements IFace {
         }
 
     }
-
 }
+

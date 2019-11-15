@@ -5,28 +5,16 @@ import android.content.Context;
 import android.database.sqlite.SQLiteDatabase;
 
 import com.baidu.aip.utils.PreferencesUtil;
-import com.blankj.utilcode.util.SPUtils;
 import com.blankj.utilcode.util.Utils;
 import com.squareup.leakcanary.LeakCanary;
-
-//import cn.cbdi.cbsdmonitor.Tools.GreendaoContext;
-//import cn.cbdi.cbsdmonitor.greendao.DaoMaster;
-//import cn.cbdi.cbsdmonitor.greendao.DaoSession;
 import cn.cbdi.hunaninstrument.Config.BaseConfig;
-import cn.cbdi.hunaninstrument.Config.HLJ_Config;
-import cn.cbdi.hunaninstrument.Config.HebeiConfig;
-import cn.cbdi.hunaninstrument.Config.HuNanConfig;
-import cn.cbdi.hunaninstrument.Config.NMGYZB_Config;
-import cn.cbdi.hunaninstrument.Config.WYYConfig;
-import cn.cbdi.hunaninstrument.Config.WenZhouConfig;
-import cn.cbdi.hunaninstrument.Function.Func_Face.mvp.Module.HuNanFaceImpl;
-import cn.cbdi.hunaninstrument.Function.Func_Face.mvp.Module.FaceImpl5;
-import cn.cbdi.hunaninstrument.Function.Func_Face.mvp.Module.IFace;
+
+import cn.cbdi.hunaninstrument.Config.YUNPINGTAI_Config;
+
 import cn.cbdi.hunaninstrument.Tool.DataBase.GreendaoContext;
 import cn.cbdi.hunaninstrument.Tool.WZWManager;
 import cn.cbdi.hunaninstrument.greendao.DaoMaster;
 import cn.cbdi.hunaninstrument.greendao.DaoSession;
-import cn.cbdi.log.Lg;
 
 public class AppInit extends Application {
 
@@ -69,7 +57,7 @@ public class AppInit extends Application {
 
         instance = this;
 
-        InstrumentConfig = new WYYConfig();
+        InstrumentConfig = new YUNPINGTAI_Config();
 
 //        Lg.setIsSave(true);
 

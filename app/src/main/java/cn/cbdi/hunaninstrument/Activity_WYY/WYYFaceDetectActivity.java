@@ -16,8 +16,6 @@ import com.trello.rxlifecycle2.android.ActivityEvent;
 import com.trello.rxlifecycle2.components.RxActivity;
 
 import org.greenrobot.eventbus.EventBus;
-import org.greenrobot.eventbus.Subscribe;
-import org.greenrobot.eventbus.ThreadMode;
 
 import java.util.concurrent.TimeUnit;
 
@@ -37,8 +35,7 @@ import io.reactivex.Observable;
 import io.reactivex.android.schedulers.AndroidSchedulers;
 import io.reactivex.disposables.Disposable;
 
-import static cn.cbdi.hunaninstrument.Function.Func_Face.mvp.Module.HuNanFaceImpl.FEATURE_DATAS_UNREADY;
-import static cn.cbdi.hunaninstrument.Function.Func_Face.mvp.presenter.FacePresenter.FaceResultType.IMG_MATCH_IMG_Error;
+import static cn.cbdi.hunaninstrument.Function.Func_Face.mvp.Module.HuNanFaceImpl3.FEATURE_DATAS_UNREADY;
 import static cn.cbdi.hunaninstrument.Function.Func_Face.mvp.presenter.FacePresenter.FaceResultType.Reg_failed;
 import static cn.cbdi.hunaninstrument.Function.Func_Face.mvp.presenter.FacePresenter.FaceResultType.Reg_success;
 
@@ -95,7 +92,6 @@ public class WYYFaceDetectActivity extends RxActivity implements IFaceView {
                     ToastUtils.showLong("抽取特征超时，你可以点击头像图片再次抽取人脸特征");
                     fp.PreviewCease(() -> WYYFaceDetectActivity.this.finish());
                 });
-        EventBus.getDefault().register(this);
     }
 
     @Override
@@ -109,7 +105,6 @@ public class WYYFaceDetectActivity extends RxActivity implements IFaceView {
         super.onResume();
         Log.e(TAG, "onResume");
         MediaHelper.play(MediaHelper.Text.reg_model);
-        fp.SetRegStatus(true);
         fp.FacePresenterSetView(this);
         Observable.timer(2, TimeUnit.SECONDS)
                 .observeOn(AndroidSchedulers.mainThread())
@@ -136,14 +131,6 @@ public class WYYFaceDetectActivity extends RxActivity implements IFaceView {
         if (disposableTimer != null) {
             disposableTimer.dispose();
         }
-        EventBus.getDefault().unregister(this);
-
-    }
-
-    @Subscribe(threadMode = ThreadMode.MAIN)
-    public void onFaceDetectEvent(FaceDetectEvent event) {
-
-
     }
 
     @Override
