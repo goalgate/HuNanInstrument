@@ -8,12 +8,14 @@ import org.greenrobot.greendao.database.Database;
 import org.greenrobot.greendao.identityscope.IdentityScopeType;
 import org.greenrobot.greendao.internal.DaoConfig;
 
+import cn.cbdi.hunaninstrument.Bean.AttendanceScene;
 import cn.cbdi.hunaninstrument.Bean.Employer;
 import cn.cbdi.hunaninstrument.Bean.FingerprintUser;
 import cn.cbdi.hunaninstrument.Bean.Keeper;
 import cn.cbdi.hunaninstrument.Bean.ReUploadBean;
 import cn.cbdi.hunaninstrument.Bean.ReUploadWithBsBean;
 
+import cn.cbdi.hunaninstrument.greendao.AttendanceSceneDao;
 import cn.cbdi.hunaninstrument.greendao.EmployerDao;
 import cn.cbdi.hunaninstrument.greendao.FingerprintUserDao;
 import cn.cbdi.hunaninstrument.greendao.KeeperDao;
@@ -29,12 +31,14 @@ import cn.cbdi.hunaninstrument.greendao.ReUploadWithBsBeanDao;
  */
 public class DaoSession extends AbstractDaoSession {
 
+    private final DaoConfig attendanceSceneDaoConfig;
     private final DaoConfig employerDaoConfig;
     private final DaoConfig fingerprintUserDaoConfig;
     private final DaoConfig keeperDaoConfig;
     private final DaoConfig reUploadBeanDaoConfig;
     private final DaoConfig reUploadWithBsBeanDaoConfig;
 
+    private final AttendanceSceneDao attendanceSceneDao;
     private final EmployerDao employerDao;
     private final FingerprintUserDao fingerprintUserDao;
     private final KeeperDao keeperDao;
@@ -44,6 +48,9 @@ public class DaoSession extends AbstractDaoSession {
     public DaoSession(Database db, IdentityScopeType type, Map<Class<? extends AbstractDao<?, ?>>, DaoConfig>
             daoConfigMap) {
         super(db);
+
+        attendanceSceneDaoConfig = daoConfigMap.get(AttendanceSceneDao.class).clone();
+        attendanceSceneDaoConfig.initIdentityScope(type);
 
         employerDaoConfig = daoConfigMap.get(EmployerDao.class).clone();
         employerDaoConfig.initIdentityScope(type);
@@ -60,12 +67,14 @@ public class DaoSession extends AbstractDaoSession {
         reUploadWithBsBeanDaoConfig = daoConfigMap.get(ReUploadWithBsBeanDao.class).clone();
         reUploadWithBsBeanDaoConfig.initIdentityScope(type);
 
+        attendanceSceneDao = new AttendanceSceneDao(attendanceSceneDaoConfig, this);
         employerDao = new EmployerDao(employerDaoConfig, this);
         fingerprintUserDao = new FingerprintUserDao(fingerprintUserDaoConfig, this);
         keeperDao = new KeeperDao(keeperDaoConfig, this);
         reUploadBeanDao = new ReUploadBeanDao(reUploadBeanDaoConfig, this);
         reUploadWithBsBeanDao = new ReUploadWithBsBeanDao(reUploadWithBsBeanDaoConfig, this);
 
+        registerDao(AttendanceScene.class, attendanceSceneDao);
         registerDao(Employer.class, employerDao);
         registerDao(FingerprintUser.class, fingerprintUserDao);
         registerDao(Keeper.class, keeperDao);
@@ -74,11 +83,16 @@ public class DaoSession extends AbstractDaoSession {
     }
     
     public void clear() {
+        attendanceSceneDaoConfig.clearIdentityScope();
         employerDaoConfig.clearIdentityScope();
         fingerprintUserDaoConfig.clearIdentityScope();
         keeperDaoConfig.clearIdentityScope();
         reUploadBeanDaoConfig.clearIdentityScope();
         reUploadWithBsBeanDaoConfig.clearIdentityScope();
+    }
+
+    public AttendanceSceneDao getAttendanceSceneDao() {
+        return attendanceSceneDao;
     }
 
     public EmployerDao getEmployerDao() {

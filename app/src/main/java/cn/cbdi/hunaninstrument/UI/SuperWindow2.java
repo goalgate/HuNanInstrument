@@ -20,7 +20,7 @@ import cn.cbdi.hunaninstrument.R;
  */
 
 
-public class SuperWindow extends PopupWindow implements View.OnClickListener{
+public class SuperWindow2 extends PopupWindow implements View.OnClickListener {
 
     private View mContentView;
     private Activity mActivity;
@@ -28,33 +28,26 @@ public class SuperWindow extends PopupWindow implements View.OnClickListener{
     Button add;
     Button server;
     Button ipSetting;
-    Button update;
-    Button delete;
 
-    public SuperWindow(Activity activity) {
+
+    public SuperWindow2(Activity activity) {
         mActivity = activity;
         setWidth(ViewGroup.LayoutParams.MATCH_PARENT);
         setHeight(ViewGroup.LayoutParams.WRAP_CONTENT);
-        mContentView = LayoutInflater.from(activity).inflate(R.layout.window_super, null);
+        mContentView = LayoutInflater.from(activity).inflate(R.layout.window_super2, null);
         setContentView(mContentView);
         add = (Button) mContentView.findViewById(R.id.btn_add);
         server = (Button) mContentView.findViewById(R.id.btn_server);
-        update = (Button) mContentView.findViewById(R.id.btn_update);
         ipSetting = (Button) mContentView.findViewById(R.id.btn_ipSetting);
-        delete = (Button) mContentView.findViewById(R.id.btn_delete);
-        if(AppInit.getInstrumentConfig().getClass().getName().equals(Attendance_Config.class.getName())){
-            delete.setText("查看数据");
-        }
+
         add.setOnClickListener(this);
         server.setOnClickListener(this);
-        update.setOnClickListener(this);
         ipSetting.setOnClickListener(this);
-        delete.setOnClickListener(this);
         setFocusable(true);
         setOutsideTouchable(true);
         setBackgroundDrawable(new ColorDrawable(Color.parseColor("#00000000")));
         setAnimationStyle(R.style.Person_type_Popup);
-        setOnDismissListener(new OnDismissListener(){
+        setOnDismissListener(new OnDismissListener() {
             @Override
             public void onDismiss() {
                 lighton();
@@ -91,21 +84,17 @@ public class SuperWindow extends PopupWindow implements View.OnClickListener{
 
     @Override
     public void onClick(View v) {
-        switch (v.getId()){
-            case R.id.btn_add :
-                listener.onSuperOptionType(add,1);
+        switch (v.getId()) {
+            case R.id.btn_add:
+                listener.onSuperOptionType(add, 1);
                 break;
-            case R.id.btn_server :
-                listener.onSuperOptionType(server,2);
+            case R.id.btn_server:
+                listener.onSuperOptionType(server, 2);
                 break;
-            case R.id.btn_update :
-                listener.onSuperOptionType(update,3);
+            case R.id.btn_ipSetting:
+                listener.onSuperOptionType(ipSetting, 3);
                 break;
-            case R.id.btn_ipSetting :
-                listener.onSuperOptionType(ipSetting,4);
-                break;
-            case R.id.btn_delete :
-                listener.onSuperOptionType(delete,5);
+            default:
                 break;
         }
     }
@@ -114,7 +103,7 @@ public class SuperWindow extends PopupWindow implements View.OnClickListener{
         void onSuperOptionType(Button view, int type);
     }
 
-    public void setOptionTypeListener(OptionTypeListener listener){
+    public void setOptionTypeListener(OptionTypeListener listener) {
         this.listener = listener;
     }
 

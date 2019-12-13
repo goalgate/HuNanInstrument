@@ -27,6 +27,7 @@ public class ActivityCollector {
         FaceSDKManager.getInstance().release();
         FacePresenter.getInstance().onDestroy();
         AppInit.getMyManager().unBindAIDLService(AppInit.getContext());
+        SwitchPresenter.getInstance().WhiteLighrOff();
 
         for (Activity activity:activities){
             if (!activity.isFinishing()){

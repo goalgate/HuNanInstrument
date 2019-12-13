@@ -3,6 +3,7 @@ package com.baidu.aip.face;
 import com.baidu.aip.callback.FaceDetectCallBack;
 import com.baidu.aip.entity.LivenessModel;
 import com.baidu.aip.manager.FaceSDKManager;
+import com.baidu.idl.facesdk.FaceDetect;
 import com.baidu.idl.facesdk.model.FaceInfo;
 
 import java.util.concurrent.ExecutorService;
@@ -81,6 +82,21 @@ public class FaceTrackManager {
         });
     }
 
+    public void faceDetectAll(final int[] argb, final int width, final int height,
+                          final FaceDetectCallBack faceDetectCallBack) {
+
+        if (future != null && !future.isDone()) {
+            return;
+        }
+        future = es.submit(new Runnable() {
+            @Override
+            public void run() {
+                Thread.currentThread().setPriority(Thread.NORM_PRIORITY);
+                faceDataDetectByn(argb, width, height, faceDetectCallBack);
+            }
+        });
+    }
+
     public void faceTrackPriority (final int[] argb, final int width, final int height,
                           final FaceDetectCallBack faceDetectCallBack) {
 
@@ -125,6 +141,44 @@ public class FaceTrackManager {
                 startTime = System.currentTimeMillis();
                 float rgbScore = FaceSDKManager.getInstance().getFaceLiveness().rgbLiveness(argb,
                         width, height, faceInfo.landmarks);
+                livenessModel.setRgbLivenessScore(rgbScore);
+                livenessModel.setRgbLivenessDuration(System.currentTimeMillis() - startTime);
+            }
+            if (faceDetectCallBack != null) {
+                faceDetectCallBack.onFaceDetectCallback(livenessModel);
+                faceDetectCallBack.onTip(0, "人脸检测中");
+            }
+        } else {
+            if (faceDetectCallBack != null) {
+                faceDetectCallBack.onFaceDetectCallback(null);
+                faceDetectCallBack.onTip(0, "未检测到人脸");
+            }
+        }
+    }
+
+
+    private void faceDataDetectByn(final int[] argb, int width, int height, FaceDetectCallBack faceDetectCallBack) {
+        LivenessModel livenessModel = new LivenessModel();
+        long startTime = System.currentTimeMillis();
+        FaceInfo[] faceInfos = FaceSDKManager.getInstance().getFaceDetector().detect(argb, width, height,50);
+        livenessModel.setRgbDetectDuration(System.currentTimeMillis() - startTime);
+        livenessModel.getImageFrame().setArgb(argb);
+        livenessModel.getImageFrame().setWidth(width);
+        livenessModel.getImageFrame().setHeight(height);
+        if (faceInfos != null && faceInfos.length > 0) {
+            for (FaceInfo faceInfo : faceInfos){
+                faceInfo =  FaceSDKManager.getInstance().getFaceDetector().align(argb, height, width, faceInfo);
+            }
+            livenessModel.setTrackFaceInfo(faceInfos);
+//            livenessModel.setLandmarks(faceInfo.landmarks);
+            // 塞选人脸，可以调节距离、角度
+//            if (!filter(faceInfo, width, height, faceDetectCallBack)) {
+//                faceDetectCallBack.onCallback(null);
+//            }
+            if (isAliving) {
+                startTime = System.currentTimeMillis();
+                float rgbScore = FaceSDKManager.getInstance().getFaceLiveness().rgbLiveness(argb,
+                        width, height, faceInfos[0].landmarks);
                 livenessModel.setRgbLivenessScore(rgbScore);
                 livenessModel.setRgbLivenessDuration(System.currentTimeMillis() - startTime);
             }

@@ -94,8 +94,8 @@ public class SplashActivity extends RxActivity {
                                 }
                                 config.put("firstStart", false);
                                 config.put("daid", new NetInfo().getMacId());
+//                                config.put("daid", "042162-079043-230210");
                                 config.put("key", DESX.encrypt(jsonKey.toString()));
-//                                    config.put("daid", "042162-079043-230210");
 //                                    config.put("key", "C13BE3F912863EDB71AF98E7FEC781F673C18B27229219445CE6079BDEF01F507B64D35EA7BB492DE1DC29C8FD3211B8335B0F17BCB77715AE846AFC34EBB1B275299C49FC6D73105467F8904D23673D3CC6CE9A5340EDBADD22FDA81CA9EF58");
                                 config.put("ServerId", AppInit.getInstrumentConfig().getServerId());
                                 AssetsUtils.getInstance(AppInit.getContext()).copyAssetsToSD("wltlib", "wltlib");

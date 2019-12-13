@@ -1,4 +1,4 @@
-package cn.cbdi.hunaninstrument.Activity_WYY;
+package cn.cbdi.hunaninstrument.Activity_HLJYZB;
 
 import android.app.Activity;
 import android.graphics.Bitmap;
@@ -56,17 +56,14 @@ import io.reactivex.Observer;
 import io.reactivex.android.schedulers.AndroidSchedulers;
 import io.reactivex.annotations.NonNull;
 import io.reactivex.disposables.Disposable;
-import io.reactivex.functions.Consumer;
 import io.reactivex.functions.Function;
 import io.reactivex.schedulers.Schedulers;
 import okhttp3.ResponseBody;
 
-public class WYYAddActvity extends Activity implements IFingerPrintView {
-    private String TAG = WYYAddActvity.class.getSimpleName();
+public class AddActvity extends Activity {
+    private String TAG = AddActvity.class.getSimpleName();
 
     SPUtils config = SPUtils.getInstance("config");
-
-    FingerPrintPresenter fpp = FingerPrintPresenter.getInstance();
 
     boolean commitable = false;
 
@@ -74,15 +71,9 @@ public class WYYAddActvity extends Activity implements IFingerPrintView {
 
     FingerprintUser user = new FingerprintUser();
 
-    String fp_id = "0";
-
     String alertTitle = "请选择接下来的操作";
 
-    @BindView(R.id.iv_finger)
-    ImageView img_finger;
 
-    @BindView(R.id.et_finger)
-    TextView tv_finger;
 
     @BindView(R.id.btn_commit)
     Button btn_commit;
@@ -96,10 +87,14 @@ public class WYYAddActvity extends Activity implements IFingerPrintView {
     @BindView(R.id.iv_userPic)
     ImageView iv_userPic;
 
+    int count = 3;
 
     @OnClick(R.id.iv_userPic)
     void choose() {
         if (user.getCardId() != null) {
+            if (user.getFaceUserId() != null) {
+                FaceApi.getInstance().userDelete(user.getFaceUserId(), "1");
+            }
             FaceDetect(user.getCardId(), user.getName());
         }
     }
@@ -121,22 +116,50 @@ public class WYYAddActvity extends Activity implements IFingerPrintView {
                                 if (infoMap.size() > 0) {
 //                                    if (infoMap.get("status").equals(String.valueOf(0))) {
                                     if (infoMap.get("status").equals(String.valueOf(0)) || infoMap.get("status").equals(String.valueOf(1))) {
-                                        fp_id = String.valueOf(fpp.fpGetEmptyID());
-                                        img_finger.setClickable(false);
-                                        fpp.fpEnroll(fp_id);
                                         user = new FingerprintUser();
                                         user.setCardId(et_idcard.getText().toString().toUpperCase());
                                         user.setName(infoMap.get("name"));
-                                        user.setFingerprintId(fp_id);
                                         user.setCourIds(infoMap.get("courIds"));
                                         user.setCourType(infoMap.get("courType"));
                                         query.setText(infoMap.get("name") + ",欢迎您！");
                                         query.setClickable(false);
+                                        Observable.interval(0, 1, TimeUnit.SECONDS)
+                                                .take(count + 1)
+                                                .map(new Function<Long, Long>() {
+                                                    @Override
+                                                    public Long apply(@NonNull Long aLong) throws Exception {
+                                                        return count - aLong;
+                                                    }
+                                                })
+                                                .subscribeOn(Schedulers.io())
+                                                .observeOn(AndroidSchedulers.mainThread())
+                                                .subscribe(new Observer<Long>() {
+                                                    @Override
+                                                    public void onSubscribe(@NonNull Disposable d) {
+
+                                                    }
+
+                                                    @Override
+                                                    public void onNext(@NonNull Long aLong) {
+                                                        ToastUtils.showLong(aLong + "秒后进入人脸识别界面");
+                                                    }
+
+                                                    @Override
+                                                    public void onError(@NonNull Throwable e) {
+
+                                                    }
+
+                                                    @Override
+                                                    public void onComplete() {
+                                                        iv_userPic.setClickable(true);
+                                                        FaceDetect(user.getCardId(), user.getName());
+                                                    }
+                                                });
                                     } else {
-                                        Alarm.getInstance(WYYAddActvity.this).messageAlarm("您的身份有误，如有疑问请联系客服处理");
+                                        Alarm.getInstance(AddActvity.this).messageAlarm("您的身份有误，如有疑问请联系客服处理");
                                     }
                                 } else {
-                                    Alarm.getInstance(WYYAddActvity.this).messageAlarm("系统未能查询到该人员信息，如有疑问请联系客服处理");
+                                    Alarm.getInstance(AddActvity.this).messageAlarm("系统未能查询到该人员信息，如有疑问请联系客服处理");
                                 }
                             } catch (IOException e) {
                                 Lg.e(TAG, e.toString());
@@ -153,61 +176,19 @@ public class WYYAddActvity extends Activity implements IFingerPrintView {
     @OnClick(R.id.btn_commit)
     void commit() {
         if (commitable) {
-            if (user.getFingerprintId() != null) {
-                JSONObject jsonObject = new JSONObject();
-                try {
-                    jsonObject.put("id", user.getCardId());
-                    jsonObject.put("courIds", user.getCourIds());
-                    jsonObject.put("dataType", "1");
-                    jsonObject.put("name", user.getName());
-                    jsonObject.put("courType", user.getCourType());
-                    jsonObject.put("fingerprintPhoto", user.getFingerprintPhoto());
-                    jsonObject.put("fingerprintId", user.getFingerprintId());
-                    jsonObject.put("fingerprintKey", fpp.fpUpTemlate(user.getFingerprintId()));
-                    jsonObject.put("datetime", TimeUtils.getNowString());
-                } catch (JSONException e) {
-                    e.printStackTrace();
-                }
-                RetrofitGenerator.getWyyConnectApi().withDataRr("fingerLog", config.getString("key"), jsonObject.toString())
-                        .subscribeOn(Schedulers.io())
-                        .unsubscribeOn(Schedulers.io())
-                        .observeOn(AndroidSchedulers.mainThread())
-                        .subscribe(new MyObserver<ResponseBody>(this) {
-                            @Override
-                            public void onNext(ResponseBody s) {
-                                try {
-                                    if (s.string().equals("true")) {
-                                        AppInit.getInstance().getDaoSession().insert(user);
-                                        Employer employer = new Employer();
-                                        employer.setCardID(user.getCardId());
-                                        employer.setType(Integer.valueOf(user.getCourType()));
-                                        AppInit.getInstance().getDaoSession().insertOrReplace(employer);
-                                        fp_id = "0";
-                                        user = new FingerprintUser();
-                                        ToastUtils.showLong("人员插入成功");
-                                        alertTitle = "人员插入成功,请选择接下来的操作";
-                                        cancel();
-                                    } else {
-                                        Alarm.getInstance(WYYAddActvity.this).messageAlarm("数据插入有错");
-                                    }
-                                } catch (Exception e) {
-                                    Alarm.getInstance(WYYAddActvity.this).messageAlarm(e.toString());
-                                    Lg.e(TAG, e.toString());
-                                }
-                            }
-                        });
-            } else {
-                Alarm.getInstance(WYYAddActvity.this).messageAlarm("您的操作有误，请重试");
-
-            }
+            AppInit.getInstance().getDaoSession().insert(user);
+            user = new FingerprintUser();
+            ToastUtils.showLong("人员插入成功");
+            alertTitle = "人员插入成功,请选择接下来的操作";
+            cancel();
         } else {
-            Alarm.getInstance(WYYAddActvity.this).messageAlarm("您还有信息未登记，如需退出请按取消");
+            Alarm.getInstance(AddActvity.this).messageAlarm("您还有信息未登记，如需退出请按取消");
         }
     }
 
     @OnClick(R.id.btn_cancel)
     void cancel() {
-        new AlertView(alertTitle, null, null, new String[]{"重置并继续录入信息", "退出至主桌面"}, null, WYYAddActvity.this, AlertView.Style.Alert, new OnItemClickListener() {
+        new AlertView(alertTitle, null, null, new String[]{"重置并继续录入信息", "退出至主桌面"}, null, AddActvity.this, AlertView.Style.Alert, new OnItemClickListener() {
             @Override
             public void onItemClick(Object o, int position) {
                 if (position == 0) {
@@ -218,25 +199,14 @@ public class WYYAddActvity extends Activity implements IFingerPrintView {
                     et_idcard.setHint("请填写身份证信息");
                     et_idcard.setText(null);
                     user = new FingerprintUser();
-                    img_finger.setClickable(false);
                     iv_userPic.setClickable(false);
-                    fpp.fpCancel(true);
-                    if (!fp_id.equals("0")) {
-                        fpp.fpRemoveTmpl(fp_id);
-                    }
                     if (user.getFaceUserId() != null) {
                         FaceApi.getInstance().userDelete(user.getFaceUserId(), "1");
                     }
                     iv_userPic.setImageBitmap(BitmapFactory.decodeResource(getResources(), R.drawable.user_icon));
-                    tv_finger.setText("先验证人员身份获得指纹编号");
-                    img_finger.setImageBitmap(BitmapFactory.decodeResource(getResources(), R.drawable.zw_icon));
                 } else {
                     if (user.getFaceUserId() != null) {
                         FaceApi.getInstance().userDelete(user.getFaceUserId(), "1");
-                    }
-                    fpp.fpCancel(true);
-                    if (!fp_id.equals("0")) {
-                        fpp.fpRemoveTmpl(fp_id);
                     }
                     finish();
                 }
@@ -249,16 +219,9 @@ public class WYYAddActvity extends Activity implements IFingerPrintView {
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         BarUtils.hideStatusBar(this);
-        setContentView(R.layout.activity_add_person);
+        setContentView(R.layout.activity_add_person2);
         ButterKnife.bind(this);
         EventBus.getDefault().register(this);
-        RxView.clicks(img_finger).throttleFirst(3, TimeUnit.SECONDS)
-                .observeOn(AndroidSchedulers.mainThread())
-                .subscribe((o) -> {
-                    fpp.fpEnroll(fp_id);
-                    img_finger.setClickable(false);
-                });
-        img_finger.setClickable(false);
         iv_userPic.setClickable(false);
 }
 
@@ -266,74 +229,7 @@ public class WYYAddActvity extends Activity implements IFingerPrintView {
         Bundle bundle = new Bundle();
         bundle.putString("cardId", cardId);
         bundle.putString("name", name);
-        ActivityUtils.startActivity(bundle, getPackageName(), getPackageName() + ".Activity_WYY.FaceDetectActivity");
-    }
-
-    @Override
-    public void onSetImg(Bitmap bmp) {
-        img_finger.setImageBitmap(bmp);
-        user.setFingerprintPhoto(FileUtils.bitmapToBase64(bmp));
-    }
-
-
-    int count = 3;
-
-    @Override
-    public void onText(String msg) {
-        if (!msg.equals("Canceled")) {
-            tv_finger.setText(msg);
-        }
-        if (msg.endsWith("录入成功")) {
-            Observable.interval(0, 1, TimeUnit.SECONDS)
-                    .take(count + 1)
-                    .map(new Function<Long, Long>() {
-                        @Override
-                        public Long apply(@NonNull Long aLong) throws Exception {
-                            return count - aLong;
-                        }
-                    })
-                    .subscribeOn(Schedulers.io())
-                    .observeOn(AndroidSchedulers.mainThread())
-                    .subscribe(new Observer<Long>() {
-                        @Override
-                        public void onSubscribe(@NonNull Disposable d) {
-
-                        }
-
-                        @Override
-                        public void onNext(@NonNull Long aLong) {
-                            ToastUtils.showLong(aLong + "秒后进入人脸识别界面");
-                        }
-
-                        @Override
-                        public void onError(@NonNull Throwable e) {
-
-                        }
-
-                        @Override
-                        public void onComplete() {
-                            iv_userPic.setClickable(true);
-                            FaceDetect(user.getCardId(), user.getName());
-                        }
-                    });
-        }
-        if (msg.endsWith("点我重试")) {
-            img_finger.setClickable(true);
-        }
-    }
-
-    @Override
-    protected void onResume() {
-        super.onResume();
-        fpp.FingerPrintPresenterSetView(this);
-
-    }
-
-    @Override
-    protected void onPause() {
-        super.onPause();
-        fpp.fpCancel(true);
-        fpp.FingerPrintPresenterSetView(null);
+        ActivityUtils.startActivity(bundle, getPackageName(), getPackageName() + ".Activity_HLJYZB.FaceDetectActivity");
     }
 
     @Override
@@ -350,7 +246,6 @@ public class WYYAddActvity extends Activity implements IFingerPrintView {
         iv_userPic.setImageBitmap(event.getBitmap());
         user.setFaceUserId(event.getUserId());
         commitable = true;
-
     }
 
 
@@ -392,10 +287,6 @@ public class WYYAddActvity extends Activity implements IFingerPrintView {
 
     }
 
-    @Override
-    public void onFpSucc(String msg) {
-
-    }
 
     public void onBackPressed() {
 

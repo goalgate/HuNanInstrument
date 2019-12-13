@@ -81,10 +81,46 @@
             </intent-filter>
         </activity>
 
+        <activity
+            android:name=".Activity_Attendance.MainActivity"
+            android:launchMode="singleTask"
+            android:theme="@style/ImageTranslucentTheme"></activity>
+        <activity
+            android:name=".Activity_Attendance.AddActvity"
+            android:launchMode="standard"
+            android:theme="@style/ImageTranslucentTheme"></activity>
+
+        <activity
+            android:name=".Activity_Attendance.FaceDetectActivity"
+            android:launchMode="standard"
+            android:theme="@style/ImageTranslucentTheme"></activity>
+
+        <activity
+            android:name=".Activity_Attendance.SceneActivity"
+            android:launchMode="standard"
+            android:theme="@style/ImageTranslucentTheme"></activity>
+
+        <activity android:name=".Activity_HLJYZB.MainActivity"
+            android:launchMode="singleTask"
+            android:theme="@style/ImageTranslucentTheme">
+        </activity>
+
+        <activity android:name=".Activity_HLJYZB.AddActvity"
+            android:launchMode="standard"
+            android:theme="@style/ImageTranslucentTheme">
+        </activity>
+
+        <activity android:name=".Activity_HLJYZB.FaceDetectActivity"
+            android:launchMode="standard"
+            android:theme="@style/ImageTranslucentTheme">
+
+        </activity>
+
         <service android:name=".Service.HuNanService"></service>
         <service android:name=".Service.WYYService"></service>
         <service android:name=".Service.HeBeiService"></service>
         <service android:name=".Service.SXService"></service>
+        <service android:name=".Service.AttendanceService"></service>
 
         <receiver android:name=".BroadcastReceiver.BootBroadcastReceiver">
             <intent-filter>

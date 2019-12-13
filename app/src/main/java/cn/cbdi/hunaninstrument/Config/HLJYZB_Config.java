@@ -2,10 +2,11 @@ package cn.cbdi.hunaninstrument.Config;
 
 import cn.cbdi.hunaninstrument.Function.Func_Face.mvp.Module.IFace;
 import cn.cbdi.hunaninstrument.Function.Func_Face.mvp.Module.WYYFaceImpl;
+import cn.cbdi.hunaninstrument.Function.Func_Face.mvp.Module.WYYFaceImpl2;
 import cn.cbdi.hunaninstrument.Function.Func_IDCard.mvp.presenter.IDCardPresenter;
 import cn.cbdi.hunaninstrument.Service.WYYService;
 
-public class WYYConfig extends BaseConfig{
+public class HLJYZB_Config extends BaseConfig{
     @Override
     public boolean isFace() {
         return true;
@@ -33,7 +34,7 @@ public class WYYConfig extends BaseConfig{
 
     @Override
     public String getUpDataPrefix() {
-         return "da_gzmb_updata?";
+        return "da_gzmb_updata?";
     }
 
     @Override
@@ -58,7 +59,7 @@ public class WYYConfig extends BaseConfig{
 
     @Override
     public String getProject() {
-        return "WYY";        //危运云平台
+        return "HLJYZB";
     }
 
     @Override
@@ -104,7 +105,7 @@ public class WYYConfig extends BaseConfig{
 
     @Override
     public boolean fingerprint() {
-        return true;
+        return false;
     }
 
     @Override
@@ -114,12 +115,12 @@ public class WYYConfig extends BaseConfig{
 
     @Override
     public String getMainActivity() {
-        return ".Activity_WYY.MainActivity";
+        return ".Activity_HLJYZB.MainActivity";
     }
 
     @Override
     public String getAddActivity() {
-        return ".Activity_WYY.AddActvity";
+        return ".Activity_HLJYZB.AddActvity";
     }
 
     @Override
@@ -131,9 +132,10 @@ public class WYYConfig extends BaseConfig{
     public boolean MenKongSuo() {
         return false;
     }
+
     @Override
     public IFace getFaceImpl() {
-        return new WYYFaceImpl();
+        return new WYYFaceImpl2();
     }
 
     @Override
@@ -146,3 +148,4 @@ public class WYYConfig extends BaseConfig{
         return false;
     }
 }
+

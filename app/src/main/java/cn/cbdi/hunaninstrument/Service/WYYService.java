@@ -130,29 +130,6 @@ public class WYYService extends Service implements ISwitchView {
                         }
 
                     });
-//            Observable.create(new ObservableOnSubscribe<Boolean>() {
-//                @Override
-//                public void subscribe(ObservableEmitter<Boolean> e) {
-//                    e.onNext(ApkUtils.copyfile(
-//                            new File(ApkUtils.getSourceApkPath(HuNanService.this, UpdateConstant.TEST_PACKAGENAME)),
-//                            new File(UpdateConstant.ORIGINAL_APK_PATH),
-//                            true));
-//                }
-//            })
-//                    .subscribeOn(Schedulers.io())
-//                    .unsubscribeOn(Schedulers.io())
-//                    .observeOn(AndroidSchedulers.mainThread())
-//                    .subscribe(new Consumer<Boolean>() {
-//                        @Override
-//                        public void accept(Boolean status) {
-//                            if (status) {
-//                                ToastUtils.showLong("源文件复制成功");
-//                                config.put("CopySourceFile", false);
-//                            } else {
-//                                ToastUtils.showLong("源文件复制失败");
-//                            }
-//                        }
-//                    });
         }
     }
 

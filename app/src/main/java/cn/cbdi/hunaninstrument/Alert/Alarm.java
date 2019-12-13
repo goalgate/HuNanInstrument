@@ -8,11 +8,16 @@ import android.widget.TextView;
 import com.bigkoo.alertview.AlertView;
 import com.bigkoo.alertview.OnItemClickListener;
 
+import java.util.concurrent.TimeUnit;
+
 import cn.cbdi.hunaninstrument.Function.Func_Switch.mvp.module.SwitchImpl;
 import cn.cbdi.hunaninstrument.Function.Func_Switch.mvp.presenter.SwitchPresenter;
 import cn.cbdi.hunaninstrument.R;
 import cn.cbdi.hunaninstrument.State.DoorState.Door;
 import cn.cbdi.hunaninstrument.State.LockState.Lock;
+import io.reactivex.Observable;
+import io.reactivex.android.schedulers.AndroidSchedulers;
+import io.reactivex.functions.Consumer;
 
 
 public class Alarm {
@@ -69,6 +74,14 @@ public class Alarm {
     public void messageAlarm(String msg) {
         alarmText.setText(msg);
         alert.show();
+    }
+
+    public void messageDelay(String msg) {
+        alarmText.setText(msg);
+        Observable.timer(1, TimeUnit.SECONDS)
+                .observeOn(AndroidSchedulers.mainThread())
+                .subscribe((l)-> alert.show());
+
     }
     public void setKnown( boolean known) {
         networkIsKnown = known;

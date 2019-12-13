@@ -1,4 +1,4 @@
-package cn.cbdi.hunaninstrument.Activity_WYY;
+package cn.cbdi.hunaninstrument.Activity_Attendance;
 
 import android.os.Bundle;
 import android.util.Log;
@@ -17,8 +17,10 @@ import java.util.concurrent.TimeUnit;
 
 import butterknife.BindView;
 import cn.cbdi.hunaninstrument.AppInit;
+import cn.cbdi.hunaninstrument.Bean.AttendanceScene;
 import cn.cbdi.hunaninstrument.Bean.Employer;
 import cn.cbdi.hunaninstrument.Bean.FingerprintUser;
+import cn.cbdi.hunaninstrument.Bean.Keeper;
 import cn.cbdi.hunaninstrument.Bean.ReUploadBean;
 import cn.cbdi.hunaninstrument.Function.Func_Face.mvp.presenter.FacePresenter;
 import cn.cbdi.hunaninstrument.Function.Func_Face.mvp.view.IFaceView;
@@ -33,11 +35,12 @@ import cn.cbdi.hunaninstrument.Tool.MediaHelper;
 import cn.cbdi.hunaninstrument.greendao.DaoSession;
 import io.reactivex.Observable;
 import io.reactivex.android.schedulers.AndroidSchedulers;
-import io.reactivex.functions.Consumer;
 
 import static cn.cbdi.hunaninstrument.Function.Func_Face.mvp.Module.FaceImpl2.FEATURE_DATAS_UNREADY;
 
 public abstract class BaseActivity extends RxActivity implements IFaceView, IIDCardView, IFingerPrintView {
+
+
 
     private String TAG = BaseActivity.class.getSimpleName();
 
@@ -104,9 +107,8 @@ public abstract class BaseActivity extends RxActivity implements IFaceView, IIDC
         fp.FacePresenterSetView(this);
         if (config.getBoolean("firstUse", true)) {
             try {
-                mdaoSession.deleteAll(ReUploadBean.class);
-                mdaoSession.deleteAll(Employer.class);
-                mdaoSession.deleteAll(FingerprintUser.class);
+                mdaoSession.deleteAll(AttendanceScene.class);
+                mdaoSession.deleteAll(Keeper.class);
                 fpp.fpRemoveAll();
                 FaceApi.getInstance().groupDelete("1");
                 config.put("firstUse",false);
@@ -152,6 +154,8 @@ public abstract class BaseActivity extends RxActivity implements IFaceView, IIDC
         MediaHelper.mediaRealese();
         ActivityCollector.removeActivity(this);
     }
+
+
 
     @Override
     public void onBackPressed() {

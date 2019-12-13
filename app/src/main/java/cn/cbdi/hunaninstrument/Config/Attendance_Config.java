@@ -1,11 +1,12 @@
 package cn.cbdi.hunaninstrument.Config;
 
 import cn.cbdi.hunaninstrument.Function.Func_Face.mvp.Module.IFace;
-import cn.cbdi.hunaninstrument.Function.Func_Face.mvp.Module.WYYFaceImpl;
+import cn.cbdi.hunaninstrument.Function.Func_Face.mvp.Module.AttendanceFaceImpl;
 import cn.cbdi.hunaninstrument.Function.Func_IDCard.mvp.presenter.IDCardPresenter;
-import cn.cbdi.hunaninstrument.Service.WYYService;
+import cn.cbdi.hunaninstrument.Service.AttendanceService;
 
-public class WYYConfig extends BaseConfig{
+public class Attendance_Config extends BaseConfig {
+
     @Override
     public boolean isFace() {
         return true;
@@ -33,7 +34,7 @@ public class WYYConfig extends BaseConfig{
 
     @Override
     public String getUpDataPrefix() {
-         return "da_gzmb_updata?";
+        return "da_gzmb_updata?";
     }
 
     @Override
@@ -109,17 +110,17 @@ public class WYYConfig extends BaseConfig{
 
     @Override
     public Class getServiceName() {
-        return WYYService.class;
+        return AttendanceService.class;
     }
 
     @Override
     public String getMainActivity() {
-        return ".Activity_WYY.MainActivity";
+        return ".Activity_Attendance.MainActivity";
     }
 
     @Override
     public String getAddActivity() {
-        return ".Activity_WYY.AddActvity";
+        return ".Activity_Attendance.AddActvity";
     }
 
     @Override
@@ -133,7 +134,7 @@ public class WYYConfig extends BaseConfig{
     }
     @Override
     public IFace getFaceImpl() {
-        return new WYYFaceImpl();
+        return new AttendanceFaceImpl();
     }
 
     @Override
@@ -145,4 +146,5 @@ public class WYYConfig extends BaseConfig{
     public boolean isHongWai() {
         return false;
     }
+
 }

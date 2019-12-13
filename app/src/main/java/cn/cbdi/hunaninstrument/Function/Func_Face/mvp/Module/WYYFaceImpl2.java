@@ -49,6 +49,7 @@ import cn.cbdi.hunaninstrument.AppInit;
 import cn.cbdi.hunaninstrument.Bean.Keeper;
 import cn.cbdi.hunaninstrument.Config.HuNanConfig;
 import cn.cbdi.hunaninstrument.Function.Func_Face.mvp.presenter.FacePresenter;
+import cn.cbdi.hunaninstrument.Function.Func_IDCard.mvp.presenter.IDCardPresenter;
 import cn.cbdi.hunaninstrument.Function.Func_Switch.mvp.presenter.SwitchPresenter;
 import cn.cbdi.hunaninstrument.Tool.FileUtils;
 import cn.cbdi.hunaninstrument.Tool.MediaHelper;
@@ -58,7 +59,8 @@ import io.reactivex.disposables.Disposable;
 import io.reactivex.functions.Consumer;
 import io.reactivex.schedulers.Schedulers;
 
-public class YUNFaceImpl2 implements IFace {
+public class WYYFaceImpl2 implements IFace {
+
     boolean reg_status = false;
 
     private final static double livnessScore = 0.0;
@@ -108,6 +110,8 @@ public class YUNFaceImpl2 implements IFace {
 
     Bitmap InputBitmap;
 
+    int[] colorRGB;
+
     Bitmap global_bitmap;
 
     ICardInfo InputCardInfo;
@@ -123,7 +127,7 @@ public class YUNFaceImpl2 implements IFace {
     }
 
     @Override
-    public void IMG_to_IMG(final Bitmap bmp1, final Bitmap bmp2, boolean register) {
+    public void IMG_to_IMG(final Bitmap bmp1, final Bitmap bmp2,boolean register) {
         es.submit(new Runnable() {
             @Override
             public void run() {
@@ -136,10 +140,6 @@ public class YUNFaceImpl2 implements IFace {
                         handler.post(new Runnable() {
                             @Override
                             public void run() {
-                                if (register) {
-                                    reg_status = false;
-                                    action = FacePresenter.FaceAction.Reg_ACTION;
-                                }
                                 listener.onText(FacePresenter.FaceResultType.IMG_MATCH_IMG_Score, String.valueOf((int) FaceApi.getInstance().match(bytes1, bytes2)));
                             }
                         });
@@ -148,8 +148,6 @@ public class YUNFaceImpl2 implements IFace {
                             @Override
                             public void run() {
                                 listener.onText(FacePresenter.FaceResultType.IMG_MATCH_IMG_Score, "0");
-                                listener.onText(FacePresenter.FaceResultType.IMG_MATCH_IMG_False, "系统上登记照片无法提取人脸特征,请更改照片");
-
                             }
                         });
                     }
@@ -158,8 +156,6 @@ public class YUNFaceImpl2 implements IFace {
                         @Override
                         public void run() {
                             listener.onText(FacePresenter.FaceResultType.IMG_MATCH_IMG_Score, "0");
-                            listener.onText(FacePresenter.FaceResultType.IMG_MATCH_IMG_False, "系统上登记照片无法提取人脸特征,请更改照片");
-
                         }
                     });
                 }
@@ -191,7 +187,7 @@ public class YUNFaceImpl2 implements IFace {
 
     @Override
     public void FaceIdentify() {
-//        IDCardPresenter.getInstance().stopReadCard();
+        IDCardPresenter.getInstance().stopReadCard();
         action = FacePresenter.FaceAction.Identify_ACTION;
         outOfIdentifyTime = Observable.timer(10, TimeUnit.SECONDS)
                 .observeOn(AndroidSchedulers.mainThread())
@@ -201,7 +197,7 @@ public class YUNFaceImpl2 implements IFace {
                         action = FacePresenter.FaceAction.No_ACTION;
                         listener.onText(FacePresenter.FaceResultType.Identify_non, "尝试获取人脸超时,请重试");
                         MediaHelper.play(MediaHelper.Text.searchFace_outofTime);
-//                        IDCardPresenter.getInstance().readCard();
+                        IDCardPresenter.getInstance().readCard();
 
                     }
                 });
@@ -217,7 +213,7 @@ public class YUNFaceImpl2 implements IFace {
 
     @Override
     public void FaceReg(ICardInfo cardInfo, Bitmap bitmap) {
-//        IDCardPresenter.getInstance().stopReadCard();
+        IDCardPresenter.getInstance().stopReadCard();
         action = FacePresenter.FaceAction.Headphoto_MATCH_IMG;
         outOfRegTime = Observable.timer(20, TimeUnit.SECONDS)
                 .observeOn(AndroidSchedulers.mainThread())
@@ -228,7 +224,7 @@ public class YUNFaceImpl2 implements IFace {
                         MediaHelper.play(MediaHelper.Text.searchFace_outofTime);
                         reg_status = true;
                         action = FacePresenter.FaceAction.No_ACTION;
-//                        IDCardPresenter.getInstance().readCard();
+                        IDCardPresenter.getInstance().readCard();
                     }
                 });
         this.InputBitmap = bitmap;
@@ -307,11 +303,12 @@ public class YUNFaceImpl2 implements IFace {
         this.textureView.setKeepScreenOn(true);
         this.mPreviewView1.getTextureView().setScaleX(-1);
 //        this.textureView.setScaleX(-1);
-        AnotherPreviewManager.getInstance().setCameraFacing(AnotherPreviewManager.CAMERA_FACING_FRONT);//彩色
+        AnotherPreviewManager.getInstance().setCameraFacing(AnotherPreviewManager.CAMERA_FACING_FRONT);
         AnotherPreviewManager.getInstance().startPreview(context, previewView, mWidth, mHeight, new CameraDataCallback() {
             @Override
             public void onGetCameraData(final int[] data, Camera camera, final int width, final int height) {
                 global_bitmap = Bitmap.createBitmap(data, width, height, Bitmap.Config.ARGB_8888);
+                colorRGB = data;
                 if (reg_status) {
                     dealCameraData(data, width, height);
                 }
@@ -323,11 +320,10 @@ public class YUNFaceImpl2 implements IFace {
             }
         });
         FaceTrackManager.getInstance().setAliving(true); // 活体检测
-        Camera1PreviewManager.getInstance().setCameraFacing(Camera1PreviewManager.CAMERA_FACING_BACK);//红外
+        Camera1PreviewManager.getInstance().setCameraFacing(Camera1PreviewManager.CAMERA_FACING_BACK);
         Camera1PreviewManager.getInstance().startPreview(context, previewView1, mWidth, mHeight, new CameraDataCallback() {
             @Override
             public void onGetCameraData(int[] data, Camera camera, int width, int height) {
-//                global_bitmap = Bitmap.createBitmap(data, width, height, Bitmap.Config.ARGB_8888);
                 if (!reg_status) {
                     dealCameraData(data, width, height);
                 }
@@ -390,6 +386,15 @@ public class YUNFaceImpl2 implements IFace {
 //                    reg_status = true;
                     headphotoBW = FaceCropper.getFace(model.getImageFrame().getArgb(), model.getFaceInfo(), model.getImageFrame().getWidth());
                     register(model.getFaceInfo(), model.getImageFrame(), InputCardInfo);
+                    AppInit.getInstrumentConfig().readCard();
+//                    headphotoRGB = FaceCropper.getFace(model.getImageFrame().getArgb(), model.getFaceInfo(), model.getImageFrame().getWidth());
+////                    action = FacePresenter.FaceAction.No_ACTION;
+//                    if (Img_match_Img(model.getFaceInfo(), model.getImageFrame())) {
+//                        reg_status = false;
+//                        register(model.getFaceInfo(), model.getImageFrame(), InputCardInfo);
+//                    } else {
+////                        action = FacePresenter.FaceAction.Reg_ACTION;
+//                    }
                     break;
                 case Headphoto_MATCH_IMG:
                     headphotoRGB = FaceCropper.getFace(model.getImageFrame().getArgb(), model.getFaceInfo(), model.getImageFrame().getWidth());
@@ -398,7 +403,7 @@ public class YUNFaceImpl2 implements IFace {
                         action = FacePresenter.FaceAction.Reg_ACTION;
                     } else {
                         action = FacePresenter.FaceAction.No_ACTION;
-//                        IDCardPresenter.getInstance().readCard();
+                        IDCardPresenter.getInstance().readCard();
                         if (outOfRegTime != null) {
                             outOfRegTime.dispose();
                         }
@@ -419,6 +424,7 @@ public class YUNFaceImpl2 implements IFace {
 
 
     private Paint paint = new Paint();
+
     {
         paint.setColor(Color.YELLOW);
         paint.setStyle(Paint.Style.STROKE);
@@ -452,65 +458,30 @@ public class YUNFaceImpl2 implements IFace {
             return;
         }
         canvas.drawColor(Color.TRANSPARENT, PorterDuff.Mode.CLEAR);
-        if (faceInfos.length <= 3) {
-            for (FaceInfo faceInfo : faceInfos) {
-                rectF.set(getFaceRectTwo(faceInfo, imageFrame));
-                // 检测图片的坐标和显示的坐标不一样，需要转换。
-                mapFromOriginalRect(rectF, faceInfo, imageFrame);
-                float yaw2 = Math.abs(faceInfo.headPose[0]);
-                float patch2 = Math.abs(faceInfo.headPose[1]);
-                float roll2 = Math.abs(faceInfo.headPose[2]);
-                if (yaw2 > 20 || patch2 > 20 || roll2 > 20) {
-                    // 不符合要求，绘制黄框
-                    paint.setColor(Color.YELLOW);
-                    String text = "请正视屏幕";
-                    float width = paint.measureText(text) + 50;
-                    float x = rectF.centerX() - width / 2;
-                    paint.setColor(Color.RED);
-                    paint.setStyle(Paint.Style.FILL);
-                    canvas.drawText(text, x + 25, rectF.top - 20, paint);
-                    paint.setColor(Color.YELLOW);
-                } else {
-                    // 符合检测要求，绘制绿框
-                    paint.setColor(Color.GREEN);
-                }
-                paint.setStyle(Paint.Style.STROKE);
-                // 绘制框
-                canvas.drawRect(rectF, paint);
-                canvas.save();
-                canvas.restore();
-            }
+        FaceInfo faceInfo = faceInfos[0];
+        rectF.set(getFaceRectTwo(faceInfo, imageFrame));
+        // 检测图片的坐标和显示的坐标不一样，需要转换。
+        mapFromOriginalRect(rectF, faceInfo, imageFrame);
+        float yaw2 = Math.abs(faceInfo.headPose[0]);
+        float patch2 = Math.abs(faceInfo.headPose[1]);
+        float roll2 = Math.abs(faceInfo.headPose[2]);
+        if (yaw2 > 20 || patch2 > 20 || roll2 > 20) {
+            // 不符合要求，绘制黄框
+            paint.setColor(Color.YELLOW);
+            String text = "请正视屏幕";
+            float width = paint.measureText(text) + 50;
+            float x = rectF.centerX() - width / 2;
+            paint.setColor(Color.RED);
+            paint.setStyle(Paint.Style.FILL);
+            canvas.drawText(text, x + 25, rectF.top - 20, paint);
+            paint.setColor(Color.YELLOW);
         } else {
-            for (int i = 0; i <= 3; i++) {
-                FaceInfo faceInfo = faceInfos[i];
-                rectF.set(getFaceRectTwo(faceInfo, imageFrame));
-                // 检测图片的坐标和显示的坐标不一样，需要转换。
-                mapFromOriginalRect(rectF, faceInfo, imageFrame);
-                float yaw2 = Math.abs(faceInfo.headPose[0]);
-                float patch2 = Math.abs(faceInfo.headPose[1]);
-                float roll2 = Math.abs(faceInfo.headPose[2]);
-                if (yaw2 > 20 || patch2 > 20 || roll2 > 20) {
-                    // 不符合要求，绘制黄框
-                    paint.setColor(Color.YELLOW);
-                    String text = "请正视屏幕";
-                    float width = paint.measureText(text) + 50;
-                    float x = rectF.centerX() - width / 2;
-                    paint.setColor(Color.RED);
-                    paint.setStyle(Paint.Style.FILL);
-                    canvas.drawText(text, x + 25, rectF.top - 20, paint);
-                    paint.setColor(Color.YELLOW);
-                } else {
-                    // 符合检测要求，绘制绿框
-                    paint.setColor(Color.GREEN);
-                }
-                paint.setStyle(Paint.Style.STROKE);
-                // 绘制框
-                canvas.drawRect(rectF, paint);
-                canvas.save();
-                canvas.restore();
-
-            }
+            // 符合检测要求，绘制绿框
+            paint.setColor(Color.GREEN);
         }
+        paint.setStyle(Paint.Style.STROKE);
+        // 绘制框
+        canvas.drawRect(rectF, paint);
         SwitchPresenter.getInstance().WhiteLighrOn();
         textureView.unlockCanvasAndPost(canvas);
 
@@ -563,10 +534,6 @@ public class YUNFaceImpl2 implements IFace {
             rectF.left = left;
             rectF.right = right;
         }
-//        if (!reg_status) {
-//            rectF.left -= 5.0;
-//            rectF.right -= 5.0;
-//        }
     }
 
     private boolean Img_match_Img(FaceInfo faceInfo, ImageFrame imageFrame) {
@@ -631,6 +598,8 @@ public class YUNFaceImpl2 implements IFace {
         return false;
     }
 
+
+
     private void register(final FaceInfo faceInfo, final ImageFrame imageFrame, final ICardInfo cardInfo) {
         /*
          * 用户id（由数字、字母、下划线组成），长度限制128B
@@ -646,7 +615,7 @@ public class YUNFaceImpl2 implements IFace {
         es.submit(new Runnable() {
             @Override
             public void run() {
-                final Bitmap bitmap = FaceCropper.getFace(imageFrame.getArgb(), faceInfo, imageFrame.getWidth());
+                final Bitmap bitmap = FaceCropper.getFace(colorRGB, faceInfo, imageFrame.getWidth());
                 ARGBImg argbImg = FeatureUtils.getImageInfo(headphotoBW);
                 byte[] bytes = new byte[512];
                 float ret = FaceApi.getInstance().extractVisFeature(argbImg, bytes, 50);
@@ -661,7 +630,7 @@ public class YUNFaceImpl2 implements IFace {
                     feature.setFeature(bytes);
                     user.getFeatureList().add(feature);
                     if (FaceApi.getInstance().userAdd(user)) {
-                        if (AppInit.getInstrumentConfig().getClass().getName().equals(HuNanConfig.class.getName())) {
+                        if (AppInit.getInstrumentConfig().getClass().getName().equals(HuNanConfig.class.getName())){
                             Keeper keeper = new Keeper(cardInfo.cardId().toUpperCase(),
                                     cardInfo.name(),
                                     FileUtils.bitmapToBase64(InputBitmap),
@@ -739,7 +708,7 @@ public class YUNFaceImpl2 implements IFace {
                     action = FacePresenter.FaceAction.No_ACTION;
                     listener.onText(FacePresenter.FaceResultType.Identify_non, "系统没有找到相关人脸信息");
                     MediaHelper.play(MediaHelper.Text.identify_non);
-//                    IDCardPresenter.getInstance().readCard();
+                    IDCardPresenter.getInstance().readCard();
                 }
             });
             return;
@@ -756,7 +725,7 @@ public class YUNFaceImpl2 implements IFace {
                         FaceSetNoAction();
                         listener.onText(FacePresenter.FaceResultType.Identify_non, "系统没有找到相关人脸信息");
                         MediaHelper.play(MediaHelper.Text.identify_non);
-//                        IDCardPresenter.getInstance().readCard();
+                        IDCardPresenter.getInstance().readCard();
 
                     }
                 });
@@ -765,7 +734,7 @@ public class YUNFaceImpl2 implements IFace {
                     @Override
                     public void run() {
                         FaceSetNoAction();
-//                        IDCardPresenter.getInstance().readCard();
+                        IDCardPresenter.getInstance().readCard();
                         listener.onBitmap(FacePresenter.FaceResultType.Identify, global_bitmap);
                         listener.onBitmap(FacePresenter.FaceResultType.headphoto, scene_Bitmap);
                         listener.onText(FacePresenter.FaceResultType.Identify, String.valueOf((int) identifyRet.getScore()));
@@ -781,7 +750,7 @@ public class YUNFaceImpl2 implements IFace {
         if (identityStatus != IDENTITY_IDLE) {
             return;
         }
-        final Bitmap scene_Bitmap = FaceCropper.getFace(imageFrame.getArgb(), faceInfo, imageFrame.getWidth());
+        final Bitmap scene_Bitmap = FaceCropper.getFace(colorRGB, faceInfo, imageFrame.getWidth());
 
         float raw = Math.abs(faceInfo.headPose[0]);
         float patch = Math.abs(faceInfo.headPose[1]);
@@ -868,5 +837,6 @@ public class YUNFaceImpl2 implements IFace {
         }
 
     }
+
 }
 

@@ -1,0 +1,63 @@
+<?xml version="1.0" encoding="utf-8"?>
+<RelativeLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:orientation="vertical">
+
+    <LinearLayout
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_centerHorizontal="true"
+        android:layout_centerVertical="true">
+
+
+        <TableLayout
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginLeft="30dp"
+            android:layout_marginRight="30dp">
+
+            <Button
+                android:id="@+id/btn_add"
+                android:layout_width="460dp"
+                android:layout_height="70dp"
+                android:background="@color/orange"
+                android:text="增加人员"
+                android:textColor="@color/white"
+                android:textSize="24sp" />
+
+            <TableRow android:layout_marginTop="20dp">
+
+                <Button
+                    android:id="@+id/btn_server"
+                    android:layout_width="200dp"
+                    android:layout_height="wrap_content"
+                    android:layout_marginRight="15dp"
+                    android:layout_weight="1"
+                    android:background="@drawable/delete_bg"
+                    android:text="服务器设置"
+                    android:textColor="@color/white"
+                    android:textSize="24sp" />
+
+
+                <Button
+                    android:id="@+id/btn_ipSetting"
+                    android:layout_width="200dp"
+                    android:layout_height="wrap_content"
+                    android:layout_marginLeft="15dp"
+                    android:layout_weight="1"
+                    android:background="@drawable/increase_bg"
+                    android:text="设置静态IP"
+                    android:textColor="@color/white"
+                    android:textSize="24sp" />
+            </TableRow>
+
+
+
+        </TableLayout>
+
+
+    </LinearLayout>
+
+
+</RelativeLayout>

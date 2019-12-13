@@ -90,7 +90,7 @@ public class ServerConnectionUtil {
         }
         try {
             safeCheck.setURL(server);
-            URL url = new URL(baseUrl + "&pass=" + safeCheck.getPass(config.getString("devid")));
+            URL url = new URL(baseUrl + "&pass=" + safeCheck.getPass(config.getString("daid")));
             HttpURLConnection conn = (HttpURLConnection) url.openConnection();
             conn.setReadTimeout(200 * 1000);
             conn.setConnectTimeout(200 * 1000);
@@ -136,7 +136,7 @@ public class ServerConnectionUtil {
         String result = null;
         try {
             safeCheck.setURL(server);
-            URL url = new URL(baseUrl + "&pass=" + safeCheck.getPass(config.getString("devid")));
+            URL url = new URL(baseUrl + "&pass=" + safeCheck.getPass(config.getString("daid")));
             HttpURLConnection conn = (HttpURLConnection) url.openConnection();
             conn.setReadTimeout(TIME_OUT);
             conn.setConnectTimeout(TIME_OUT);
@@ -170,7 +170,7 @@ public class ServerConnectionUtil {
         ByteArrayInputStream bin = null;
         try {
             safeCheck.setURL(server);
-            URL url = new URL(baseUrl + "&pass=" + safeCheck.getPass(config.getString("devid")));
+            URL url = new URL(baseUrl + "&pass=" + safeCheck.getPass(config.getString("daid")));
             HttpURLConnection conn = (HttpURLConnection) url.openConnection();
             conn.setReadTimeout(TIME_OUT);
             conn.setConnectTimeout(TIME_OUT);

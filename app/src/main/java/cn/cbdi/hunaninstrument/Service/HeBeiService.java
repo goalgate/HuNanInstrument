@@ -465,6 +465,7 @@ public class HeBeiService extends Service implements ISwitchView {
                     @Override
                     public void onNext(String s) {
                         try {
+                            Log.e("persionType = 3",s);
                             mdaoSession.getEmployerDao().deleteAll();
                             String[] idList = s.split("\\|");
                             if (idList.length > 0) {
@@ -498,6 +499,7 @@ public class HeBeiService extends Service implements ISwitchView {
                                     @Override
                                     public void onNext(String s) {
                                         try {
+                                            Log.e("persionType = 2",s);
                                             String[] idList = s.split("\\|");
                                             if (idList.length > 0) {
                                                 for (String id : idList) {
@@ -530,6 +532,7 @@ public class HeBeiService extends Service implements ISwitchView {
                                                     @Override
                                                     public void onNext(String s) {
                                                         try {
+                                                            Log.e("persionType = 1",s);
                                                             String[] idList = s.split("\\|");
                                                             if (idList.length > 0) {
                                                                 for (String id : idList) {

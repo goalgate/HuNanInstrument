@@ -1,10 +1,7 @@
 package cn.cbdi.hunaninstrument.Config;
 
-import cn.cbdi.hunaninstrument.Function.Func_Face.mvp.Module.HuNanFaceImpl3;
 import cn.cbdi.hunaninstrument.Function.Func_Face.mvp.Module.IFace;
-import cn.cbdi.hunaninstrument.Function.Func_Face.mvp.Module.WYYFaceImpl;
-import cn.cbdi.hunaninstrument.Function.Func_Face.mvp.Module.YUNFaceImpl;
-import cn.cbdi.hunaninstrument.Function.Func_Face.mvp.Module.YUNFaceImpl2;
+import cn.cbdi.hunaninstrument.Function.Func_Face.mvp.Module.AttendanceFaceImpl;
 import cn.cbdi.hunaninstrument.Function.Func_IDCard.mvp.presenter.IDCardPresenter;
 import cn.cbdi.hunaninstrument.Service.WYYService;
 
@@ -120,12 +117,12 @@ public class YUNPINGTAI_Config extends BaseConfig{
 
     @Override
     public String getMainActivity() {
-        return ".Activity_WYY.WYYMainActivity";
+        return ".Activity_WYY.MainActivity";
     }
 
     @Override
     public String getAddActivity() {
-        return ".Activity_WYY.WYYAddActvity";
+        return ".Activity_WYY.AddActvity";
     }
 
     @Override
@@ -139,7 +136,7 @@ public class YUNPINGTAI_Config extends BaseConfig{
     }
     @Override
     public IFace getFaceImpl() {
-        return new YUNFaceImpl2();
+        return new AttendanceFaceImpl();
     }
 
     @Override

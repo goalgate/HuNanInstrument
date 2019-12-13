@@ -23,7 +23,7 @@ public class WZWManager {
     public static final String ethernet = "ethernet";
 
     public void unBindAIDLService(Context context) {
-        manager.unBindAIDLService(context);
+//        manager.unBindAIDLService(context);
         //        if (Integer.parseInt(Build.VERSION.INCREMENTAL.substring(Build.VERSION.INCREMENTAL.indexOf(".20") +
         // 1, Build.VERSION.INCREMENTAL.indexOf(".20") + 9)) >= 20190606) {
         //            manager2.unBindAIDLService(context);

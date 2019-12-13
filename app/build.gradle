@@ -45,7 +45,7 @@ android {
     }
 }
 greendao {
-    schemaVersion 7//数据库版本号
+    schemaVersion 10//数据库版本号
     daoPackage 'cn.cbdi.hunaninstrument.greendao'//设置DaoMaster、DaoSession、Dao包名
     targetGenDir 'src/main/java'//设置DaoMaster、DaoSession、Dao目录
     //targetGenDirTest：设置生成单元测试目录
@@ -81,6 +81,7 @@ dependencies {
     implementation "com.trello.rxlifecycle2:rxlifecycle:$retrofitVersion"
     implementation 'com.bigkoo:alertview:1.0.3'
     implementation 'org.greenrobot:greendao:3.2.2'
+    implementation 'io.github.yuweiguocn:GreenDaoUpgradeHelper:v2.2.1'
     implementation 'cn.finalteam:okhttpfinal:2.0.7'
     implementation 'com.trello.rxlifecycle2:rxlifecycle:2.2.1'
     implementation 'com.trello.rxlifecycle2:rxlifecycle-components:2.0'
@@ -93,6 +94,7 @@ dependencies {
     implementation project(':libuvccamera')
     implementation project(':usbCameraCommon')
     implementation files('libs/rkapi.jar')
+    implementation 'com.android.support:recyclerview-v7:27.1.1'
 
 
 }

@@ -1,0 +1,89 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout
+    xmlns:android="http://schemas.android.com/apk/res/android"
+    android:orientation="vertical"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:background="@drawable/body_bg">
+
+    <LinearLayout
+        android:layout_width="@dimen/y360"
+        android:layout_height="wrap_content"
+        android:background="@drawable/zt_box_bg"
+        android:layout_gravity="center_horizontal"
+        android:orientation="vertical"
+        android:paddingLeft="@dimen/y24"
+        android:paddingRight="@dimen/y24"
+        android:layout_marginTop="@dimen/x7"
+        android:layout_marginBottom="@dimen/x7"
+        android:focusable="true"
+        android:focusableInTouchMode="true">
+
+        <TextView
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_centerHorizontal="true"
+            android:layout_gravity="center_horizontal"
+            android:textAlignment="center"
+            android:layout_marginTop="@dimen/x10"
+            android:layout_marginBottom="@dimen/x3"
+            android:text="增加人员"
+            android:textColor="@color/white"
+            android:textSize="12pt" />
+
+
+        <RelativeLayout
+            android:layout_width="@dimen/y108"
+            android:layout_height="wrap_content"
+            android:layout_gravity="center"
+            android:layout_marginTop="@dimen/x10">
+            <EditText
+                android:id="@+id/et_idcard"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:background="@drawable/zwh_bg"
+                android:hint="请填写人员信息"
+                android:gravity="center"
+                android:paddingTop="@dimen/x7"
+                android:paddingBottom="@dimen/x7"
+              />
+        </RelativeLayout>
+
+
+        <RelativeLayout
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_gravity="center"
+            android:layout_marginBottom="@dimen/x3">
+
+            <ImageView
+
+                android:id="@+id/iv_userPic"
+                android:layout_width="@dimen/y108"
+                android:layout_height="@dimen/y108"
+                android:layout_marginTop="@dimen/x33"
+                android:layout_marginBottom="@dimen/x3"
+                android:src="@drawable/user_icon" />
+        </RelativeLayout>
+
+
+        <RelativeLayout
+            android:layout_width="@dimen/y108"
+            android:layout_height="wrap_content"
+            android:layout_gravity="center"
+            android:layout_marginTop="@dimen/x10"
+            android:layout_marginBottom="@dimen/x3">
+            <Button
+                android:id="@+id/btn_cancel"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:background="@drawable/tj_bg"
+                android:text="完     成"
+                android:textColor="@color/white"
+                android:textSize="24sp" />
+        </RelativeLayout>
+
+
+    </LinearLayout>
+
+</LinearLayout>

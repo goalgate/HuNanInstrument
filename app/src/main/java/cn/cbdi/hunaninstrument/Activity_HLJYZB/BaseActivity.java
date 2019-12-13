@@ -1,4 +1,4 @@
-package cn.cbdi.hunaninstrument.Activity_WYY;
+package cn.cbdi.hunaninstrument.Activity_HLJYZB;
 
 import android.os.Bundle;
 import android.util.Log;
@@ -33,11 +33,10 @@ import cn.cbdi.hunaninstrument.Tool.MediaHelper;
 import cn.cbdi.hunaninstrument.greendao.DaoSession;
 import io.reactivex.Observable;
 import io.reactivex.android.schedulers.AndroidSchedulers;
-import io.reactivex.functions.Consumer;
 
 import static cn.cbdi.hunaninstrument.Function.Func_Face.mvp.Module.FaceImpl2.FEATURE_DATAS_UNREADY;
 
-public abstract class BaseActivity extends RxActivity implements IFaceView, IIDCardView, IFingerPrintView {
+public abstract class BaseActivity extends RxActivity implements IFaceView, IIDCardView {
 
     private String TAG = BaseActivity.class.getSimpleName();
 
@@ -46,8 +45,6 @@ public abstract class BaseActivity extends RxActivity implements IFaceView, IIDC
     public IDCardPresenter idp = IDCardPresenter.getInstance();
 
     public FacePresenter fp = FacePresenter.getInstance();
-
-    public FingerPrintPresenter fpp = FingerPrintPresenter.getInstance();
 
     SPUtils config = SPUtils.getInstance("config");
 
@@ -100,14 +97,12 @@ public abstract class BaseActivity extends RxActivity implements IFaceView, IIDC
         super.onResume();
         Log.e(TAG, "onResume");
         idp.IDCardPresenterSetView(this);
-        fpp.FingerPrintPresenterSetView(this);
         fp.FacePresenterSetView(this);
         if (config.getBoolean("firstUse", true)) {
             try {
                 mdaoSession.deleteAll(ReUploadBean.class);
                 mdaoSession.deleteAll(Employer.class);
                 mdaoSession.deleteAll(FingerprintUser.class);
-                fpp.fpRemoveAll();
                 FaceApi.getInstance().groupDelete("1");
                 config.put("firstUse",false);
             }catch (Exception e){
@@ -118,7 +113,6 @@ public abstract class BaseActivity extends RxActivity implements IFaceView, IIDC
                 .compose(this.<Long>bindUntilEvent(ActivityEvent.PAUSE))
                 .observeOn(AndroidSchedulers.mainThread())
                 .subscribe((l) -> {
-                    fpp.fpIdentify();
                     AppInit.getInstrumentConfig().readCard();
                 });
         fp.SetRegStatus(false);
@@ -132,8 +126,6 @@ public abstract class BaseActivity extends RxActivity implements IFaceView, IIDC
         super.onPause();
         Log.e(TAG, "onPause");
 //        fp.PreviewCease();
-        fpp.fpCancel(true);
-        fpp.FingerPrintPresenterSetView(null);
         fp.FacePresenterSetView(null);
         idp.IDCardPresenterSetView(null);
         AppInit.getInstrumentConfig().stopReadCard();
@@ -147,7 +139,6 @@ public abstract class BaseActivity extends RxActivity implements IFaceView, IIDC
     protected void onDestroy() {
         super.onDestroy();
         idp.idCardClose();
-        fpp.fpClose();
         sp.WhiteLighrOff();
         MediaHelper.mediaRealese();
         ActivityCollector.removeActivity(this);

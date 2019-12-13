@@ -216,13 +216,15 @@ public class ReadCard2 implements ICardInfo {
         @Override
         public void run() {
             super.run();
-            try {
-                sendandread(dt_sam,readBuffer,()->{
-                    System.arraycopy(readBuffer,0,buf_,0,readBuffer.length);
-                    getSam_();
-                },100);
-            }catch (Exception e){
-                e.printStackTrace();
+            if(useID) {
+                try {
+                    sendandread(dt_sam, readBuffer, () -> {
+                        System.arraycopy(readBuffer, 0, buf_, 0, readBuffer.length);
+                        getSam_();
+                    }, 100);
+                } catch (Exception e) {
+                    e.printStackTrace();
+                }
             }
 
             while (thread_continuous) {
