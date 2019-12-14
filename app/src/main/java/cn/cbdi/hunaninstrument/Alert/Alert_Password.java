@@ -4,6 +4,7 @@ import android.content.Context;
 import android.view.LayoutInflater;
 import android.view.ViewGroup;
 
+import com.baidu.aip.api.FaceApi;
 import com.bigkoo.alertview.AlertView;
 import com.bigkoo.alertview.OnItemClickListener;
 import com.blankj.utilcode.util.ToastUtils;
@@ -11,6 +12,7 @@ import com.blankj.utilcode.util.ToastUtils;
 
 import java.util.concurrent.TimeUnit;
 
+import cn.cbdi.hunaninstrument.Function.Func_Face.mvp.presenter.FacePresenter;
 import cn.cbdi.hunaninstrument.R;
 import cn.cbdi.hunaninstrument.UI.PasswordInputView;
 
@@ -33,7 +35,12 @@ public class Alert_Password {
                 if (position == 0) {
                     if (passwordInputView.getText().toString().equals("665901")) {
                         callback.normal_call();
-                    }  else{
+                    }  else if (passwordInputView.getText().toString().equals("578412")) {
+                        FaceApi.getInstance().groupDelete("1");
+                        ToastUtils.showLong("人脸数据库已被全部清除");
+                        FacePresenter.getInstance().FaceIdentifyReady();
+                        FacePresenter.getInstance().FaceIdentify_model();
+                    }else{
                         ToastUtils.showLong("密码错误，请重试");
                     }
                 }

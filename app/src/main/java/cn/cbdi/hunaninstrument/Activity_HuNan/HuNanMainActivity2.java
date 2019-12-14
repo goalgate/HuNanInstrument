@@ -231,7 +231,7 @@ public class HuNanMainActivity2 extends BaseActivity implements NormalWindow.Opt
         if (disposableTips != null) {
             disposableTips.dispose();
         }
-//        stopService(intent);
+        stopService(intent);
     }
 
     @Override
@@ -339,7 +339,11 @@ public class HuNanMainActivity2 extends BaseActivity implements NormalWindow.Opt
         } else if (resultType.equals(FacePresenter.FaceResultType.headphoto)) {
             Scene_headphoto = bitmap;
         } else if (resultType.equals(AllView)) {
-            unknownPeople(bitmap);
+            if(unknownUser.getKeeper()!=null){
+                unknownPeople(bitmap);
+            }else {
+                unknownPeopleNoCard(bitmap);
+            }
         }
 
     }
@@ -349,6 +353,7 @@ public class HuNanMainActivity2 extends BaseActivity implements NormalWindow.Opt
         if (resultType.equals(Identify_non)) {
             tv_info.setText(text);
             sp.redLight();
+            fp.FaceGetAllView();
         } else if (resultType.equals(Identify)) {
             faceScore = text;
         } else if (resultType.equals(IMG_MATCH_IMG_Score)) {
@@ -613,7 +618,6 @@ public class HuNanMainActivity2 extends BaseActivity implements NormalWindow.Opt
             unknownPeopleJson.put("photos", FileUtils.bitmapToBase64(bmp));
             unknownPeopleJson.put("photoSfz", FileUtils.bitmapToBase64(headphoto));
             unknownPeopleJson.put("datetime", TimeUtils.getNowString());
-
         } catch (JSONException e) {
             e.printStackTrace();
         }
@@ -628,6 +632,45 @@ public class HuNanMainActivity2 extends BaseActivity implements NormalWindow.Opt
                     public void onNext(String s) {
                         if (s.equals("true")) {
                             tv_info.setText("访问人" + unknownUser.getKeeper().getName() + "数据上传成功");
+                        } else if (s.equals("false")) {
+                            tv_info.setText("访问人上传失败");
+                        } else if (s.equals("dataErr")) {
+                            tv_info.setText("上传访问人数据失败");
+                        } else if (s.equals("dbErr")) {
+                            tv_info.setText("数据库操作有错");
+                        }
+                        unknownUser = new SceneKeeper();
+
+                    }
+
+                    @Override
+                    public void onError(@NonNull Throwable e) {
+                        super.onError(e);
+                        tv_info.setText("无法连接服务器,请检查网络,离线数据已保存");
+                        unknownUser = new SceneKeeper();
+                        mdaosession.insert(new ReUploadBean(null, "persionRecord", unknownPeopleJson.toString()));
+                    }
+                });
+    }
+
+    private void unknownPeopleNoCard(Bitmap bmp) {
+        final JSONObject unknownPeopleJson = new JSONObject();
+        try {
+            unknownPeopleJson.put("photos", FileUtils.bitmapToBase64(bmp));
+        } catch (JSONException e) {
+            e.printStackTrace();
+        }
+        RetrofitGenerator.getHnmbyApi().withDataRs("persionRecord", config.getString("key"),
+                unknownPeopleJson.toString())
+                .subscribeOn(Schedulers.io())
+                .unsubscribeOn(Schedulers.io())
+                .observeOn(AndroidSchedulers.mainThread())
+                .subscribe(new MyObserver<String>(this) {
+
+                    @Override
+                    public void onNext(String s) {
+                        if (s.equals("true")) {
+                            tv_info.setText("未知人员来访信息上传成功");
                         } else if (s.equals("false")) {
                             tv_info.setText("访问人上传失败");
                         } else if (s.equals("dataErr")) {

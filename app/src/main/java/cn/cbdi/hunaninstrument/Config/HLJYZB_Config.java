@@ -4,6 +4,7 @@ import cn.cbdi.hunaninstrument.Function.Func_Face.mvp.Module.IFace;
 import cn.cbdi.hunaninstrument.Function.Func_Face.mvp.Module.WYYFaceImpl;
 import cn.cbdi.hunaninstrument.Function.Func_Face.mvp.Module.WYYFaceImpl2;
 import cn.cbdi.hunaninstrument.Function.Func_IDCard.mvp.presenter.IDCardPresenter;
+import cn.cbdi.hunaninstrument.Service.HLJYZBService;
 import cn.cbdi.hunaninstrument.Service.WYYService;
 
 public class HLJYZB_Config extends BaseConfig{
@@ -110,7 +111,7 @@ public class HLJYZB_Config extends BaseConfig{
 
     @Override
     public Class getServiceName() {
-        return WYYService.class;
+        return HLJYZBService.class;
     }
 
     @Override
