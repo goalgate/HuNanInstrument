@@ -602,6 +602,10 @@ public class WYYFaceImpl implements IFace {
         return false;
     }
 
+    @Override
+    public void FaceRegInBackGround(ICardInfo cardInfo, Bitmap bitmap,resultCallBack callBack) {
+    }
+
     private void register(final FaceInfo faceInfo, final ImageFrame imageFrame, final ICardInfo cardInfo) {
         /*
          * 用户id（由数字、字母、下划线组成），长度限制128B

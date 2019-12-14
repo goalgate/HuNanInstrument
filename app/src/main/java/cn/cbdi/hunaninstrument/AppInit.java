@@ -13,6 +13,7 @@ import cn.cbdi.hunaninstrument.Config.BaseConfig;
 
 import cn.cbdi.hunaninstrument.Config.HLJYZB_Config;
 import cn.cbdi.hunaninstrument.Config.HLJ_Config;
+import cn.cbdi.hunaninstrument.Config.HuNanConfig;
 import cn.cbdi.hunaninstrument.Config.WYYConfig;
 import cn.cbdi.hunaninstrument.Config.XAJD_Config;
 import cn.cbdi.hunaninstrument.Config.YUNPINGTAI_Config;
@@ -64,7 +65,7 @@ public class AppInit extends Application {
 
         instance = this;
 
-        InstrumentConfig = new HLJYZB_Config();
+        InstrumentConfig = new HuNanConfig();
 
 //        Lg.setIsSave(true);
 

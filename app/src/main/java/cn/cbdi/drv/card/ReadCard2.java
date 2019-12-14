@@ -322,13 +322,13 @@ public class ReadCard2 implements ICardInfo {
                     if (readBuffer[((readBuffer[0] << 8) + readBuffer[1]) + 1] == CRC16.Xor(readBuffer,
                             ((readBuffer[0] << 8) + readBuffer[1]) + 1)) {
                         if (readBuffer[1] == 0x08) {
-                            Log.e("cardID寻卡", "寻卡成功");
+                            Lg.e("cardID寻卡", "寻卡成功");
                         } else if (readBuffer[1] == 0x04) {
-                            Log.e("cardID寻卡", "寻卡失败");
+                            Lg.e("cardID寻卡", "寻卡失败");
                             id_continuous = false;
                         }
                     } else {
-                        Log.e("cardID寻卡", "寻卡：错误数据包");
+                        Lg.e("cardID寻卡", "寻卡：错误数据包");
 
                     }
                 }, 200);
@@ -337,12 +337,12 @@ public class ReadCard2 implements ICardInfo {
                     if (readBuffer[((readBuffer[0] << 8) + readBuffer[1]) + 1] == CRC16.Xor(readBuffer,
                             ((readBuffer[0] << 8) + readBuffer[1]) + 1)) {
                         if (readBuffer[1] == 0x0C) {
-                            Log.e("cardID选卡", "选卡成功");
+                            Lg.e("cardID选卡", "选卡成功");
                         } else if (readBuffer[1] == 0x04) {
-                            Log.e("cardID选卡", "选卡失败");
+                            Lg.e("cardID选卡", "选卡失败");
                         }
                     } else {
-                        Log.e("cardID选卡", "选卡：错误数据包");
+                        Lg.e("cardID选卡", "选卡：错误数据包");
                     }
                 }, 100);
                 if (id_continuous) {
@@ -350,15 +350,15 @@ public class ReadCard2 implements ICardInfo {
                 }
                 sendandread(dt_readCer, readBuffer, () -> {
                     if (readBuffer[6] == 0x04) {
-                        Log.e("cardID读卡", "读卡失败");
+                        Lg.e("cardID读卡", "读卡失败");
                     } else {
                         if ((readBuffer[5] << 8) + readBuffer[6] == 1288) {
-                            Log.e("cardID读卡", "读卡成功");
+                            Lg.e("cardID读卡", "读卡成功");
                             System.arraycopy(readBuffer,0,buf_,0,readBuffer.length);
                             readCerd();
                             id_continuous = true;
                         } else {
-                            Log.e("cardID读卡", "读卡返回数据不完整");
+                            Lg.e("cardID读卡", "读卡返回数据不完整");
                         }
                     }
                 }, 1100);

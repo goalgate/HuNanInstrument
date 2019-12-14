@@ -4,6 +4,14 @@ import android.graphics.Bitmap;
 
 public class CardInfoBean implements ICardInfo {
 
+    public CardInfoBean() {
+    }
+
+    public CardInfoBean(String cardID, String name) {
+        this.cardID = cardID;
+        this.name = name;
+    }
+
     public void setCardID(String cardID) {
         this.cardID = cardID;
     }

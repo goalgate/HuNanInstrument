@@ -26,6 +26,8 @@ public interface IFace {
 
     void FaceReg(ICardInfo cardInfo);
 
+    void FaceRegInBackGround(ICardInfo cardInfo, Bitmap bitmap,resultCallBack callBack);
+
     void Face_to_IMG(Bitmap bitmap);
 
     void IMG_to_IMG(Bitmap bmp1,Bitmap bmp2,boolean register);
@@ -56,6 +58,10 @@ public interface IFace {
 
     interface CeaseListener{
         void CeaseCallBack();
+    }
+
+    interface resultCallBack{
+        void getResult(boolean result);
     }
 
 }

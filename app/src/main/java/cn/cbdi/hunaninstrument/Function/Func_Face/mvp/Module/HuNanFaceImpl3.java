@@ -52,6 +52,7 @@ import cn.cbdi.hunaninstrument.Function.Func_IDCard.mvp.presenter.IDCardPresente
 import cn.cbdi.hunaninstrument.Function.Func_Switch.mvp.presenter.SwitchPresenter;
 import cn.cbdi.hunaninstrument.Tool.FileUtils;
 import cn.cbdi.hunaninstrument.Tool.MediaHelper;
+import cn.cbdi.log.Lg;
 import io.reactivex.Observable;
 import io.reactivex.android.schedulers.AndroidSchedulers;
 import io.reactivex.disposables.Disposable;
@@ -125,7 +126,7 @@ public class HuNanFaceImpl3 implements IFace {
     }
 
     @Override
-    public void IMG_to_IMG(final Bitmap bmp1, final Bitmap bmp2,boolean register) {
+    public void IMG_to_IMG(final Bitmap bmp1, final Bitmap bmp2, boolean register) {
         es.submit(new Runnable() {
             @Override
             public void run() {
@@ -138,7 +139,7 @@ public class HuNanFaceImpl3 implements IFace {
                         handler.post(new Runnable() {
                             @Override
                             public void run() {
-                                if(register){
+                                if (register) {
                                     reg_status = false;
                                     action = FacePresenter.FaceAction.Reg_ACTION;
                                 }
@@ -187,7 +188,6 @@ public class HuNanFaceImpl3 implements IFace {
     }
 
 
-
     @Override
     public void FaceIdentify_model() {
         action = FacePresenter.FaceAction.Identify_Model;
@@ -216,6 +216,47 @@ public class HuNanFaceImpl3 implements IFace {
         this.InputCardInfo = cardInfo;
         reg_status = false;
         action = FacePresenter.FaceAction.Reg_ACTION;
+    }
+
+
+    @Override
+    public void FaceRegInBackGround(ICardInfo cardInfo, Bitmap bitmap,resultCallBack callBack) {
+        final User user = new User();
+//        final String uid = UUID.randomUUID().toString();
+        user.setUserId(cardInfo.cardId());
+        user.setUserInfo(cardInfo.name());
+        user.setGroupId("1");
+        es.submit(new Runnable() {
+            @Override
+            public void run() {
+                byte[] bytes = new byte[512];
+                float ret = FaceApi.getInstance().extractVisFeature(bitmap, bytes, 20);
+                if (ret != -1) {
+                    Feature feature = new Feature();
+                    feature.setGroupId("1");
+                    feature.setUserId(cardInfo.cardId());
+                    feature.setFeature(bytes);
+                    user.getFeatureList().add(feature);
+                    if (FaceApi.getInstance().userAdd(user)) {
+                        Keeper keeper = new Keeper(cardInfo.cardId().toUpperCase(),
+                                cardInfo.name(),
+                                null, null, null,
+                                user.getUserId(), bytes);
+                        AppInit.getInstance().getDaoSession().getKeeperDao().insertOrReplace(keeper);
+                        Lg.e("myface", cardInfo.cardId()+"人脸特征已存");
+                        callBack.getResult(true);
+                    }else{
+                        Lg.e("myface", "人脸特征存储失败");
+                        callBack.getResult(false);
+
+                    }
+                }else{
+                    Lg.e("myface", "人脸特征解析失败");
+                    callBack.getResult(false);
+
+                }
+            }
+        });
     }
 
     @Override
@@ -386,7 +427,7 @@ public class HuNanFaceImpl3 implements IFace {
                 case No_ACTION:
                     break;
                 case Reg_ACTION:
-                    if(outOfRegTime!=null){
+                    if (outOfRegTime != null) {
                         outOfRegTime.dispose();
                     }
                     action = FacePresenter.FaceAction.No_ACTION;
@@ -411,9 +452,10 @@ public class HuNanFaceImpl3 implements IFace {
                     } else {
                         action = FacePresenter.FaceAction.No_ACTION;
                         IDCardPresenter.getInstance().readCard();
-                        if(outOfRegTime!=null){
+                        if (outOfRegTime != null) {
                             outOfRegTime.dispose();
-                        }                    }
+                        }
+                    }
                     break;
                 case Identify_ACTION:
                     identity(model.getImageFrame(), model.getFaceInfo());
@@ -450,7 +492,7 @@ public class HuNanFaceImpl3 implements IFace {
             // 清空canvas
             canvas.drawColor(Color.TRANSPARENT, PorterDuff.Mode.CLEAR);
             textureView.unlockCanvasAndPost(canvas);
-            Log.e("canvasClear", "canvas by model is null");
+//            Log.e("canvasClear", "canvas by model is null");
             SwitchPresenter.getInstance().WhiteLighrOff();
             return;
         }
@@ -542,7 +584,7 @@ public class HuNanFaceImpl3 implements IFace {
         }
         if (!reg_status) {
             rectF.left += 25.0;
-            rectF.right+= 25.0;
+            rectF.right += 25.0;
         }
     }
 
@@ -574,7 +616,7 @@ public class HuNanFaceImpl3 implements IFace {
                         }
                     });
                 }
-            }else if(ret2 == -1){
+            } else if (ret2 == -1) {
                 listener.onText(FacePresenter.FaceResultType.IMG_MATCH_IMG_False, "系统上登记照片无法提取人脸特征,请更改照片");
             }
         } else if (ret1 == -100) {
@@ -705,7 +747,7 @@ public class HuNanFaceImpl3 implements IFace {
         int[] landmarks = faceInfo.landmarks;
         final IdentifyRet identifyRet = FaceApi.getInstance().identity(argb, rows, cols, landmarks, "1");
         if (identifyRet.getScore() < 80) {
-            if(outOfIdentifyTime!=null){
+            if (outOfIdentifyTime != null) {
                 outOfIdentifyTime.dispose();
             }
             identityStatus = IDENTITY_IDLE;
@@ -720,7 +762,7 @@ public class HuNanFaceImpl3 implements IFace {
             });
             return;
         } else {
-            if(outOfIdentifyTime!=null){
+            if (outOfIdentifyTime != null) {
                 outOfIdentifyTime.dispose();
             }
             identityStatus = IDENTITY_IDLE;

@@ -218,6 +218,10 @@ public class HeBeiFaceImpl implements IFace {
     }
 
     @Override
+    public void FaceRegInBackGround(ICardInfo cardInfo, Bitmap bitmap,resultCallBack callBack) {
+    }
+
+    @Override
     public void FaceReg(ICardInfo cardInfo, Bitmap bitmap) {
         IDCardPresenter.getInstance().stopReadCard();
         action = FacePresenter.FaceAction.Headphoto_MATCH_IMG;

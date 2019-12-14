@@ -3,15 +3,19 @@ package cn.cbdi.hunaninstrument.Service;
 import android.app.Service;
 import android.content.Intent;
 import android.database.sqlite.SQLiteException;
+import android.graphics.Bitmap;
 import android.os.Environment;
 import android.os.Handler;
 import android.os.IBinder;
+import android.text.TextUtils;
 import android.util.Base64;
 import android.util.Log;
+import android.widget.Toast;
 
 import com.baidu.aip.api.FaceApi;
 import com.baidu.aip.entity.Feature;
 import com.baidu.aip.entity.User;
+import com.baidu.liantian.ac.F;
 import com.blankj.utilcode.util.AppUtils;
 import com.blankj.utilcode.util.FileIOUtils;
 import com.blankj.utilcode.util.SPUtils;
@@ -36,6 +40,7 @@ import java.util.Timer;
 import java.util.TimerTask;
 import java.util.concurrent.TimeUnit;
 
+import cn.cbdi.drv.card.CardInfoBean;
 import cn.cbdi.hunaninstrument.AppInit;
 import cn.cbdi.hunaninstrument.Bean.Employer;
 import cn.cbdi.hunaninstrument.Bean.Keeper;
@@ -45,6 +50,7 @@ import cn.cbdi.hunaninstrument.EventBus.LockUpEvent;
 import cn.cbdi.hunaninstrument.EventBus.NetworkEvent;
 import cn.cbdi.hunaninstrument.EventBus.PassEvent;
 import cn.cbdi.hunaninstrument.EventBus.TemHumEvent;
+import cn.cbdi.hunaninstrument.Function.Func_Face.mvp.Module.IFace;
 import cn.cbdi.hunaninstrument.Function.Func_Face.mvp.presenter.FacePresenter;
 import cn.cbdi.hunaninstrument.Function.Func_Switch.mvp.module.SwitchImpl;
 import cn.cbdi.hunaninstrument.Function.Func_Switch.mvp.presenter.SwitchPresenter;
@@ -52,6 +58,7 @@ import cn.cbdi.hunaninstrument.Function.Func_Switch.mvp.view.ISwitchView;
 import cn.cbdi.hunaninstrument.Retrofit.RetrofitGenerator;
 import cn.cbdi.hunaninstrument.State.DoorState.Door;
 import cn.cbdi.hunaninstrument.State.LockState.Lock;
+import cn.cbdi.hunaninstrument.Tool.FileUtils;
 import cn.cbdi.hunaninstrument.Tool.ServerConnectionUtil;
 import cn.cbdi.hunaninstrument.Tool.Update.ApkUtils;
 import cn.cbdi.hunaninstrument.Tool.Update.SignUtils;
@@ -112,6 +119,78 @@ public class HuNanService extends Service implements ISwitchView {
                 .subscribe((l) -> testNet());
         Observable.interval(10, 600, TimeUnit.SECONDS).observeOn(Schedulers.io())
                 .subscribe((l) -> StateRecord());
+    }
+
+
+    int count = 0;
+    StringBuffer logMen;
+
+    private void getPic() {
+        logMen = new StringBuffer();
+        count = 0;
+        List<Employer> employers = mdaoSession.loadAll(Employer.class);
+        if (employers.size() > 0) {
+            for (Employer employer : employers) {
+                try {
+                    User user = FaceApi.getInstance().getUserInfo("1", employer.getCardID());
+                    logMen.append(user.getUserInfo() + "、");
+                    count++;
+                } catch (NullPointerException e) {
+                    RetrofitGenerator.getHnmbyApi()
+                            .recentPic("recentPic", config.getString("key"), employer.getCardID())
+                            .subscribeOn(Schedulers.single())
+                            .unsubscribeOn(Schedulers.single())
+                            .observeOn(Schedulers.single())
+                            .subscribe(new Observer<ResponseBody>() {
+                                @Override
+                                public void onSubscribe(Disposable d) {
+
+                                }
+
+                                @Override
+                                public void onNext(ResponseBody responseBody) {
+                                    try {
+                                        JSONObject jsonObject = new JSONObject(responseBody.string());
+                                        String ps = jsonObject.getString("result");
+                                        String name = jsonObject.getString("name");
+//                                        String name = "我问问";
+                                        if (!TextUtils.isEmpty(ps)) {
+                                            Bitmap bitmap = FileUtils.base64ToBitmap(ps);
+                                            FacePresenter.getInstance().FaceRegInBackGround(new CardInfoBean(employer.getCardID(), name),
+                                                    bitmap, null);
+                                        }
+                                    } catch (Exception e) {
+                                        Lg.e(TAG, e.toString());
+                                    }
+
+                                }
+
+                                @Override
+                                public void onError(Throwable e) {
+                                    count++;
+
+
+                                }
+
+                                @Override
+                                public void onComplete() {
+                                    count++;
+                                    if (count == employers.size()) {
+                                        FacePresenter.getInstance().FaceIdentifyReady();
+                                    }
+
+                                }
+                            });
+                }
+            }
+            if (count == employers.size()) {
+                if (logMen.length() > 0) {
+                    logMen.deleteCharAt(logMen.length() - 1);
+                    ToastUtils.showLong(logMen.toString() + "人脸特征已准备完毕");
+                }
+
+            }
+        }
 
     }
 
@@ -139,7 +218,7 @@ public class HuNanService extends Service implements ISwitchView {
                 }
             }
         } else {
-            if (value.startsWith("AAAAAA")&&value.endsWith("000000")) {
+            if (value.startsWith("AAAAAA") && value.endsWith("000000")) {
                 if (!value.equals(Last_Value)) {
                     Last_Value = value;
                     if (Last_Value.equals("AAAAAA000000000000")) {
@@ -264,29 +343,6 @@ public class HuNanService extends Service implements ISwitchView {
                             ToastUtils.showLong("源文件复制失败");
                         }
                     });
-//            Observable.create(new ObservableOnSubscribe<Boolean>() {
-//                @Override
-//                public void subscribe(ObservableEmitter<Boolean> e) {
-//                    e.onNext(ApkUtils.copyfile(
-//                            new File(ApkUtils.getSourceApkPath(HuNanService.this, UpdateConstant.TEST_PACKAGENAME)),
-//                            new File(UpdateConstant.ORIGINAL_APK_PATH),
-//                            true));
-//                }
-//            })
-//                    .subscribeOn(Schedulers.io())
-//                    .unsubscribeOn(Schedulers.io())
-//                    .observeOn(AndroidSchedulers.mainThread())
-//                    .subscribe(new Consumer<Boolean>() {
-//                        @Override
-//                        public void accept(Boolean status) {
-//                            if (status) {
-//                                ToastUtils.showLong("源文件复制成功");
-//                                config.put("CopySourceFile", false);
-//                            } else {
-//                                ToastUtils.showLong("源文件复制失败");
-//                            }
-//                        }
-//                    });
         }
     }
 
@@ -398,7 +454,7 @@ public class HuNanService extends Service implements ISwitchView {
 //        mdaoSession.insertOrReplace(new Employer("412325197011264532", 1));
 //        mdaoSession.insertOrReplace(new Employer("450211197801011312", 1));
 
-        syncFace();
+//        syncFace();
         RetrofitGenerator.getHnmbyApi().syncPersonInfo("updatePersion", config.getString("key"), 3)
                 .subscribeOn(Schedulers.io())
                 .unsubscribeOn(Schedulers.io())
@@ -413,13 +469,20 @@ public class HuNanService extends Service implements ISwitchView {
                     public void onNext(String s) {
                         try {
                             mdaoSession.getEmployerDao().deleteAll();
-                            String[] idList = s.split("\\|");
-                            if (idList.length > 0) {
-                                for (String id : idList) {
-                                    mdaoSession.insertOrReplace(new Employer(id, 3));
+                            if (s.equals("no")) {
+
+                            } else {
+                                String[] idList = s.split("\\|");
+                                if (idList.length > 0) {
+                                    for (String id : idList) {
+                                        if (!id.equals("")) {
+                                            mdaoSession.insertOrReplace(new Employer(id, 3));
+                                        }
+                                    }
                                 }
                             }
-                        }catch (Exception e){
+
+                        } catch (Exception e) {
                             e.printStackTrace();
                         }
                     }
@@ -444,13 +507,19 @@ public class HuNanService extends Service implements ISwitchView {
                                     @Override
                                     public void onNext(String s) {
                                         try {
-                                            String[] idList = s.split("\\|");
-                                            if (idList.length > 0) {
-                                                for (String id : idList) {
-                                                    mdaoSession.insertOrReplace(new Employer(id, 2));
+                                            if (s.equals("no")) {
+
+                                            } else {
+                                                String[] idList = s.split("\\|");
+                                                if (idList.length > 0) {
+                                                    for (String id : idList) {
+                                                        if (!id.equals("")) {
+                                                            mdaoSession.insertOrReplace(new Employer(id, 2));
+                                                        }
+                                                    }
                                                 }
                                             }
-                                        }catch (Exception e){
+                                        } catch (Exception e) {
                                             e.printStackTrace();
                                         }
 
@@ -476,13 +545,19 @@ public class HuNanService extends Service implements ISwitchView {
                                                     @Override
                                                     public void onNext(String s) {
                                                         try {
-                                                            String[] idList = s.split("\\|");
-                                                              if (idList.length > 0) {
-                                                                for (String id : idList) {
-                                                                    mdaoSession.insertOrReplace(new Employer(id, 1));
+                                                            if (s.equals("no")) {
+
+                                                            } else {
+                                                                String[] idList = s.split("\\|");
+                                                                if (idList.length > 0) {
+                                                                    for (String id : idList) {
+                                                                        if (!id.equals("")) {
+                                                                            mdaoSession.insertOrReplace(new Employer(id, 1));
+                                                                        }
+                                                                    }
                                                                 }
                                                             }
-                                                        }catch (Exception e){
+                                                        } catch (Exception e) {
                                                             e.printStackTrace();
                                                         }
                                                     }
@@ -507,6 +582,7 @@ public class HuNanService extends Service implements ISwitchView {
                                                         } catch (SQLiteException e) {
                                                             Lg.e(TAG, e.toString());
                                                         }
+                                                        getPic();
                                                     }
                                                 });
                                     }

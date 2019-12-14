@@ -10,7 +10,6 @@ import android.graphics.PorterDuff;
 import android.graphics.Rect;
 import android.graphics.RectF;
 import android.hardware.Camera;
-import android.hardware.usb.UsbDevice;
 import android.os.Handler;
 import android.os.Looper;
 import android.util.Log;
@@ -29,58 +28,57 @@ import com.baidu.aip.entity.User;
 import com.baidu.aip.face.AutoTexturePreviewView;
 import com.baidu.aip.face.FaceCropper;
 import com.baidu.aip.face.FaceTrackManager;
-
-import com.baidu.aip.face.camera.UVCBackPreviewManager;
-import com.baidu.aip.face.camera.UVCFrontPreviewManager;
+import com.baidu.aip.face.camera.AnotherPreviewManager;
+import com.baidu.aip.face.camera.Camera1PreviewManager;
 import com.baidu.aip.manager.FaceSDKManager;
 import com.baidu.aip.utils.FeatureUtils;
 import com.baidu.aip.utils.FileUitls;
 import com.baidu.aip.utils.ImageUtils;
 import com.baidu.aip.utils.PreferencesUtil;
 import com.baidu.idl.facesdk.model.FaceInfo;
+import com.baidu.liantian.ac.F;
 import com.blankj.utilcode.util.ToastUtils;
-import com.serenegiant.common.BaseActivity;
-import com.serenegiant.usb.DeviceFilter;
-import com.serenegiant.usb.USBMonitor;
 import com.serenegiant.usb.UVCCamera;
 
 import java.io.File;
+import java.text.ParseException;
+import java.text.SimpleDateFormat;
+import java.util.Date;
 import java.util.List;
-import java.util.UUID;
+import java.util.Random;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.TimeUnit;
 
-
+import cn.cbdi.drv.card.ICardInfo;
 import cn.cbdi.hunaninstrument.AppInit;
+import cn.cbdi.hunaninstrument.Bean.AttendanceScene;
 import cn.cbdi.hunaninstrument.Bean.Keeper;
+import cn.cbdi.hunaninstrument.Bean.SceneKeeper;
 import cn.cbdi.hunaninstrument.Config.HuNanConfig;
 import cn.cbdi.hunaninstrument.Function.Func_Face.mvp.presenter.FacePresenter;
-import cn.cbdi.drv.card.ICardInfo;
-import cn.cbdi.hunaninstrument.Function.Func_IDCard.mvp.presenter.IDCardPresenter;
 import cn.cbdi.hunaninstrument.Function.Func_Switch.mvp.presenter.SwitchPresenter;
 import cn.cbdi.hunaninstrument.Tool.FileUtils;
 import cn.cbdi.hunaninstrument.Tool.MediaHelper;
+import cn.cbdi.hunaninstrument.greendao.AttendanceSceneDao;
+import cn.cbdi.hunaninstrument.greendao.DaoSession;
+import cn.cbdi.hunaninstrument.greendao.KeeperDao;
+import cn.cbdi.log.Lg;
 import io.reactivex.Observable;
 import io.reactivex.android.schedulers.AndroidSchedulers;
 import io.reactivex.disposables.Disposable;
 import io.reactivex.functions.Consumer;
 import io.reactivex.schedulers.Schedulers;
 
+public class AttendanceFaceImpl implements IFace {
 
-public class FaceImpl5 implements IFace {
+    SimpleDateFormat formatter = new SimpleDateFormat("yyyyMMddHHmmss");
+
+    private int trackface = 5;
 
     boolean reg_status = false;
 
-    List<UsbDevice> list;
-
-    private static final String TAG = BaseActivity.class.getSimpleName();
-
-    USBMonitor mUSBMonitor;
-
-    private final Object mSync = new Object();
-
-    private final static double livnessScore = 0.2;
+    private final static double livnessScore = 0.0;
 
     static FacePresenter.FaceAction action = FacePresenter.FaceAction.No_ACTION;
 
@@ -102,15 +100,13 @@ public class FaceImpl5 implements IFace {
 
     private static final int mHeight = 480;
 
-    USBMonitor.UsbControlBlock RGBctrlBlock;
-    USBMonitor.UsbControlBlock BWctrlBlock;
-
-
+    int[] colorARGB;
     private AutoTexturePreviewView mPreviewView;
+
     private AutoTexturePreviewView mPreviewView1;
     TextureView textureView;
 
-    IFace.IFaceListener listener;
+    IFaceListener listener;
 
     private ExecutorService es = Executors.newSingleThreadExecutor();
 
@@ -119,96 +115,14 @@ public class FaceImpl5 implements IFace {
         DBManager.getInstance().init(context);
         FaceSDKManager.getInstance().init(context, listener);
         livnessTypeTip();
-        if (mUSBMonitor == null) {
-            try {
-                mUSBMonitor = new USBMonitor(AppInit.getContext(), mOnDeviceConnectListener);
-                mUSBMonitor.register();
-            } catch (ClassCastException e) {
-
-            } catch (NullPointerException e) {
-
-            }
-        }
-        List<DeviceFilter> filter = DeviceFilter.getDeviceFilters(AppInit.getContext(), com.serenegiant.uvccamera.R.xml.device_filter);
-        list = mUSBMonitor.getDeviceList(filter.get(0));
-//        mUSBMonitor.requestPermission(list.get(1));
-        mUSBMonitor.requestPermission(list.get(0));
-
     }
-
-    UsbDevice devicebuff;
-    private final USBMonitor.OnDeviceConnectListener mOnDeviceConnectListener = new USBMonitor.OnDeviceConnectListener() {
-        @Override
-        public void onAttach(UsbDevice device) {
-
-        }
-
-        @Override
-        public void onDettach(UsbDevice device) {
-
-        }
-
-        @Override
-        public void onConnect(UsbDevice device, USBMonitor.UsbControlBlock ctrlBlock, boolean createNew) {
-            if (device.equals(list.get(0))) {
-                if (!device.getProductName().startsWith("802")) {
-                    RGBctrlBlock = ctrlBlock;
-                    BWctrlBlock = ctrlBlock;
-                    devicebuff = device;
-                }
-                mUSBMonitor.requestPermission(list.get(1));
-            } else if (device.equals(list.get(1))) {
-                if(devicebuff!=null){
-                    if (!device.getProductName().startsWith("802")) {
-                        if (Integer.parseInt(device.getDeviceName().substring(device.getDeviceName().length() - 1, device.getDeviceName().length()))
-                                > Integer.parseInt(devicebuff.getDeviceName().substring(devicebuff.getDeviceName().length() - 1, devicebuff.getDeviceName().length()))) {
-                            BWctrlBlock = ctrlBlock;
-                        }else{
-                            RGBctrlBlock = ctrlBlock;
-                        }
-                    }
-                }else {
-                    RGBctrlBlock = ctrlBlock;
-                    BWctrlBlock = ctrlBlock;
-                    devicebuff = device;
-                }
-                mUSBMonitor.requestPermission(list.get(2));
-            } else if (device.equals(list.get(2))) {
-                if (!device.getProductName().startsWith("802")) {
-                    if (Integer.parseInt(device.getDeviceName().substring(device.getDeviceName().length() - 1, device.getDeviceName().length()))
-                            > Integer.parseInt(devicebuff.getDeviceName().substring(devicebuff.getDeviceName().length() - 1, devicebuff.getDeviceName().length()))) {
-                        BWctrlBlock = ctrlBlock;
-                    }else{
-                        RGBctrlBlock = ctrlBlock;
-                    }
-                }
-            }
-
-//            if (device.equals(list.get(1))) {
-//                RGBctrlBlock = ctrlBlock;
-//                mUSBMonitor.requestPermission(list.get(2));
-//            } else if (device.equals(list.get(2))) {
-//                BWctrlBlock = ctrlBlock;
-//            }
-        }
-
-        @Override
-        public void onDisconnect(UsbDevice device, USBMonitor.UsbControlBlock ctrlBlock) {
-
-        }
-
-        @Override
-        public void onCancel(UsbDevice device) {
-
-        }
-    };
 
     @Override
     public void CameraPreview(Context context, AutoTexturePreviewView previewView, AutoTexturePreviewView previewView1, TextureView textureView, IFaceListener listener) {
         this.listener = listener;
         startCameraPreview(context, previewView, previewView1, textureView);
-    }
 
+    }
 
     Bitmap InputBitmap;
 
@@ -227,22 +141,7 @@ public class FaceImpl5 implements IFace {
     }
 
     @Override
-    public void onActivityDestroy() {
-        if (mUSBMonitor != null) {
-            mUSBMonitor.unregister();
-            mUSBMonitor.destroy();
-            mUSBMonitor = null;
-        }
-    }
-
-    @Override
-    public void Face_allView() {
-//        Bitmap bmp = Bitmap.createBitmap(global_IFrame.getArgb(), global_IFrame.getWidth(), global_IFrame.getHeight(), Bitmap.Config.ARGB_8888);
-        listener.onBitmap(FacePresenter.FaceResultType.AllView, global_bitmap);
-    }
-
-    @Override
-    public void IMG_to_IMG(final Bitmap bmp1, final Bitmap bmp2,boolean register) {
+    public void IMG_to_IMG(final Bitmap bmp1, final Bitmap bmp2, boolean register) {
         es.submit(new Runnable() {
             @Override
             public void run() {
@@ -255,6 +154,9 @@ public class FaceImpl5 implements IFace {
                         handler.post(new Runnable() {
                             @Override
                             public void run() {
+                                if (register) {
+                                    action = FacePresenter.FaceAction.Reg_ACTION;
+                                }
                                 listener.onText(FacePresenter.FaceResultType.IMG_MATCH_IMG_Score, String.valueOf((int) FaceApi.getInstance().match(bytes1, bytes2)));
                             }
                         });
@@ -263,6 +165,8 @@ public class FaceImpl5 implements IFace {
                             @Override
                             public void run() {
                                 listener.onText(FacePresenter.FaceResultType.IMG_MATCH_IMG_Score, "0");
+                                listener.onText(FacePresenter.FaceResultType.IMG_MATCH_IMG_False, "系统上登记照片无法提取人脸特征,请更改照片");
+
                             }
                         });
                     }
@@ -271,11 +175,19 @@ public class FaceImpl5 implements IFace {
                         @Override
                         public void run() {
                             listener.onText(FacePresenter.FaceResultType.IMG_MATCH_IMG_Score, "0");
+                            listener.onText(FacePresenter.FaceResultType.IMG_MATCH_IMG_False, "系统上登记照片无法提取人脸特征,请更改照片");
+
                         }
                     });
                 }
             }
         });
+    }
+
+
+    @Override
+    public void Face_allView() {
+        listener.onBitmap(FacePresenter.FaceResultType.AllView, global_bitmap);
     }
 
     @Override
@@ -288,7 +200,6 @@ public class FaceImpl5 implements IFace {
         identityStatus = i;
     }
 
-
     @Override
     public void FaceIdentify_model() {
         action = FacePresenter.FaceAction.Identify_Model;
@@ -296,7 +207,7 @@ public class FaceImpl5 implements IFace {
 
     @Override
     public void FaceIdentify() {
-        IDCardPresenter.getInstance().stopReadCard();
+//        IDCardPresenter.getInstance().stopReadCard();
         action = FacePresenter.FaceAction.Identify_ACTION;
         outOfIdentifyTime = Observable.timer(10, TimeUnit.SECONDS)
                 .observeOn(AndroidSchedulers.mainThread())
@@ -306,7 +217,7 @@ public class FaceImpl5 implements IFace {
                         action = FacePresenter.FaceAction.No_ACTION;
                         listener.onText(FacePresenter.FaceResultType.Identify_non, "尝试获取人脸超时,请重试");
                         MediaHelper.play(MediaHelper.Text.searchFace_outofTime);
-                        IDCardPresenter.getInstance().readCard();
+//                        IDCardPresenter.getInstance().readCard();
 
                     }
                 });
@@ -316,7 +227,6 @@ public class FaceImpl5 implements IFace {
     @Override
     public void FaceReg(ICardInfo cardInfo) {
         this.InputCardInfo = cardInfo;
-        reg_status = false;
         action = FacePresenter.FaceAction.Reg_ACTION;
     }
 
@@ -326,7 +236,7 @@ public class FaceImpl5 implements IFace {
 
     @Override
     public void FaceReg(ICardInfo cardInfo, Bitmap bitmap) {
-        IDCardPresenter.getInstance().stopReadCard();
+//        IDCardPresenter.getInstance().stopReadCard();
         action = FacePresenter.FaceAction.Headphoto_MATCH_IMG;
         outOfRegTime = Observable.timer(20, TimeUnit.SECONDS)
                 .observeOn(AndroidSchedulers.mainThread())
@@ -335,9 +245,8 @@ public class FaceImpl5 implements IFace {
                     public void accept(Long aLong) throws Exception {
                         listener.onText(FacePresenter.FaceResultType.Reg_failed, "尝试获取人脸超时,请重试");
                         MediaHelper.play(MediaHelper.Text.searchFace_outofTime);
-                        reg_status = true;
                         action = FacePresenter.FaceAction.No_ACTION;
-                        IDCardPresenter.getInstance().readCard();
+//                        IDCardPresenter.getInstance().readCard();
                     }
                 });
         this.InputBitmap = bitmap;
@@ -365,23 +274,28 @@ public class FaceImpl5 implements IFace {
 
     @Override
     public void PreviewCease() {
-        UVCFrontPreviewManager.getInstance().stopPreview();
-//        UVCFrontPreviewManager.getInstance().release();
-        UVCBackPreviewManager.getInstance().stopPreview();
-//        UVCBackPreviewManager.getInstance().release();
+        Camera1PreviewManager.getInstance().stopPreview();
+        Camera1PreviewManager.getInstance().release();
+        AnotherPreviewManager.getInstance().stopPreview();
+        AnotherPreviewManager.getInstance().release();
         mPreviewView = null;
         mPreviewView1 = null;
         textureView = null;
         System.gc();
     }
 
+    @Override
+    public void onActivityDestroy() {
+
+    }
+
 
     @Override
     public void PreviewCease(CeaseListener ceaseListener) {
-        UVCBackPreviewManager.getInstance().stopPreview();
-//        UVCBackPreviewManager.getInstance().release();
-        UVCFrontPreviewManager.getInstance().stopPreview();
-//        UVCFrontPreviewManager.getInstance().release();
+        Camera1PreviewManager.getInstance().stopPreview();
+        Camera1PreviewManager.getInstance().release();
+        AnotherPreviewManager.getInstance().stopPreview();
+        AnotherPreviewManager.getInstance().release();
         mPreviewView = null;
         mPreviewView1 = null;
         textureView = null;
@@ -397,7 +311,7 @@ public class FaceImpl5 implements IFace {
         PreferencesUtil.putInt(TYPE_LIVENSS, TYPE_RGB_LIVENSS);
     }
 
-    private void startCameraPreview(final Context context, AutoTexturePreviewView previewView, final AutoTexturePreviewView previewView1, TextureView textureView) {
+    private void startCameraPreview(Context context, AutoTexturePreviewView previewView, AutoTexturePreviewView previewView1, TextureView textureView) {
         // 设置前置摄像头
         // Camera1PreviewManager.getInstance().setCameraFacing(Camera1PreviewManager.CAMERA_FACING_FRONT);
         // 设置后置摄像头
@@ -409,37 +323,32 @@ public class FaceImpl5 implements IFace {
         this.textureView.setOpaque(false);
         // 不需要屏幕自动变黑。
         this.textureView.setKeepScreenOn(true);
-//        this.mPreviewView1.getTextureView().setScaleX(-1);
+        this.mPreviewView1.getTextureView().setScaleX(-1);
 //        this.textureView.setScaleX(-1);
-        FaceTrackManager.getInstance().setAliving(true); // 活体检测
-        UVCFrontPreviewManager.getInstance().setCtrlBlock(RGBctrlBlock, handler, mSync);
-        UVCBackPreviewManager.getInstance().setCtrlBlock(BWctrlBlock, handler, mSync);
-        UVCFrontPreviewManager.getInstance().startPreview(context, previewView, mWidth, mHeight, new CameraDataCallback() {
+        AnotherPreviewManager.getInstance().setCameraFacing(AnotherPreviewManager.CAMERA_FACING_FRONT);//彩色
+        AnotherPreviewManager.getInstance().startPreview(context, previewView, mWidth, mHeight, new CameraDataCallback() {
             @Override
             public void onGetCameraData(final int[] data, Camera camera, final int width, final int height) {
-
+                global_bitmap = Bitmap.createBitmap(data, width, height, Bitmap.Config.ARGB_8888);
+                colorARGB = data;
             }
 
             @Override
             public void onGetCameraData(int[] data, UVCCamera camera, int width, int height) {
-                global_bitmap = Bitmap.createBitmap(data, width, height, Bitmap.Config.ARGB_8888);
-                if (reg_status) {
-                    dealCameraData(data, width, height);
-                }
+
             }
         });
-        //        红外摄像头
-        UVCBackPreviewManager.getInstance().startPreview(context, previewView1, mWidth, mHeight, new CameraDataCallback() {
+        FaceTrackManager.getInstance().setAliving(true); // 活体检测
+        Camera1PreviewManager.getInstance().setCameraFacing(Camera1PreviewManager.CAMERA_FACING_BACK);//红外
+        Camera1PreviewManager.getInstance().startPreview(context, previewView1, mWidth, mHeight, new CameraDataCallback() {
             @Override
             public void onGetCameraData(int[] data, Camera camera, int width, int height) {
-
+                dealCameraData(data, width, height);
             }
 
             @Override
             public void onGetCameraData(int[] data, UVCCamera camera, int width, int height) {
-                if (!reg_status) {
-                    dealCameraData(data, width, height);
-                }
+
             }
         });
     }
@@ -460,18 +369,35 @@ public class FaceImpl5 implements IFace {
 //        } else if (liveType == LivenessSettingActivity.TYPE_RGB_LIVENSS) {
 //            FaceTrackManager.getInstance().setAliving(true); // 活体检测
 //        }
-        FaceTrackManager.getInstance().faceTrack(argb, width, height, new FaceDetectCallBack() {
-            @Override
-            public void onFaceDetectCallback(LivenessModel livenessModel) {
-                showFrame(livenessModel);
-                checkResult(livenessModel);
-            }
+        if (!reg_status) {
+            FaceTrackManager.getInstance().faceDetectAll(argb, width, height, new FaceDetectCallBack() {
+                @Override
+                public void onFaceDetectCallback(LivenessModel livenessModel) {
+                    showFrame(livenessModel);
+                    checkResult(livenessModel);
 
-            @Override
-            public void onTip(int code, final String msg) {
+                }
+
+                @Override
+                public void onTip(int code, final String msg) {
 //                displayTip(msg);
-            }
-        });
+                }
+            });
+        } else {
+            FaceTrackManager.getInstance().faceTrack(argb, width, height, new FaceDetectCallBack() {
+                @Override
+                public void onFaceDetectCallback(LivenessModel livenessModel) {
+                    checkResult(livenessModel);
+                    showSingleFrame(livenessModel);
+
+                }
+
+                @Override
+                public void onTip(int code, final String msg) {
+//                displayTip(msg);
+                }
+            });
+        }
     }
 
     boolean livenessSuccess = false;
@@ -480,7 +406,9 @@ public class FaceImpl5 implements IFace {
         if (model == null) {
             return;
         }
-        livenessSuccess = (model.getRgbLivenessScore() > livnessScore) ? true : false;
+//        livenessSuccess = (model.getRgbLivenessScore() > livnessScore) ? true : false;
+        livenessSuccess = true;
+
         if (livenessSuccess) {
             switch (action) {
                 case No_ACTION:
@@ -490,37 +418,17 @@ public class FaceImpl5 implements IFace {
                         outOfRegTime.dispose();
                     }
                     action = FacePresenter.FaceAction.No_ACTION;
-//                    reg_status = true;
                     headphotoBW = FaceCropper.getFace(model.getImageFrame().getArgb(), model.getFaceInfo(), model.getImageFrame().getWidth());
                     register(model.getFaceInfo(), model.getImageFrame(), InputCardInfo);
-                    AppInit.getInstrumentConfig().readCard();
-//                    headphotoRGB = FaceCropper.getFace(model.getImageFrame().getArgb(), model.getFaceInfo(), model.getImageFrame().getWidth());
-////                    action = FacePresenter.FaceAction.No_ACTION;
-//                    if (Img_match_Img(model.getFaceInfo(), model.getImageFrame())) {
-//                        reg_status = false;
-//                        register(model.getFaceInfo(), model.getImageFrame(), InputCardInfo);
-//                    } else {
-////                        action = FacePresenter.FaceAction.Reg_ACTION;
-//                    }
                     break;
                 case Headphoto_MATCH_IMG:
-                    headphotoRGB = FaceCropper.getFace(model.getImageFrame().getArgb(), model.getFaceInfo(), model.getImageFrame().getWidth());
-                    if (Img_match_Img(model.getFaceInfo(), model.getImageFrame())) {
-                        reg_status = false;
-                        action = FacePresenter.FaceAction.Reg_ACTION;
-                    } else {
-                        action = FacePresenter.FaceAction.No_ACTION;
-                        IDCardPresenter.getInstance().readCard();
-                        if (outOfRegTime != null) {
-                            outOfRegTime.dispose();
-                        }
-                    }
                     break;
                 case Identify_ACTION:
                     identity(model.getImageFrame(), model.getFaceInfo());
                     break;
                 case Identify_Model:
-                    identity_model(model.getImageFrame(), model.getFaceInfo());
+//                    identity_model(model.getImageFrame(), model.getFaceInfo());
+                    identity_modelfaceInfos(model.getImageFrame(), model);
                     break;
                 default:
                     break;
@@ -528,6 +436,8 @@ public class FaceImpl5 implements IFace {
         }
 //        }
     }
+
+
     private Paint paint = new Paint();
 
     {
@@ -539,7 +449,7 @@ public class FaceImpl5 implements IFace {
 
     RectF rectF = new RectF();
 
-    private void showFrame(LivenessModel model) {
+    private void showSingleFrame(LivenessModel model) {
         Canvas canvas = textureView.lockCanvas();
         if (canvas == null) {
             textureView.unlockCanvasAndPost(canvas);
@@ -592,6 +502,47 @@ public class FaceImpl5 implements IFace {
 
     }
 
+    private void showFrame(LivenessModel model) {
+        Canvas canvas = textureView.lockCanvas();
+        if (canvas == null) {
+            textureView.unlockCanvasAndPost(canvas);
+            return;
+        }
+        if (model == null) {
+            // 清空canvas
+            canvas.drawColor(Color.TRANSPARENT, PorterDuff.Mode.CLEAR);
+            textureView.unlockCanvasAndPost(canvas);
+            Log.e("canvasClear", "canvas by model is null");
+            SwitchPresenter.getInstance().WhiteLighrOff();
+            return;
+        }
+        FaceInfo[] faceInfos = model.getTrackFaceInfo();
+        Log.e("faceInfosLength", String.valueOf(faceInfos.length));
+        ImageFrame imageFrame = model.getImageFrame();
+        if (faceInfos == null || faceInfos.length == 0) {
+            // 清空canvas
+            canvas.drawColor(Color.TRANSPARENT, PorterDuff.Mode.CLEAR);
+            textureView.unlockCanvasAndPost(canvas);
+            Log.e("canvasClear", "canvas by faceInfo is null");
+            return;
+        }
+        canvas.drawColor(Color.TRANSPARENT, PorterDuff.Mode.CLEAR);
+        int faceRectNum = faceInfos.length > trackface ? trackface : faceInfos.length;
+        for (int i = 0; i < faceRectNum; i++) {
+            FaceInfo faceInfo = faceInfos[i];
+            rectF.set(getFaceRectTwo(faceInfo, imageFrame));
+            // 检测图片的坐标和显示的坐标不一样，需要转换。
+            mapFromOriginalRect(rectF, faceInfo, imageFrame);
+            // 符合检测要求，绘制绿框
+            paint.setColor(Color.GREEN);
+            paint.setStyle(Paint.Style.STROKE);
+            // 绘制框
+            canvas.drawRect(rectF, paint);
+        }
+        SwitchPresenter.getInstance().WhiteLighrOn();
+        textureView.unlockCanvasAndPost(canvas);
+
+    }
 
     public Rect getFaceRectTwo(FaceInfo faceInfo, ImageFrame frame) {
         Rect rect = new Rect();
@@ -633,18 +584,16 @@ public class FaceImpl5 implements IFace {
             matrix.postTranslate(-delta, 0);
         }
         matrix.mapRect(rectF);
-        if (false) { // 根据镜像调整
+        if (true) { // 根据镜像调整
             float left = selfWidth - rectF.right;
             float right = left + rectF.width();
             rectF.left = left;
             rectF.right = right;
         }
-        if (!reg_status) {
-            rectF.left -= 15.0;
-            rectF.right-= 15.0;
-            rectF.bottom -= 10.0;
-            rectF.top -= 10.0;
-        }
+//        if (!reg_status) {
+//            rectF.left -= 5.0;
+//            rectF.right -= 5.0;
+//        }
     }
 
     private boolean Img_match_Img(FaceInfo faceInfo, ImageFrame imageFrame) {
@@ -709,7 +658,8 @@ public class FaceImpl5 implements IFace {
         return false;
     }
 
-    private void register(final FaceInfo faceInfo, final ImageFrame imageFrame, final ICardInfo cardInfo) {
+    private void register(final FaceInfo faceInfo, final ImageFrame imageFrame,
+                          final ICardInfo cardInfo) {
         /*
          * 用户id（由数字、字母、下划线组成），长度限制128B
          * uid为用户的id,百度对uid不做限制和处理，应该与您的帐号系统中的用户id对应。
@@ -739,15 +689,6 @@ public class FaceImpl5 implements IFace {
                     feature.setFeature(bytes);
                     user.getFeatureList().add(feature);
                     if (FaceApi.getInstance().userAdd(user)) {
-                        if (AppInit.getInstrumentConfig().getClass().getName().equals(HuNanConfig.class.getName())){
-                            Keeper keeper = new Keeper(cardInfo.cardId().toUpperCase(),
-                                    cardInfo.name(),
-                                    FileUtils.bitmapToBase64(InputBitmap),
-                                    FileUtils.bitmapToBase64(headphotoRGB),
-                                    FileUtils.bitmapToBase64(headphotoBW),
-                                    user.getUserId(), bytes);
-                            AppInit.getInstance().getDaoSession().getKeeperDao().insertOrReplace(keeper);
-                        }
 
                         handler.post(new Runnable() {
                             @Override
@@ -759,6 +700,14 @@ public class FaceImpl5 implements IFace {
 
                             }
                         });
+                        Keeper keeper = new Keeper(cardInfo.cardId(),
+                                cardInfo.name(),
+                                null,
+                                null,
+                                FileUtils.bitmapToBase64(headphotoBW),
+                                user.getUserId(), bytes);
+                        AppInit.getInstance().getDaoSession().getKeeperDao().insertOrReplace(keeper);
+
                         //saveFace(faceInfo,imageFrame,cardInfo);
                     } else {
                         handler.post(new Runnable() {
@@ -817,7 +766,7 @@ public class FaceImpl5 implements IFace {
                     action = FacePresenter.FaceAction.No_ACTION;
                     listener.onText(FacePresenter.FaceResultType.Identify_non, "系统没有找到相关人脸信息");
                     MediaHelper.play(MediaHelper.Text.identify_non);
-                    IDCardPresenter.getInstance().readCard();
+//                    IDCardPresenter.getInstance().readCard();
                 }
             });
             return;
@@ -834,7 +783,7 @@ public class FaceImpl5 implements IFace {
                         FaceSetNoAction();
                         listener.onText(FacePresenter.FaceResultType.Identify_non, "系统没有找到相关人脸信息");
                         MediaHelper.play(MediaHelper.Text.identify_non);
-                        IDCardPresenter.getInstance().readCard();
+//                        IDCardPresenter.getInstance().readCard();
 
                     }
                 });
@@ -843,7 +792,7 @@ public class FaceImpl5 implements IFace {
                     @Override
                     public void run() {
                         FaceSetNoAction();
-                        IDCardPresenter.getInstance().readCard();
+//                        IDCardPresenter.getInstance().readCard();
                         listener.onBitmap(FacePresenter.FaceResultType.Identify, global_bitmap);
                         listener.onBitmap(FacePresenter.FaceResultType.headphoto, scene_Bitmap);
                         listener.onText(FacePresenter.FaceResultType.Identify, String.valueOf((int) identifyRet.getScore()));
@@ -861,13 +810,13 @@ public class FaceImpl5 implements IFace {
         }
         final Bitmap scene_Bitmap = FaceCropper.getFace(imageFrame.getArgb(), faceInfo, imageFrame.getWidth());
 
-        float raw = Math.abs(faceInfo.headPose[0]);
-        float patch = Math.abs(faceInfo.headPose[1]);
-        float roll = Math.abs(faceInfo.headPose[2]);
-        // 人脸的三个角度大于20不进行识别
-        if (raw > 20 || patch > 20 || roll > 20) {
-            return;
-        }
+//        float raw = Math.abs(faceInfo.headPose[0]);
+//        float patch = Math.abs(faceInfo.headPose[1]);
+//        float roll = Math.abs(faceInfo.headPose[2]);
+//        // 人脸的三个角度大于20不进行识别
+//        if (raw > 20 || patch > 20 || roll > 20) {
+//            return;
+//        }
         identityStatus = IDENTITYING;
         int[] argb = imageFrame.getArgb();
         int rows = imageFrame.getHeight();
@@ -924,6 +873,114 @@ public class FaceImpl5 implements IFace {
     }
 
 
+    DaoSession mDaoSession = AppInit.getInstance().getDaoSession();
+
+    boolean Identify_non = true;
+
+    private void identity_modelfaceInfos(ImageFrame imageFrame, LivenessModel model) {
+        StringBuffer sb = new StringBuffer();
+        Identify_non = true;
+        if (identityStatus != IDENTITY_IDLE) {
+            return;
+        }
+        FaceInfo[] faceInfos = model.getTrackFaceInfo();
+        int faceRectNum = faceInfos.length > trackface ? trackface : faceInfos.length;
+        identityStatus = IDENTITYING;
+        for (int i = 0; i < faceRectNum; i++) {
+            FaceInfo faceInfo = faceInfos[i];
+            if (FaceSDKManager.getInstance().getFaceLiveness().rgbLiveness(model.getImageFrame().getArgb(),
+                    mWidth, mHeight, faceInfo.landmarks) > livnessScore) {
+                //            Bitmap scbmp = FaceCropper.getFace(imageFrame.getArgb(), faceInfo, imageFrame.getWidth());
+                Bitmap scbmp = FaceCropper.getFace(colorARGB, faceInfo, imageFrame.getWidth());
+                global_bitmap = Bitmap.createBitmap(colorARGB, mWidth, mHeight, Bitmap.Config.ARGB_8888);
+                int[] argb = imageFrame.getArgb();
+                int rows = imageFrame.getHeight();
+                int cols = imageFrame.getWidth();
+                int[] landmarks = faceInfo.landmarks;
+                IdentifyRet identifyRet = FaceApi.getInstance().identity(argb, rows, cols, landmarks, "1");
+                if (identifyRet.getScore() < 80) {
+                    AttendanceScene attendanceScene = new AttendanceScene();
+                    attendanceScene.setName("未知人员");
+                    attendanceScene.setScenePhoto(FileUtils.bitmapToBase64(global_bitmap));
+                    attendanceScene.setSceneHeadPhoto(FileUtils.bitmapToBase64(scbmp));
+                    attendanceScene.setAttendanceTime(formatter.format(new Date(System.currentTimeMillis())));
+                    mDaoSession.insert(attendanceScene);
+                    attendanceScene.setAlive(1);
+                    Log.e("faceTips", "系统没有找到相关人脸信息");
+                } else {
+                    User user = FaceApi.getInstance().getUserInfo("1", identifyRet.getUserId());
+                    Keeper keeper = mDaoSession.queryRaw(Keeper.class, "where CARD_ID ='" + user.getUserId() + "'").get(0);
+                    if (user == null) {
+                        toast("获得的user为null");
+                    } else {
+                        Identify_non = false;
+                        sb.append(user.getUserInfo() + ",");
+                        try {
+                            AttendanceScene last_attendanceScene = mDaoSession.getAttendanceSceneDao()
+                                    .queryBuilder()
+                                    .where(AttendanceSceneDao.Properties.CardID.eq(user.getUserId()))
+                                    .orderDesc(AttendanceSceneDao.Properties.AttendanceTime).list().get(0);
+                            Date storageDate = formatter.parse(last_attendanceScene.getAttendanceTime());
+                            Log.e("spantime", String.valueOf((new Date(System.currentTimeMillis()).getTime() - storageDate.getTime()) / 1000));
+                            if ((new Date(System.currentTimeMillis()).getTime() - storageDate.getTime()) / 1000 > 1 * 60) {
+                                AttendanceScene attendanceScene = new AttendanceScene();
+                                attendanceScene.setKeeper(keeper);
+                                attendanceScene.setScenePhoto(FileUtils.bitmapToBase64(global_bitmap));
+                                attendanceScene.setSceneHeadPhoto(FileUtils.bitmapToBase64(scbmp));
+                                attendanceScene.setFaceRecognition(new Random().nextInt(2)+1);
+                                attendanceScene.setAttendanceTime(formatter.format(new Date(System.currentTimeMillis())));
+                                attendanceScene.setAlive(1);
+                                mDaoSession.insert(attendanceScene);
+                                Log.e("faceTips", "user" + user.getUserInfo());
+                            }
+                        } catch (ParseException e) {
+                            Lg.e("ParseException", "存储时间有误");
+                        } catch (IndexOutOfBoundsException e) {
+                            AttendanceScene attendanceScene = new AttendanceScene();
+                            attendanceScene.setKeeper(keeper);
+                            attendanceScene.setScenePhoto(FileUtils.bitmapToBase64(global_bitmap));
+                            attendanceScene.setSceneHeadPhoto(FileUtils.bitmapToBase64(scbmp));
+                            attendanceScene.setFaceRecognition(new Random().nextInt(2)+1);
+                            attendanceScene.setAttendanceTime(formatter.format(new Date(System.currentTimeMillis())));
+                            attendanceScene.setAlive(1);
+                            mDaoSession.insert(attendanceScene);
+                            Lg.e("IndexOutOfBoundsException", "初次数据存储成功");
+                        }
+                    }
+                }
+            }else {
+                Bitmap scbmp = FaceCropper.getFace(colorARGB, faceInfo, imageFrame.getWidth());
+                global_bitmap = Bitmap.createBitmap(colorARGB, mWidth, mHeight, Bitmap.Config.ARGB_8888);
+                AttendanceScene attendanceScene = new AttendanceScene();
+                attendanceScene.setName("未知人员");
+                attendanceScene.setScenePhoto(FileUtils.bitmapToBase64(global_bitmap));
+                attendanceScene.setSceneHeadPhoto(FileUtils.bitmapToBase64(scbmp));
+                attendanceScene.setAttendanceTime(formatter.format(new Date(System.currentTimeMillis())));
+                attendanceScene.setAlive(2);
+                mDaoSession.insert(attendanceScene);
+                Log.e("faceTips", "活体检测不通过");
+            }
+        }
+        if (Identify_non) {
+            handler.post(() -> {
+                listener.onText(FacePresenter.FaceResultType.Identify_non, "系统没有找到相关人脸信息");
+                MediaHelper.play(MediaHelper.Text.identify_non);
+            });
+        } else {
+            handler.post(() -> {
+                sb.deleteCharAt(sb.length() - 1);
+                listener.onText(FacePresenter.FaceResultType.Identify, sb.toString());
+                MediaHelper.play(MediaHelper.Text.opertion_success);
+            });
+        }
+        Observable.timer(2, TimeUnit.SECONDS).observeOn(Schedulers.from(es))
+                .subscribe((l) -> {
+                    identityStatus = IDENTITY_IDLE;
+                    Lg.e("identityStatus", "IDENTITY_IDLE");
+                });
+    }
+
+
     private void toast(final String msg) {
         handler.post(new Runnable() {
             @Override
@@ -946,5 +1003,5 @@ public class FaceImpl5 implements IFace {
         }
 
     }
-
 }
+

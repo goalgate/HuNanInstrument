@@ -746,6 +746,10 @@ public class WYYFaceImpl2 implements IFace {
         }
     }
 
+    @Override
+    public void FaceRegInBackGround(ICardInfo cardInfo, Bitmap bitmap,resultCallBack callBack) {
+    }
+
     private void identity_model(ImageFrame imageFrame, FaceInfo faceInfo) {
         if (identityStatus != IDENTITY_IDLE) {
             return;

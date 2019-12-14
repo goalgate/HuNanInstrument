@@ -121,6 +121,7 @@
         <service android:name=".Service.HeBeiService"></service>
         <service android:name=".Service.SXService"></service>
         <service android:name=".Service.AttendanceService"></service>
+        <service android:name=".Service.HLJYZBService"></service>
 
         <receiver android:name=".BroadcastReceiver.BootBroadcastReceiver">
             <intent-filter>
