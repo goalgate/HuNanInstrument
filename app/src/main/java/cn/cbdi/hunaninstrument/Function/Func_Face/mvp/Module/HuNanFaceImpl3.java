@@ -220,43 +220,43 @@ public class HuNanFaceImpl3 implements IFace {
 
 
     @Override
-    public void FaceRegInBackGround(ICardInfo cardInfo, Bitmap bitmap,resultCallBack callBack) {
+    public boolean FaceRegInBackGround(ICardInfo cardInfo, Bitmap bitmap) {
         final User user = new User();
 //        final String uid = UUID.randomUUID().toString();
         user.setUserId(cardInfo.cardId());
         user.setUserInfo(cardInfo.name());
         user.setGroupId("1");
-        es.submit(new Runnable() {
-            @Override
-            public void run() {
-                byte[] bytes = new byte[512];
-                float ret = FaceApi.getInstance().extractVisFeature(bitmap, bytes, 20);
-                if (ret != -1) {
-                    Feature feature = new Feature();
-                    feature.setGroupId("1");
-                    feature.setUserId(cardInfo.cardId());
-                    feature.setFeature(bytes);
-                    user.getFeatureList().add(feature);
-                    if (FaceApi.getInstance().userAdd(user)) {
-                        Keeper keeper = new Keeper(cardInfo.cardId().toUpperCase(),
-                                cardInfo.name(),
-                                null, null, null,
-                                user.getUserId(), bytes);
-                        AppInit.getInstance().getDaoSession().getKeeperDao().insertOrReplace(keeper);
-                        Lg.e("myface", cardInfo.cardId()+"人脸特征已存");
-                        callBack.getResult(true);
-                    }else{
-                        Lg.e("myface", "人脸特征存储失败");
-                        callBack.getResult(false);
+        byte[] bytes = new byte[512];
+        float ret = FaceApi.getInstance().extractVisFeature(bitmap, bytes, 20);
+        if (ret != -1) {
+            Feature feature = new Feature();
+            feature.setGroupId("1");
+            feature.setUserId(cardInfo.cardId());
+            feature.setFeature(bytes);
+            user.getFeatureList().add(feature);
+            if (FaceApi.getInstance().userAdd(user)) {
+                Keeper keeper = new Keeper(cardInfo.cardId().toUpperCase(),
+                        cardInfo.name(),
+                        null, null, null,
+                        user.getUserId(), bytes);
+                AppInit.getInstance().getDaoSession().getKeeperDao().insertOrReplace(keeper);
+                Lg.e("myface", cardInfo.cardId() + "人脸特征已存");
+                return true;
+            } else {
+                Lg.e("myface", "人脸特征存储失败");
+                return false;
 
-                    }
-                }else{
-                    Lg.e("myface", "人脸特征解析失败");
-                    callBack.getResult(false);
-
-                }
             }
-        });
+        } else {
+            Lg.e("myface", "人脸特征解析失败");
+            return false;
+        }
+//        es.submit(new Runnable() {
+//            @Override
+//            public void run() {
+//
+//            }
+//        });
     }
 
     @Override

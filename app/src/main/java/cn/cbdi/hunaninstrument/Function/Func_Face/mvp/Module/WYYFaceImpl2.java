@@ -747,7 +747,8 @@ public class WYYFaceImpl2 implements IFace {
     }
 
     @Override
-    public void FaceRegInBackGround(ICardInfo cardInfo, Bitmap bitmap,resultCallBack callBack) {
+    public boolean FaceRegInBackGround(ICardInfo cardInfo, Bitmap bitmap) {
+        return false;
     }
 
     private void identity_model(ImageFrame imageFrame, FaceInfo faceInfo) {

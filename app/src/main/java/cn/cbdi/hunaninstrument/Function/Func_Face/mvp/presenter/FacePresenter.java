@@ -217,12 +217,13 @@ public class FacePresenter {
         }
     }
 
-    public void FaceRegInBackGround(ICardInfo cardInfo, Bitmap bitmap, IFace.resultCallBack callBack){
+    public boolean FaceRegInBackGround(ICardInfo cardInfo, Bitmap bitmap){
         try {
-            iFace.FaceRegInBackGround(cardInfo,bitmap,callBack);
+            return iFace.FaceRegInBackGround(cardInfo,bitmap);
         } catch (Exception e) {
             ToastUtils.showLong(e.toString());
         }
+        return false;
     }
 
 

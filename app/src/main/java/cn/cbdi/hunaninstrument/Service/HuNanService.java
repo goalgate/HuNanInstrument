@@ -156,8 +156,19 @@ public class HuNanService extends Service implements ISwitchView {
 //                                        String name = "我问问";
                                         if (!TextUtils.isEmpty(ps)) {
                                             Bitmap bitmap = FileUtils.base64ToBitmap(ps);
-                                            FacePresenter.getInstance().FaceRegInBackGround(new CardInfoBean(employer.getCardID(), name),
-                                                    bitmap, null);
+                                            if (FacePresenter.getInstance().FaceRegInBackGround(new CardInfoBean(employer.getCardID(), name), bitmap)) {
+                                                logMen.append(name + "、");
+                                            }
+                                            count++;
+                                            if (count == employers.size()) {
+                                                FacePresenter.getInstance().FaceIdentifyReady();
+                                                if (logMen.length() > 0) {
+                                                    logMen.deleteCharAt(logMen.length() - 1);
+                                                    handler.post(() -> ToastUtils.showLong(logMen.toString() + "人脸特征已准备完毕"));
+                                                }
+                                            }
+
+
                                         }
                                     } catch (Exception e) {
                                         Lg.e(TAG, e.toString());
@@ -168,16 +179,13 @@ public class HuNanService extends Service implements ISwitchView {
                                 @Override
                                 public void onError(Throwable e) {
                                     count++;
-
-
+                                    if (count == employers.size()) {
+                                        FacePresenter.getInstance().FaceIdentifyReady();
+                                    }
                                 }
 
                                 @Override
                                 public void onComplete() {
-                                    count++;
-                                    if (count == employers.size()) {
-                                        FacePresenter.getInstance().FaceIdentifyReady();
-                                    }
 
                                 }
                             });

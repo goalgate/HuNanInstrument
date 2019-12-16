@@ -218,7 +218,8 @@ public class HeBeiFaceImpl implements IFace {
     }
 
     @Override
-    public void FaceRegInBackGround(ICardInfo cardInfo, Bitmap bitmap,resultCallBack callBack) {
+    public boolean FaceRegInBackGround(ICardInfo cardInfo, Bitmap bitmap) {
+        return false;
     }
 
     @Override

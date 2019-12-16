@@ -26,7 +26,7 @@ public interface IFace {
 
     void FaceReg(ICardInfo cardInfo);
 
-    void FaceRegInBackGround(ICardInfo cardInfo, Bitmap bitmap,resultCallBack callBack);
+    boolean FaceRegInBackGround(ICardInfo cardInfo, Bitmap bitmap);
 
     void Face_to_IMG(Bitmap bitmap);
 
@@ -60,8 +60,6 @@ public interface IFace {
         void CeaseCallBack();
     }
 
-    interface resultCallBack{
-        void getResult(boolean result);
-    }
+
 
 }
