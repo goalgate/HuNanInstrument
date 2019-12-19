@@ -22,7 +22,7 @@
 
         <activity
             android:name=".Activity_HuNan.HuNanMainActivity2"
-            android:launchMode="singleTask"
+            android:launchMode="standard"
             android:theme="@style/ImageTranslucentTheme"></activity>
 
 

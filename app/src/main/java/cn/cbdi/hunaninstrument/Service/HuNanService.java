@@ -10,12 +10,10 @@ import android.os.IBinder;
 import android.text.TextUtils;
 import android.util.Base64;
 import android.util.Log;
-import android.widget.Toast;
 
 import com.baidu.aip.api.FaceApi;
 import com.baidu.aip.entity.Feature;
 import com.baidu.aip.entity.User;
-import com.baidu.liantian.ac.F;
 import com.blankj.utilcode.util.AppUtils;
 import com.blankj.utilcode.util.FileIOUtils;
 import com.blankj.utilcode.util.SPUtils;
@@ -50,7 +48,6 @@ import cn.cbdi.hunaninstrument.EventBus.LockUpEvent;
 import cn.cbdi.hunaninstrument.EventBus.NetworkEvent;
 import cn.cbdi.hunaninstrument.EventBus.PassEvent;
 import cn.cbdi.hunaninstrument.EventBus.TemHumEvent;
-import cn.cbdi.hunaninstrument.Function.Func_Face.mvp.Module.IFace;
 import cn.cbdi.hunaninstrument.Function.Func_Face.mvp.presenter.FacePresenter;
 import cn.cbdi.hunaninstrument.Function.Func_Switch.mvp.module.SwitchImpl;
 import cn.cbdi.hunaninstrument.Function.Func_Switch.mvp.presenter.SwitchPresenter;
@@ -67,8 +64,6 @@ import cn.cbdi.hunaninstrument.greendao.DaoSession;
 import cn.cbdi.hunaninstrument.greendao.ReUploadBeanDao;
 import cn.cbdi.log.Lg;
 import io.reactivex.Observable;
-import io.reactivex.ObservableEmitter;
-import io.reactivex.ObservableOnSubscribe;
 import io.reactivex.Observer;
 import io.reactivex.android.schedulers.AndroidSchedulers;
 import io.reactivex.annotations.NonNull;
@@ -109,7 +104,10 @@ public class HuNanService extends Service implements ISwitchView {
         EventBus.getDefault().register(this);
         autoUpdate();
         CopySourceFile();
-        syncData();
+        Observable.timer(10,TimeUnit.SECONDS).subscribeOn(Schedulers.io())
+                .unsubscribeOn(Schedulers.io())
+                .observeOn(AndroidSchedulers.mainThread())
+                .subscribe((l)->syncData());
         reUpload();
         Observable.timer(10, TimeUnit.SECONDS).observeOn(AndroidSchedulers.mainThread())
                 .subscribe((l) -> reboot());
@@ -121,86 +119,6 @@ public class HuNanService extends Service implements ISwitchView {
                 .subscribe((l) -> StateRecord());
     }
 
-
-    int count = 0;
-    StringBuffer logMen;
-
-    private void getPic() {
-        logMen = new StringBuffer();
-        count = 0;
-        List<Employer> employers = mdaoSession.loadAll(Employer.class);
-        if (employers.size() > 0) {
-            for (Employer employer : employers) {
-                try {
-                    User user = FaceApi.getInstance().getUserInfo("1", employer.getCardID());
-                    logMen.append(user.getUserInfo() + "、");
-                    count++;
-                } catch (NullPointerException e) {
-                    RetrofitGenerator.getHnmbyApi()
-                            .recentPic("recentPic", config.getString("key"), employer.getCardID())
-                            .subscribeOn(Schedulers.single())
-                            .unsubscribeOn(Schedulers.single())
-                            .observeOn(Schedulers.single())
-                            .subscribe(new Observer<ResponseBody>() {
-                                @Override
-                                public void onSubscribe(Disposable d) {
-
-                                }
-
-                                @Override
-                                public void onNext(ResponseBody responseBody) {
-                                    try {
-                                        JSONObject jsonObject = new JSONObject(responseBody.string());
-                                        String ps = jsonObject.getString("result");
-                                        String name = jsonObject.getString("name");
-//                                        String name = "我问问";
-                                        if (!TextUtils.isEmpty(ps)) {
-                                            Bitmap bitmap = FileUtils.base64ToBitmap(ps);
-                                            if (FacePresenter.getInstance().FaceRegInBackGround(new CardInfoBean(employer.getCardID(), name), bitmap)) {
-                                                logMen.append(name + "、");
-                                            }
-                                            count++;
-                                            if (count == employers.size()) {
-                                                FacePresenter.getInstance().FaceIdentifyReady();
-                                                if (logMen.length() > 0) {
-                                                    logMen.deleteCharAt(logMen.length() - 1);
-                                                    handler.post(() -> ToastUtils.showLong(logMen.toString() + "人脸特征已准备完毕"));
-                                                }
-                                            }
-
-
-                                        }
-                                    } catch (Exception e) {
-                                        Lg.e(TAG, e.toString());
-                                    }
-
-                                }
-
-                                @Override
-                                public void onError(Throwable e) {
-                                    count++;
-                                    if (count == employers.size()) {
-                                        FacePresenter.getInstance().FaceIdentifyReady();
-                                    }
-                                }
-
-                                @Override
-                                public void onComplete() {
-
-                                }
-                            });
-                }
-            }
-            if (count == employers.size()) {
-                if (logMen.length() > 0) {
-                    logMen.deleteCharAt(logMen.length() - 1);
-                    ToastUtils.showLong(logMen.toString() + "人脸特征已准备完毕");
-                }
-
-            }
-        }
-
-    }
 
     @Override
     public void onDestroy() {
@@ -332,25 +250,28 @@ public class HuNanService extends Service implements ISwitchView {
 
     private void CopySourceFile() {
         if (config.getBoolean("CopySourceFileVer1", true)) {
-            Observable.create((emitter) -> {
-                emitter.onNext(ApkUtils.copyfile(
-                        new File(ApkUtils.getSourceApkPath(HuNanService.this, UpdateConstant.TEST_PACKAGENAME)),
-                        new File(UpdateConstant.ORIGINAL_APK_PATH),
-                        true));
-            })
-                    .subscribeOn(Schedulers.io())
-                    .unsubscribeOn(Schedulers.io())
-                    .observeOn(AndroidSchedulers.mainThread())
-                    .subscribe((l) -> {
-                        Boolean status = (boolean) l;
-                        if (status) {
-                            ToastUtils.showLong("源文件复制成功");
-                            config.put("CopySourceFileVer1", false);
-                            autoUpdate();
-                        } else {
-                            ToastUtils.showLong("源文件复制失败");
-                        }
-                    });
+            if(!new File(UpdateConstant.ORIGINAL_APK_PATH).exists()){
+                Observable.create((emitter) -> {
+                    emitter.onNext(ApkUtils.copyfile(
+                            new File(ApkUtils.getSourceApkPath(HuNanService.this, UpdateConstant.TEST_PACKAGENAME)),
+                            new File(UpdateConstant.ORIGINAL_APK_PATH),
+                            true));
+                })
+                        .subscribeOn(Schedulers.io())
+                        .unsubscribeOn(Schedulers.io())
+                        .observeOn(AndroidSchedulers.mainThread())
+                        .subscribe((l) -> {
+                            Boolean status = (boolean) l;
+                            if (status) {
+                                ToastUtils.showLong("源文件复制成功");
+                                config.put("CopySourceFileVer1", false);
+                                autoUpdate();
+                            } else {
+                                ToastUtils.showLong("源文件复制失败");
+                            }
+                        });
+            }
+
         }
     }
 
@@ -659,6 +580,92 @@ public class HuNanService extends Service implements ISwitchView {
                     });
         }
     }
+
+
+    int count = 0;
+    StringBuffer logMen;
+
+
+    private void getPic() {
+        logMen = new StringBuffer();
+        count = 0;
+        List<Employer> employers = mdaoSession.loadAll(Employer.class);
+        if (employers.size() > 0) {
+            for (Employer employer : employers) {
+                RetrofitGenerator.getHnmbyApi()
+                        .recentPic("recentPic", config.getString("key"), employer.getCardID())
+                        .subscribeOn(Schedulers.single())
+                        .unsubscribeOn(Schedulers.single())
+                        .observeOn(Schedulers.single())
+                        .subscribe(new Observer<ResponseBody>() {
+                            @Override
+                            public void onSubscribe(Disposable d) {
+
+                            }
+
+                            @Override
+                            public void onNext(ResponseBody responseBody) {
+                                try {
+                                    JSONObject jsonObject = new JSONObject(responseBody.string());
+                                    String result = jsonObject.getString("result");
+                                    if (result.equals("true")) {
+                                        String ps = jsonObject.getString("returnPic");
+                                        String name = jsonObject.getString("personName");
+                                        try {
+                                            Keeper keeper = mdaoSession.queryRaw(Keeper.class, "where CARD_ID = '" + employer.getCardID().toUpperCase() + "'").get(0);
+                                            if (!TextUtils.isEmpty(ps) && keeper.getHeadphoto().length() != ps.length()) {
+                                                Log.e("ps_len",String.valueOf(ps.length()));
+                                                Log.e("keeper_len",String.valueOf(keeper.getHeadphoto().replaceAll("\r|\n", "").length()));
+                                                Bitmap bitmap = FileUtils.base64ToBitmap(ps);
+                                                if (FacePresenter.getInstance().FaceRegInBackGround(new CardInfoBean(employer.getCardID(), name), bitmap,ps)) {
+                                                    logMen.append(name + "、");
+                                                }
+                                            }else{
+                                                logMen.append(name + "、");
+                                            }
+                                        } catch (IndexOutOfBoundsException e) {
+                                            if (!TextUtils.isEmpty(ps)) {
+                                                Bitmap bitmap = FileUtils.base64ToBitmap(ps);
+                                                if (FacePresenter.getInstance().FaceRegInBackGround(new CardInfoBean(employer.getCardID(), name), bitmap,ps)) {
+                                                    logMen.append(name + "、");
+                                                }
+                                            }
+                                        }
+                                    }
+                                    count++;
+                                    if (count == employers.size()) {
+                                        FacePresenter.getInstance().FaceIdentifyReady();
+                                        if (logMen.length() > 0) {
+                                            logMen.deleteCharAt(logMen.length() - 1);
+                                            handler.post(() -> ToastUtils.showLong(logMen.toString() + "人脸特征已准备完毕"));
+                                        }
+                                    }
+                                } catch (Exception e) {
+                                    Lg.e(TAG, e.toString());
+                                }
+                            }
+
+                            @Override
+                            public void onError(Throwable e) {
+                                count++;
+                                if (count == employers.size()) {
+                                    FacePresenter.getInstance().FaceIdentifyReady();
+                                    if (logMen.length() > 0) {
+                                        logMen.deleteCharAt(logMen.length() - 1);
+                                        handler.post(() -> ToastUtils.showLong(logMen.toString() + "人脸特征已准备完毕"));
+                                    }
+                                }
+                            }
+
+                            @Override
+                            public void onComplete() {
+
+                            }
+                        });
+            }
+        }
+    }
+
 
     private void testNet() {
         RetrofitGenerator.getHnmbyApi().withDataRs("testNet", config.getString("key"), null)

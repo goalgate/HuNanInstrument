@@ -215,7 +215,7 @@ public class FaceImpl implements IFace {
     }
 
     @Override
-    public boolean FaceRegInBackGround(ICardInfo cardInfo, Bitmap bitmap) {
+    public boolean FaceRegInBackGround(ICardInfo cardInfo, Bitmap bitmap,String ps) {
         return false;
     }
 

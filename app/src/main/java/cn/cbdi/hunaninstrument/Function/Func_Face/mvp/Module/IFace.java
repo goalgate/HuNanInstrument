@@ -26,7 +26,7 @@ public interface IFace {
 
     void FaceReg(ICardInfo cardInfo);
 
-    boolean FaceRegInBackGround(ICardInfo cardInfo, Bitmap bitmap);
+    boolean FaceRegInBackGround(ICardInfo cardInfo, Bitmap bitmap, String ps);
 
     void Face_to_IMG(Bitmap bitmap);
 

@@ -3,6 +3,7 @@ package cn.cbdi.hunaninstrument.Function.Func_IDCard.mvp.module;
 import android.graphics.Bitmap;
 import android.util.Log;
 
+import cn.cbdi.drv.card.BoyaCardAdapter;
 import cn.cbdi.drv.card.CardInfo3;
 import cn.cbdi.drv.card.CardInfoRk123x;
 import cn.cbdi.drv.card.ICardInfo;
@@ -33,7 +34,7 @@ public class IDCardImpl implements IIDCard {
             else if (AppInit.getMyManager().getAndroidDisplay().startsWith("rk3368")) {
                 cardInfo = new ReadCard2(115200,"/dev/ttyS0", m_onCardState);
             } else if (AppInit.getMyManager().getAndroidDisplay().startsWith("rk3288")) {
-                cardInfo = new ReadCard2(115200, "/dev/ttyS1", m_onCardState);
+                cardInfo = new BoyaCardAdapter(115200, "/dev/ttyS1", m_onCardState);
             }
             cardInfo.setDevType("rk3368");
             cdevfd = cardInfo.open();

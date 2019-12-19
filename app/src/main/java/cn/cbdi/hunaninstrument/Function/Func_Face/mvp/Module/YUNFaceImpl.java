@@ -73,7 +73,7 @@ public class YUNFaceImpl implements IFace {
     public static final int IDENTITY_IDLE = 2;
 
     @Override
-    public boolean FaceRegInBackGround(ICardInfo cardInfo, Bitmap bitmap) {
+    public boolean FaceRegInBackGround(ICardInfo cardInfo, Bitmap bitmap,String ps) {
         return false;
     }
 

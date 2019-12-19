@@ -154,13 +154,13 @@ public abstract class BaseActivity extends RxActivity implements IFaceView, IIDC
 
 
     private void firstUse() {
-        if (config.getBoolean("firstUse", true)) {
+        if (config.getBoolean("firstUse_ver12", true)) {
             try {
                 mdaosession.deleteAll(ReUploadBean.class);
                 mdaosession.deleteAll(Employer.class);
                 mdaosession.deleteAll(Keeper.class);
                 FaceApi.getInstance().groupDelete("1");
-                config.put("firstUse", false);
+                config.put("firstUse_ver12", false);
             } catch (Exception e) {
                 e.printStackTrace();
             }

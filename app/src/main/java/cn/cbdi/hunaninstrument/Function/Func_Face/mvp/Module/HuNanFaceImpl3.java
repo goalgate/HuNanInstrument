@@ -220,7 +220,7 @@ public class HuNanFaceImpl3 implements IFace {
 
 
     @Override
-    public boolean FaceRegInBackGround(ICardInfo cardInfo, Bitmap bitmap) {
+    public boolean FaceRegInBackGround(ICardInfo cardInfo, Bitmap bitmap,String ps) {
         final User user = new User();
 //        final String uid = UUID.randomUUID().toString();
         user.setUserId(cardInfo.cardId());
@@ -229,6 +229,7 @@ public class HuNanFaceImpl3 implements IFace {
         byte[] bytes = new byte[512];
         float ret = FaceApi.getInstance().extractVisFeature(bitmap, bytes, 20);
         if (ret != -1) {
+            FaceApi.getInstance().userDelete(cardInfo.cardId(), "1");
             Feature feature = new Feature();
             feature.setGroupId("1");
             feature.setUserId(cardInfo.cardId());
@@ -237,7 +238,7 @@ public class HuNanFaceImpl3 implements IFace {
             if (FaceApi.getInstance().userAdd(user)) {
                 Keeper keeper = new Keeper(cardInfo.cardId().toUpperCase(),
                         cardInfo.name(),
-                        null, null, null,
+                        ps, null, null,
                         user.getUserId(), bytes);
                 AppInit.getInstance().getDaoSession().getKeeperDao().insertOrReplace(keeper);
                 Lg.e("myface", cardInfo.cardId() + "人脸特征已存");
@@ -245,18 +246,11 @@ public class HuNanFaceImpl3 implements IFace {
             } else {
                 Lg.e("myface", "人脸特征存储失败");
                 return false;
-
             }
         } else {
             Lg.e("myface", "人脸特征解析失败");
             return false;
         }
-//        es.submit(new Runnable() {
-//            @Override
-//            public void run() {
-//
-//            }
-//        });
     }
 
     @Override
