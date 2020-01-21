@@ -197,7 +197,7 @@ public class FaceSDKManager {
     }
 
     public FaceEnvironment getFaceEnvironmentConfig() {
-        faceEnvironment.setMinFaceSize(50);
+        faceEnvironment.setMinFaceSize(100);
         faceEnvironment.setMaxFaceSize(-1);
         faceEnvironment.setDetectInterval(1000);
         faceEnvironment.setTrackInterval(500);

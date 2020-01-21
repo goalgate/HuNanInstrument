@@ -41,6 +41,13 @@ public class HebeiConfig extends BaseConfig {
         return "http://211.90.38.12:8081/";
     }
 
+
+
+//    @Override
+//    public String getServerId() {
+//        return "http://20.1.1.10:9090/";
+//    }
+
     @Override
     public int getCheckOnlineTime() {
         return 60;

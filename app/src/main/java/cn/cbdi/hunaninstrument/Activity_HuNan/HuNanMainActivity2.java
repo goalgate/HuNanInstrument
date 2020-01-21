@@ -348,12 +348,16 @@ public class HuNanMainActivity2 extends BaseActivity implements NormalWindow.Opt
 
     }
 
+
+    boolean VisitUpload = true;
     @Override
     public void onText(FacePresenter.FaceResultType resultType, String text) {
         if (resultType.equals(Identify_non)) {
             tv_info.setText(text);
             sp.redLight();
-            fp.FaceGetAllView();
+            if(VisitUpload){
+                fp.FaceGetAllView();
+            }
         } else if (resultType.equals(Identify)) {
             faceScore = text;
         } else if (resultType.equals(IMG_MATCH_IMG_Score)) {
@@ -364,6 +368,7 @@ public class HuNanMainActivity2 extends BaseActivity implements NormalWindow.Opt
             DoorOpenOperation.getInstance().doNext();
             EventBus.getDefault().post(new PassEvent());
             iv_lock.setImageBitmap(BitmapFactory.decodeResource(getResources(), R.drawable.iv_mj1));
+            VisitUpload = false;
         }
     }
 
@@ -511,7 +516,7 @@ public class HuNanMainActivity2 extends BaseActivity implements NormalWindow.Opt
         tv_info.setText("仓库已重新上锁");
         iv_lock.setImageBitmap(BitmapFactory.decodeResource(getResources(), R.drawable.iv_mj));
 //        sp.relay(ISwitching.Relay.relay_D5, ISwitching.Hex.H0, true);
-
+        VisitUpload = true;
         cg_User1 = new SceneKeeper();
         cg_User2 = new SceneKeeper();
         DoorOpenOperation.getInstance().setmDoorOpenOperation(DoorOpenOperation.DoorOpenState.Locking);

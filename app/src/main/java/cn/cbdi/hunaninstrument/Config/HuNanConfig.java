@@ -39,7 +39,7 @@ public class HuNanConfig extends BaseConfig{
 
 //    @Override
 //    public String getServerId() {
-//        return "http://192.168.11.125:8102/";
+//        return "http://20.1.1.10:9090/";
 //    }
 
     @Override

@@ -10,6 +10,7 @@ import android.graphics.BitmapFactory;
 import android.os.Bundle;
 import android.os.Handler;
 import android.provider.Settings;
+import android.util.Log;
 import android.view.Gravity;
 import android.widget.Button;
 
@@ -194,6 +195,8 @@ public class HebeiMainActivity extends BaseActivity implements NormalWindow.Opti
         safeCheck.setURL(config.getString("ServerId"));
         paramsMap.put("daid", config.getString("daid"));
         paramsMap.put("pass", safeCheck.getPass(config.getString("daid")));
+        Log.e("pass",paramsMap.get("pass"));
+
     }
 
     private void setGestures() {

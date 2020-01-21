@@ -3,9 +3,11 @@ package cn.cbdi.hunaninstrument.Service;
 import android.app.Service;
 import android.content.Intent;
 import android.database.sqlite.SQLiteException;
+import android.graphics.Bitmap;
 import android.os.Environment;
 import android.os.Handler;
 import android.os.IBinder;
+import android.text.TextUtils;
 import android.util.Base64;
 import android.util.Log;
 
@@ -37,6 +39,7 @@ import java.util.Timer;
 import java.util.TimerTask;
 import java.util.concurrent.TimeUnit;
 
+import cn.cbdi.drv.card.CardInfoBean;
 import cn.cbdi.hunaninstrument.AppInit;
 import cn.cbdi.hunaninstrument.Bean.Employer;
 import cn.cbdi.hunaninstrument.Bean.Keeper;
@@ -55,6 +58,7 @@ import cn.cbdi.hunaninstrument.Function.Func_Switch.mvp.view.ISwitchView;
 import cn.cbdi.hunaninstrument.Retrofit.RetrofitGenerator;
 import cn.cbdi.hunaninstrument.State.DoorState.Door;
 import cn.cbdi.hunaninstrument.State.LockState.Lock;
+import cn.cbdi.hunaninstrument.Tool.FileUtils;
 import cn.cbdi.hunaninstrument.Tool.SafeCheck;
 import cn.cbdi.hunaninstrument.Tool.ServerConnectionUtil;
 import cn.cbdi.hunaninstrument.Tool.Update.ApkUtils;
@@ -121,7 +125,10 @@ public class HeBeiService extends Service implements ISwitchView {
         mapInit();
         autoUpdate();
         CopySourceFile();
-        syncData();
+        Observable.timer(10, TimeUnit.SECONDS).subscribeOn(Schedulers.io())
+                .unsubscribeOn(Schedulers.io())
+                .observeOn(AndroidSchedulers.mainThread())
+                .subscribe((l) -> syncData());
         reUpload();
         Observable.timer(10, TimeUnit.SECONDS).observeOn(AndroidSchedulers.mainThread())
                 .subscribe((l) -> reboot());
@@ -465,7 +472,7 @@ public class HeBeiService extends Service implements ISwitchView {
                     @Override
                     public void onNext(String s) {
                         try {
-                            Log.e("persionType = 3",s);
+                            Log.e("persionType = 3", s);
                             mdaoSession.getEmployerDao().deleteAll();
                             String[] idList = s.split("\\|");
                             if (idList.length > 0) {
@@ -499,7 +506,7 @@ public class HeBeiService extends Service implements ISwitchView {
                                     @Override
                                     public void onNext(String s) {
                                         try {
-                                            Log.e("persionType = 2",s);
+                                            Log.e("persionType = 2", s);
                                             String[] idList = s.split("\\|");
                                             if (idList.length > 0) {
                                                 for (String id : idList) {
@@ -532,7 +539,7 @@ public class HeBeiService extends Service implements ISwitchView {
                                                     @Override
                                                     public void onNext(String s) {
                                                         try {
-                                                            Log.e("persionType = 1",s);
+                                                            Log.e("persionType = 1", s);
                                                             String[] idList = s.split("\\|");
                                                             if (idList.length > 0) {
                                                                 for (String id : idList) {
@@ -564,6 +571,8 @@ public class HeBeiService extends Service implements ISwitchView {
                                                         } catch (SQLiteException e) {
                                                             Lg.e(TAG, e.toString());
                                                         }
+                                                        getPic();
+
                                                     }
                                                 });
                                     }
@@ -572,9 +581,106 @@ public class HeBeiService extends Service implements ISwitchView {
                 });
     }
 
+    int count = 0;
+
+    StringBuffer logMen;
+
+    private void getPic() {
+        logMen = new StringBuffer();
+        count = 0;
+        List<Employer> employers = mdaoSession.loadAll(Employer.class);
+        if (employers.size() > 0) {
+            for (Employer employer : employers) {
+                RetrofitGenerator.getHebeiApi().recentPicNew("recentPic", paramsMap.get("daid"), paramsMap.get("pass"), employer.getCardID())
+                        .subscribeOn(Schedulers.single())
+                        .unsubscribeOn(Schedulers.single())
+                        .observeOn(Schedulers.single())
+                        .subscribe(new Observer<ResponseBody>() {
+                            @Override
+                            public void onSubscribe(Disposable d) {
+
+                            }
+
+                            @Override
+                            public void onNext(ResponseBody responseBody) {
+                                try {
+                                    JSONObject jsonObject = new JSONObject(responseBody.string());
+                                    count++;
+                                    String result = jsonObject.getString("result");
+                                    if (result.equals("true")) {
+                                        String ps = jsonObject.getString("returnPic");
+                                        String name = jsonObject.getString("personName");
+                                        try {
+                                            Keeper keeper = mdaoSession.queryRaw(Keeper.class, "where CARD_ID = '" + employer.getCardID().toUpperCase() + "'").get(0);
+                                            if (!TextUtils.isEmpty(ps) && keeper.getHeadphoto().length() != ps.length()) {
+                                                Log.e("ps_len", String.valueOf(ps.length()));
+                                                Log.e("keeper_len", String.valueOf(keeper.getHeadphoto().replaceAll("\r|\n", "").length()));
+                                                Bitmap bitmap = FileUtils.base64ToBitmap(ps);
+                                                if (FacePresenter.getInstance().FaceRegInBackGround(new CardInfoBean(employer.getCardID(), name), bitmap, ps)) {
+                                                    logMen.append(name + "、");
+                                                }
+                                            } else {
+                                                logMen.append(name + "、");
+                                            }
+                                        } catch (IndexOutOfBoundsException e) {
+                                            if (!TextUtils.isEmpty(ps)) {
+                                                Bitmap bitmap = FileUtils.base64ToBitmap(ps);
+                                                if (FacePresenter.getInstance().FaceRegInBackGround(new CardInfoBean(employer.getCardID(), name), bitmap, ps)) {
+                                                    logMen.append(name + "、");
+                                                }
+                                            }
+                                        }
+                                    }
+                                    if (count == employers.size()) {
+                                        FacePresenter.getInstance().FaceIdentifyReady();
+                                        if (logMen.length() > 0) {
+                                            logMen.deleteCharAt(logMen.length() - 1);
+                                            handler.post(() -> ToastUtils.showLong(logMen.toString() + "人脸特征已准备完毕"));
+                                        } else {
+                                            handler.post(() -> ToastUtils.showLong("该设备没有可使用的人脸特征"));
+                                        }
+                                    }
+                                } catch (Exception e) {
+                                    Lg.e(TAG, e.toString());
+                                    if (count == employers.size()) {
+                                        FacePresenter.getInstance().FaceIdentifyReady();
+                                        if (logMen.length() > 0) {
+                                            logMen.deleteCharAt(logMen.length() - 1);
+                                            handler.post(() -> ToastUtils.showLong(logMen.toString() + "人脸特征已准备完毕"));
+                                        } else {
+                                            handler.post(() -> ToastUtils.showLong("该设备没有可使用的人脸特征"));
+                                        }
+                                    }
+                                }
+                            }
+
+                            @Override
+                            public void onError(Throwable e) {
+                                count++;
+                                if (count == employers.size()) {
+                                    FacePresenter.getInstance().FaceIdentifyReady();
+                                    if (logMen.length() > 0) {
+                                        logMen.deleteCharAt(logMen.length() - 1);
+                                        handler.post(() -> ToastUtils.showLong(logMen.toString() + "人脸特征已准备完毕"));
+                                    } else {
+                                        handler.post(() -> ToastUtils.showLong("该设备没有可使用的人脸特征"));
+
+                                    }
+                                }
+                            }
+
+                            @Override
+                            public void onComplete() {
+
+                            }
+                        });
+            }
+        }
+    }
+
     private void syncFace() {
         if (config.getBoolean("syncFace", true)) {
-            RetrofitGenerator.getHebeiApi().getAllFace("getAllFace", paramsMap.get("daid"), paramsMap.get("pass"))
+                RetrofitGenerator.getHebeiApi().getAllFace("getAllFace", paramsMap.get("daid"), paramsMap.get("pass"))
                     .subscribeOn(Schedulers.io())
                     .unsubscribeOn(Schedulers.io())
                     .observeOn(AndroidSchedulers.mainThread())

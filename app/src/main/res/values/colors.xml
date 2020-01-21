@@ -24,7 +24,7 @@
     <color name="grey">#607D8B</color>
     <color name="gray">#cfcfcfcf</color>
     <color name="black_deep">#ff000000</color>
-    <color name="grgray">#686868</color>
+        <color name="grgray">#686868</color>
     <color name="color_info">#cacdd9</color>
     <color name="color_text">#3a70db</color>
     <color name="transparent">#00000000</color>

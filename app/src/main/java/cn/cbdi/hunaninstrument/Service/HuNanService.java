@@ -104,13 +104,13 @@ public class HuNanService extends Service implements ISwitchView {
         EventBus.getDefault().register(this);
         autoUpdate();
         CopySourceFile();
-        Observable.timer(10,TimeUnit.SECONDS).subscribeOn(Schedulers.io())
+        Observable.timer(10, TimeUnit.SECONDS).subscribeOn(Schedulers.io())
                 .unsubscribeOn(Schedulers.io())
                 .observeOn(AndroidSchedulers.mainThread())
-                .subscribe((l)->syncData());
+                .subscribe((l) -> syncData());
         reUpload();
-        Observable.timer(10, TimeUnit.SECONDS).observeOn(AndroidSchedulers.mainThread())
-                .subscribe((l) -> reboot());
+//        Observable.timer(10, TimeUnit.SECONDS).observeOn(AndroidSchedulers.mainThread())
+//                .subscribe((l) -> reboot());
         Observable.interval(0, 5, TimeUnit.SECONDS).observeOn(AndroidSchedulers.mainThread())
                 .subscribe((l) -> sp.readHum());
         Observable.interval(0, 30, TimeUnit.SECONDS).observeOn(Schedulers.io())
@@ -250,7 +250,7 @@ public class HuNanService extends Service implements ISwitchView {
 
     private void CopySourceFile() {
         if (config.getBoolean("CopySourceFileVer1", true)) {
-            if(!new File(UpdateConstant.ORIGINAL_APK_PATH).exists()){
+            if (!new File(UpdateConstant.ORIGINAL_APK_PATH).exists()) {
                 Observable.create((emitter) -> {
                     emitter.onNext(ApkUtils.copyfile(
                             new File(ApkUtils.getSourceApkPath(HuNanService.this, UpdateConstant.TEST_PACKAGENAME)),
@@ -614,19 +614,19 @@ public class HuNanService extends Service implements ISwitchView {
                                         try {
                                             Keeper keeper = mdaoSession.queryRaw(Keeper.class, "where CARD_ID = '" + employer.getCardID().toUpperCase() + "'").get(0);
                                             if (!TextUtils.isEmpty(ps) && keeper.getHeadphoto().length() != ps.length()) {
-                                                Log.e("ps_len",String.valueOf(ps.length()));
-                                                Log.e("keeper_len",String.valueOf(keeper.getHeadphoto().replaceAll("\r|\n", "").length()));
+                                                Log.e("ps_len", String.valueOf(ps.length()));
+                                                Log.e("keeper_len", String.valueOf(keeper.getHeadphoto().replaceAll("\r|\n", "").length()));
                                                 Bitmap bitmap = FileUtils.base64ToBitmap(ps);
-                                                if (FacePresenter.getInstance().FaceRegInBackGround(new CardInfoBean(employer.getCardID(), name), bitmap,ps)) {
+                                                if (FacePresenter.getInstance().FaceRegInBackGround(new CardInfoBean(employer.getCardID(), name), bitmap, ps)) {
                                                     logMen.append(name + "、");
                                                 }
-                                            }else{
+                                            } else {
                                                 logMen.append(name + "、");
                                             }
                                         } catch (IndexOutOfBoundsException e) {
                                             if (!TextUtils.isEmpty(ps)) {
                                                 Bitmap bitmap = FileUtils.base64ToBitmap(ps);
-                                                if (FacePresenter.getInstance().FaceRegInBackGround(new CardInfoBean(employer.getCardID(), name), bitmap,ps)) {
+                                                if (FacePresenter.getInstance().FaceRegInBackGround(new CardInfoBean(employer.getCardID(), name), bitmap, ps)) {
                                                     logMen.append(name + "、");
                                                 }
                                             }
@@ -638,6 +638,8 @@ public class HuNanService extends Service implements ISwitchView {
                                         if (logMen.length() > 0) {
                                             logMen.deleteCharAt(logMen.length() - 1);
                                             handler.post(() -> ToastUtils.showLong(logMen.toString() + "人脸特征已准备完毕"));
+                                        } else {
+                                            handler.post(() -> ToastUtils.showLong("该设备没有可使用的人脸特征"));
                                         }
                                     }
                                 } catch (Exception e) {
@@ -653,6 +655,9 @@ public class HuNanService extends Service implements ISwitchView {
                                     if (logMen.length() > 0) {
                                         logMen.deleteCharAt(logMen.length() - 1);
                                         handler.post(() -> ToastUtils.showLong(logMen.toString() + "人脸特征已准备完毕"));
+                                    } else {
+                                        handler.post(() -> ToastUtils.showLong("该设备没有可使用的人脸特征"));
+
                                     }
                                 }
                             }
@@ -666,6 +671,7 @@ public class HuNanService extends Service implements ISwitchView {
         }
     }
 
+    boolean REUP = false;
 
     private void testNet() {
         RetrofitGenerator.getHnmbyApi().withDataRs("testNet", config.getString("key"), null)
@@ -682,8 +688,14 @@ public class HuNanService extends Service implements ISwitchView {
                     public void onNext(String s) {
                         if (s.equals("true")) {
                             EventBus.getDefault().post(new NetworkEvent(true));
+                            if (!REUP) {
+                                reUpload();
+                                REUP = true;
+                            }
                         } else {
                             EventBus.getDefault().post(new NetworkEvent(false));
+                            REUP = false;
+
                         }
                     }
 

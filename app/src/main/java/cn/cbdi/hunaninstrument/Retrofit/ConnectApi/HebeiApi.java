@@ -3,6 +3,7 @@ package cn.cbdi.hunaninstrument.Retrofit.ConnectApi;
 import java.util.Map;
 
 import io.reactivex.Observable;
+import okhttp3.ResponseBody;
 import retrofit2.http.Field;
 import retrofit2.http.FormUrlEncoded;
 import retrofit2.http.Multipart;
@@ -16,9 +17,13 @@ public interface HebeiApi {
     @POST("da_gzmb_updata")
     Observable<String> faceUpload(@Field("dataType") String dataType, @Field("daid") String daid, @Field("pass") String pass, @Field("jsonData") String jsonData);
 
+//    @FormUrlEncoded
+//    @POST("da_gzmb_updata")
+//    Observable<String> recentPic(@Field("dataType") String dataType, @Field("daid") String daid, @Field("pass") String pass, @Field("idcard") String id);
+
     @FormUrlEncoded
     @POST("da_gzmb_updata")
-    Observable<String> recentPic(@Field("dataType") String dataType, @Field("daid") String daid, @Field("pass") String pass, @Field("idcard") String id);
+    Observable<ResponseBody> recentPicNew(@Field("dataType") String dataType, @Field("daid") String daid, @Field("pass") String pass, @Field("idcard") String id);
 
     @FormUrlEncoded
     @POST("da_gzmb_updata")

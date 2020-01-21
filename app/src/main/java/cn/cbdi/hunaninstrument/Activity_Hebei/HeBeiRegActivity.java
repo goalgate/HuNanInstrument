@@ -18,6 +18,7 @@ import com.jakewharton.rxbinding2.widget.RxTextView;
 import com.trello.rxlifecycle2.android.ActivityEvent;
 import com.trello.rxlifecycle2.components.RxActivity;
 
+import org.json.JSONException;
 import org.json.JSONObject;
 
 import java.io.IOException;
@@ -367,26 +368,44 @@ public class HeBeiRegActivity extends RxActivity implements IFaceView, IIDCardVi
         can_recentPic = false;
         natural = false;
         idp.stopReadCard();
-        RetrofitGenerator.getHebeiApi().recentPic("recentPic",paramsMap.get("daid"),paramsMap.get("pass"), global_cardInfo.cardId())
+        RetrofitGenerator.getHebeiApi().recentPicNew("recentPic", paramsMap.get("daid"), paramsMap.get("pass"), global_cardInfo.cardId())
                 .subscribeOn(Schedulers.io())
                 .unsubscribeOn(Schedulers.io())
                 .observeOn(AndroidSchedulers.mainThread())
-                .subscribe(new MyObserver<String >(this) {
+                .subscribe(new MyObserver<ResponseBody>(this) {
                     @Override
-                    public void onNext(String s) {
+                    public void onNext(ResponseBody responseBody) {
                         try {
-                            JSONObject jsonObject = new JSONObject(s);
-                            String ps = jsonObject.getString("result");
-                            if (!TextUtils.isEmpty(ps)) {
-                                Bitmap bitmap = FileUtils.base64ToBitmap(ps);
-                                fp.IMG_to_IMG(cardBitmap, bitmap, true);
-                            } else {
-                                tv_info.setText("该人员尚未在系统提交最新照片");
-                                tv_timer.setText("该人员尚未在系统提交最新照片");
+                            JSONObject jsonObject = new JSONObject(responseBody.string());
+                            String result = jsonObject.getString("result");
+                            if (result.equals("true")) {
+                                String ps = jsonObject.getString("returnPic");
+                                if (!TextUtils.isEmpty(ps)) {
+                                    Bitmap bitmap = FileUtils.base64ToBitmap(ps);
+                                    fp.IMG_to_IMG(cardBitmap, bitmap, true);
+                                } else {
+                                    tv_info.setText("该人员尚未在系统提交最新照片");
+                                    tv_timer.setText("该人员尚未在系统提交最新照片");
+                                }
                             }
-                        } catch (Exception e) {
-                            Lg.e(TAG, e.toString());
+                        } catch (JSONException e) {
+                            e.printStackTrace();
+                        } catch (IOException e1){
+                            e1.printStackTrace();
                         }
+//                        try {
+//                            JSONObject jsonObject = new JSONObject(s);
+//                            String ps = jsonObject.getString("result");
+//                            if (!TextUtils.isEmpty(ps)) {
+//                                Bitmap bitmap = FileUtils.base64ToBitmap(ps);
+//                                fp.IMG_to_IMG(cardBitmap, bitmap, true);
+//                            } else {
+//                                tv_info.setText("该人员尚未在系统提交最新照片");
+//                                tv_timer.setText("该人员尚未在系统提交最新照片");
+//                            }
+//                        } catch (Exception e) {
+//                            Lg.e(TAG, e.toString());
+//                        }
 
                     }
 
