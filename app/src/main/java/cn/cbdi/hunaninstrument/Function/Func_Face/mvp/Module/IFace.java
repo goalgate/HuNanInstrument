@@ -48,6 +48,8 @@ public interface IFace {
 
     void onActivityDestroy();
 
+    Bitmap getBitmapData();
+
     interface IFaceListener{
         void onText(FacePresenter.FaceResultType resultType, String text);
 

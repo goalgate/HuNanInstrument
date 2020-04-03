@@ -25,6 +25,7 @@ import cn.cbdi.hunaninstrument.AppInit;
 import cn.cbdi.hunaninstrument.Config.BaseConfig;
 import cn.cbdi.hunaninstrument.Config.HLJYZB_Config;
 import cn.cbdi.hunaninstrument.Config.HuNanConfig;
+import cn.cbdi.hunaninstrument.Config.LN_Config;
 import cn.cbdi.hunaninstrument.Config.WYYConfig;
 import cn.cbdi.hunaninstrument.Config.YUNPINGTAI_Config;
 import cn.cbdi.hunaninstrument.R;
@@ -72,8 +73,8 @@ public class Alert_Server {
                 } else {
                     url = etName.getText().toString();
                 }
-                if (AppInit.getInstrumentConfig().getClass().getName().equals(WYYConfig.class.getName())||AppInit.getInstrumentConfig().getClass().getName().equals(HLJYZB_Config.class.getName())) {
-                    new RetrofitGenerator().getWyyConnectApi(url).withDataRs("testNet", config.getString("key"),null)
+                if (AppInit.getInstrumentConfig().getClass().getName().equals(WYYConfig.class.getName()) || AppInit.getInstrumentConfig().getClass().getName().equals(HLJYZB_Config.class.getName())) {
+                    new RetrofitGenerator().getWyyConnectApi(url).withDataRs("testNet", config.getString("key"), null)
                             .subscribeOn(Schedulers.io())
                             .unsubscribeOn(Schedulers.io())
                             .observeOn(AndroidSchedulers.mainThread())
@@ -93,7 +94,7 @@ public class Alert_Server {
                                         } else {
                                             ToastUtils.showLong("连接服务器失败");
                                         }
-                                    }catch (Exception e){
+                                    } catch (Exception e) {
                                         e.printStackTrace();
                                     }
                                 }
@@ -108,8 +109,8 @@ public class Alert_Server {
 
                                 }
                             });
-                }else if(AppInit.getInstrumentConfig().getClass().getName().equals(HuNanConfig.class.getName())){
-                    new RetrofitGenerator().getHnmbyApi(url).withDataRs("testNet", config.getString("key"),null)
+                } else if (AppInit.getInstrumentConfig().getClass().getName().equals(HuNanConfig.class.getName())) {
+                    new RetrofitGenerator().getHnmbyApi(url).withDataRs("testNet", config.getString("key"), null)
                             .subscribeOn(Schedulers.io())
                             .unsubscribeOn(Schedulers.io())
                             .observeOn(AndroidSchedulers.mainThread())
@@ -129,7 +130,7 @@ public class Alert_Server {
                                         } else {
                                             ToastUtils.showLong("连接服务器失败");
                                         }
-                                    }catch (Exception e){
+                                    } catch (Exception e) {
                                         e.printStackTrace();
                                     }
                                 }
@@ -144,7 +145,44 @@ public class Alert_Server {
 
                                 }
                             });
-                }else {
+                } else if (AppInit.getInstrumentConfig().getClass().getName().equals(LN_Config.class.getName())) {
+                    new RetrofitGenerator().getLNApi(url).noData("testNet", config.getString("key"))
+                            .subscribeOn(Schedulers.io())
+                            .unsubscribeOn(Schedulers.io())
+                            .observeOn(AndroidSchedulers.mainThread())
+                            .subscribe(new Observer<String>() {
+                                @Override
+                                public void onSubscribe(@NonNull Disposable d) {
+
+                                }
+
+                                @Override
+                                public void onNext(String s) {
+                                    try {
+                                        if (s.equals("true")) {
+                                            config.put("ServerId", url);
+                                            ToastUtils.showLong("连接服务器成功,请点击确定立即启用");
+                                            callback.setNetworkBmp();
+                                        } else {
+                                            ToastUtils.showLong("连接服务器失败");
+                                        }
+                                    } catch (Exception e) {
+                                        e.printStackTrace();
+                                    }
+
+                                }
+
+                                @Override
+                                public void onError(@NonNull Throwable e) {
+                                    ToastUtils.showLong("服务器连接失败");
+                                }
+
+                                @Override
+                                public void onComplete() {
+
+                                }
+                            });
+                } else {
                     new ServerConnectionUtil().post(url + AppInit.getInstrumentConfig().getUpDataPrefix() + "daid=" + config.getString("daid") + "&dataType=test", url
                             , new ServerConnectionUtil.Callback() {
                                 @Override
@@ -208,28 +246,27 @@ public class Alert_Server {
     }
 
 
-
     public void show() {
         Bitmap mBitmap = null;
-            etName.setText(config.getString("ServerId"));
-            DAInfo di = new DAInfo();
-            try {
+        etName.setText(config.getString("ServerId"));
+        DAInfo di = new DAInfo();
+        try {
 //                di.setId(config.getString("devid"));
-                di.setId(config.getString("daid"));
-                di.setName(ins_type.getName());
-                di.setModel(ins_type.getModel());
-                di.setPower(ins_type.getPower());
-                di.setSoftwareVer(AppUtils.getAppVersionName());
-                di.setProject(ins_type.getProject());
-                File key = new File(Environment.getExternalStorageDirectory() + File.separator + "key.txt");
-                di.setLicence(FileIOUtils.readFile2String(key));
-                mBitmap = di.daInfoBmp();
-            } catch (Exception ex) {
-            }
-            if (mBitmap != null) {
-                QRview.setImageBitmap(mBitmap);
-            }
-            inputServerView.show();
+            di.setId(config.getString("daid"));
+            di.setName(ins_type.getName());
+            di.setModel(ins_type.getModel());
+            di.setPower(ins_type.getPower());
+            di.setSoftwareVer(AppUtils.getAppVersionName());
+            di.setProject(ins_type.getProject());
+            File key = new File(Environment.getExternalStorageDirectory() + File.separator + "key.txt");
+            di.setLicence(FileIOUtils.readFile2String(key));
+            mBitmap = di.daInfoBmp();
+        } catch (Exception ex) {
+        }
+        if (mBitmap != null) {
+            QRview.setImageBitmap(mBitmap);
+        }
+        inputServerView.show();
     }
 
     public interface Server_Callback {

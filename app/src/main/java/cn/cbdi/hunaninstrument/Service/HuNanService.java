@@ -96,21 +96,23 @@ public class HuNanService extends Service implements ISwitchView {
 
     Disposable unlock_noOpen;
 
+    ServerConnectionUtil connectionUtil = new ServerConnectionUtil();
+
     @Override
     public void onCreate() {
         super.onCreate();
         Log.e("Md5", SignUtils.getSignMd5Str(AppInit.getInstance()));
         sp.SwitchPresenterSetView(this);
         EventBus.getDefault().register(this);
-        autoUpdate();
         CopySourceFile();
+        autoUpdate();
         Observable.timer(10, TimeUnit.SECONDS).subscribeOn(Schedulers.io())
                 .unsubscribeOn(Schedulers.io())
                 .observeOn(AndroidSchedulers.mainThread())
                 .subscribe((l) -> syncData());
         reUpload();
-//        Observable.timer(10, TimeUnit.SECONDS).observeOn(AndroidSchedulers.mainThread())
-//                .subscribe((l) -> reboot());
+        Observable.timer(10, TimeUnit.SECONDS).observeOn(AndroidSchedulers.mainThread())
+                .subscribe((l) -> reboot());
         Observable.interval(0, 5, TimeUnit.SECONDS).observeOn(AndroidSchedulers.mainThread())
                 .subscribe((l) -> sp.readHum());
         Observable.interval(0, 30, TimeUnit.SECONDS).observeOn(Schedulers.io())
@@ -249,7 +251,7 @@ public class HuNanService extends Service implements ISwitchView {
     }
 
     private void CopySourceFile() {
-        if (config.getBoolean("CopySourceFileVer1", true)) {
+        if (AppUtils.getAppVersionName().equals("1.1")) {
             if (!new File(UpdateConstant.ORIGINAL_APK_PATH).exists()) {
                 Observable.create((emitter) -> {
                     emitter.onNext(ApkUtils.copyfile(
@@ -271,7 +273,8 @@ public class HuNanService extends Service implements ISwitchView {
                             }
                         });
             }
-
+        } else {
+            config.put("CopySourceFileVer1", false);
         }
     }
 
@@ -301,7 +304,7 @@ public class HuNanService extends Service implements ISwitchView {
                 }
 
             } else {
-                new ServerConnectionUtil().download("http://sbgl.wxhxp.cn:8050/daServer/updateRLCJQ.do?ver=" + AppUtils.getAppVersionName() + "&url=" + config.getString("ServerId") + "&daid=" + config.getString("daid") + "&updateType=apk&faceid=" + FileIOUtils.readFile2String(key),
+                connectionUtil.download("http://sbgl.wxhxp.cn:8050/daServer/updateRLCJQ.do?ver=" + AppUtils.getAppVersionName() + "&url=" + config.getString("ServerId") + "&daid=" + config.getString("daid") + "&updateType=apk&faceid=" + FileIOUtils.readFile2String(key),
                         config.getString("ServerId"),
                         (s) -> {
                             if (s != null) {
@@ -606,6 +609,7 @@ public class HuNanService extends Service implements ISwitchView {
                             @Override
                             public void onNext(ResponseBody responseBody) {
                                 try {
+                                    count++;
                                     JSONObject jsonObject = new JSONObject(responseBody.string());
                                     String result = jsonObject.getString("result");
                                     if (result.equals("true")) {
@@ -632,7 +636,6 @@ public class HuNanService extends Service implements ISwitchView {
                                             }
                                         }
                                     }
-                                    count++;
                                     if (count == employers.size()) {
                                         FacePresenter.getInstance().FaceIdentifyReady();
                                         if (logMen.length() > 0) {
@@ -644,6 +647,15 @@ public class HuNanService extends Service implements ISwitchView {
                                     }
                                 } catch (Exception e) {
                                     Lg.e(TAG, e.toString());
+                                    if (count == employers.size()) {
+                                        FacePresenter.getInstance().FaceIdentifyReady();
+                                        if (logMen.length() > 0) {
+                                            logMen.deleteCharAt(logMen.length() - 1);
+                                            handler.post(() -> ToastUtils.showLong(logMen.toString() + "人脸特征已准备完毕"));
+                                        } else {
+                                            handler.post(() -> ToastUtils.showLong("该设备没有可使用的人脸特征"));
+                                        }
+                                    }
                                 }
                             }
 
@@ -845,7 +857,10 @@ public class HuNanService extends Service implements ISwitchView {
                 @Override
                 public void run() {
                     // 要执行的代码
-                    AppInit.getMyManager().reboot();
+                    autoUpdate();
+                    syncData();
+                    reUpload();
+//                    reboot();
                     Log.e("信息提示", "关机了");
                 }
             };

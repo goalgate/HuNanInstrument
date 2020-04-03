@@ -35,12 +35,12 @@ public class FacePresenter {
     private FacePresenter() {
     }
 
-    public static FacePresenter getInstance() {
-        if (instance == null) {
-            instance = new FacePresenter();
+        public static FacePresenter getInstance() {
+            if (instance == null) {
+                instance = new FacePresenter();
+            }
+            return instance;
         }
-        return instance;
-    }
 
     public void FacePresenterSetView(IFaceView view) {
         this.view = view;
@@ -65,7 +65,6 @@ public class FacePresenter {
     public void CameraPreview(Context context, AutoTexturePreviewView previewView, AutoTexturePreviewView previewView1, TextureView textureView) {
 
         try {
-
             iFace.CameraPreview(context, previewView, previewView1, textureView, new IFace.IFaceListener() {
                 @Override
                 public void onText(FaceResultType resultType, String text) {
@@ -226,5 +225,14 @@ public class FacePresenter {
         return false;
     }
 
+
+    public Bitmap getBitmapData() {
+        try {
+            return iFace.getBitmapData();
+        } catch (Exception e) {
+            ToastUtils.showLong(e.toString());
+        }
+        return null;
+    }
 
 }

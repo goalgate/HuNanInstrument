@@ -279,6 +279,12 @@ public class HeBeiFaceImpl implements IFace {
     }
 
 
+
+    @Override
+    public Bitmap getBitmapData() {
+        return  global_bitmap;
+    }
+
     @Override
     public void PreviewCease(CeaseListener ceaseListener) {
         Camera1PreviewManager.getInstance().stopPreview();

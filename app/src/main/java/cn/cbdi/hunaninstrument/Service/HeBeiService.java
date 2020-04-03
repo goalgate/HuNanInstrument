@@ -55,6 +55,7 @@ import cn.cbdi.hunaninstrument.Function.Func_Face.mvp.presenter.FacePresenter;
 import cn.cbdi.hunaninstrument.Function.Func_Switch.mvp.module.SwitchImpl;
 import cn.cbdi.hunaninstrument.Function.Func_Switch.mvp.presenter.SwitchPresenter;
 import cn.cbdi.hunaninstrument.Function.Func_Switch.mvp.view.ISwitchView;
+import cn.cbdi.hunaninstrument.R;
 import cn.cbdi.hunaninstrument.Retrofit.RetrofitGenerator;
 import cn.cbdi.hunaninstrument.State.DoorState.Door;
 import cn.cbdi.hunaninstrument.State.LockState.Lock;
@@ -123,8 +124,8 @@ public class HeBeiService extends Service implements ISwitchView {
         sp.SwitchPresenterSetView(this);
         EventBus.getDefault().register(this);
         mapInit();
-        autoUpdate();
         CopySourceFile();
+        autoUpdate();
         Observable.timer(10, TimeUnit.SECONDS).subscribeOn(Schedulers.io())
                 .unsubscribeOn(Schedulers.io())
                 .observeOn(AndroidSchedulers.mainThread())
@@ -431,7 +432,8 @@ public class HeBeiService extends Service implements ISwitchView {
     }
 
     private void CopySourceFile() {
-        if (config.getBoolean("CopySourceFileVer1", true)) {
+//        if (config.getBoolean("CopySourceFileVer1", true)) {
+        if (AppUtils.getAppVersionName().equals("1.1")) {
             Observable.create((emitter) -> {
                 emitter.onNext(ApkUtils.copyfile(
                         new File(ApkUtils.getSourceApkPath(HeBeiService.this, UpdateConstant.TEST_PACKAGENAME)),
@@ -451,6 +453,8 @@ public class HeBeiService extends Service implements ISwitchView {
                             ToastUtils.showLong("源文件复制失败");
                         }
                     });
+        } else {
+            config.put("CopySourceFileVer1", false);
         }
     }
 
@@ -586,6 +590,13 @@ public class HeBeiService extends Service implements ISwitchView {
     StringBuffer logMen;
 
     private void getPic() {
+//        if (config.getBoolean("wzwPic", true)) {
+//            mdaoSession.insertOrReplace(new Employer("441302199308100538", 1));
+//            Bitmap wzwbitmap = BitmapFactory.decodeResource(getResources(), R.drawable.wzw);
+//            if (FacePresenter.getInstance().FaceRegInBackGround(new CardInfoBean("441302199308100538", "王振文"), wzwbitmap, FileUtils.bitmapToBase64(wzwbitmap))) {
+//                Log.e("message","王振文照片完成");
+//            }
+//        }
         logMen = new StringBuffer();
         count = 0;
         List<Employer> employers = mdaoSession.loadAll(Employer.class);
@@ -604,8 +615,9 @@ public class HeBeiService extends Service implements ISwitchView {
                             @Override
                             public void onNext(ResponseBody responseBody) {
                                 try {
-                                    JSONObject jsonObject = new JSONObject(responseBody.string());
                                     count++;
+                                    JSONObject jsonObject = new JSONObject(responseBody.string());
+
                                     String result = jsonObject.getString("result");
                                     if (result.equals("true")) {
                                         String ps = jsonObject.getString("returnPic");
@@ -680,7 +692,7 @@ public class HeBeiService extends Service implements ISwitchView {
 
     private void syncFace() {
         if (config.getBoolean("syncFace", true)) {
-                RetrofitGenerator.getHebeiApi().getAllFace("getAllFace", paramsMap.get("daid"), paramsMap.get("pass"))
+            RetrofitGenerator.getHebeiApi().getAllFace("getAllFace", paramsMap.get("daid"), paramsMap.get("pass"))
                     .subscribeOn(Schedulers.io())
                     .unsubscribeOn(Schedulers.io())
                     .observeOn(AndroidSchedulers.mainThread())
@@ -935,7 +947,11 @@ public class HeBeiService extends Service implements ISwitchView {
                 @Override
                 public void run() {
                     // 要执行的代码
-                    AppInit.getMyManager().reboot();
+                    autoUpdate();
+                    syncData();
+                    reUpload();
+//                    reboot();
+//                    AppInit.getMyManager().reboot();
                     Log.e("信息提示", "关机了");
                 }
             };

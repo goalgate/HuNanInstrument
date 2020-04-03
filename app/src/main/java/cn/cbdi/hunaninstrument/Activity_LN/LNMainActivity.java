@@ -1,4 +1,4 @@
-package cn.cbdi.hunaninstrument.Activity_Hebei;
+package cn.cbdi.hunaninstrument.Activity_LN;
 
 import android.content.Intent;
 import android.gesture.GestureLibraries;
@@ -8,7 +8,6 @@ import android.gesture.Prediction;
 import android.graphics.Bitmap;
 import android.graphics.BitmapFactory;
 import android.os.Bundle;
-import android.os.Handler;
 import android.provider.Settings;
 import android.util.Log;
 import android.view.Gravity;
@@ -16,16 +15,19 @@ import android.widget.Button;
 
 import com.baidu.aip.entity.User;
 import com.blankj.utilcode.util.ActivityUtils;
+import com.blankj.utilcode.util.TimeUtils;
 import com.blankj.utilcode.util.ToastUtils;
-import com.cundong.utils.PatchUtils;
+import com.google.gson.Gson;
+import com.google.gson.reflect.TypeToken;
 import com.jakewharton.rxbinding2.widget.RxTextView;
 import com.trello.rxlifecycle2.android.ActivityEvent;
 
 import org.greenrobot.eventbus.EventBus;
-import org.greenrobot.eventbus.Subscribe;
-import org.greenrobot.eventbus.ThreadMode;
+import org.json.JSONException;
+import org.json.JSONObject;
 
 import java.io.ByteArrayOutputStream;
+import java.io.File;
 import java.io.IOException;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
@@ -38,7 +40,6 @@ import butterknife.BindView;
 import butterknife.ButterKnife;
 import butterknife.OnClick;
 import cn.cbdi.drv.card.ICardInfo;
-import cn.cbdi.hunaninstrument.Activity_HuNan.HuNanMainActivity2;
 import cn.cbdi.hunaninstrument.Alert.Alert_IP;
 import cn.cbdi.hunaninstrument.Alert.Alert_Message;
 import cn.cbdi.hunaninstrument.Alert.Alert_Password;
@@ -49,6 +50,7 @@ import cn.cbdi.hunaninstrument.Bean.DataFlow.UpOpenDoorData;
 import cn.cbdi.hunaninstrument.Bean.DataFlow.UpPersonRecordData;
 import cn.cbdi.hunaninstrument.Bean.Employer;
 import cn.cbdi.hunaninstrument.Bean.Keeper;
+import cn.cbdi.hunaninstrument.Bean.ReUploadBean;
 import cn.cbdi.hunaninstrument.Bean.ReUploadWithBsBean;
 import cn.cbdi.hunaninstrument.Bean.SceneKeeper;
 import cn.cbdi.hunaninstrument.EventBus.PassEvent;
@@ -58,17 +60,17 @@ import cn.cbdi.hunaninstrument.Function.Func_Switch.mvp.presenter.SwitchPresente
 import cn.cbdi.hunaninstrument.R;
 import cn.cbdi.hunaninstrument.Retrofit.RetrofitGenerator;
 import cn.cbdi.hunaninstrument.State.OperationState.DoorOpenOperation;
+import cn.cbdi.hunaninstrument.Tool.FileUtils;
 import cn.cbdi.hunaninstrument.Tool.MediaHelper;
 import cn.cbdi.hunaninstrument.Tool.MyObserver;
 import cn.cbdi.hunaninstrument.Tool.SafeCheck;
 import cn.cbdi.hunaninstrument.Tool.ServerConnectionUtil;
-import cn.cbdi.hunaninstrument.Tool.Update.ApkUtils;
-import cn.cbdi.hunaninstrument.Tool.Update.SignUtils;
-import cn.cbdi.hunaninstrument.Tool.Update.UpdateConstant;
 import cn.cbdi.hunaninstrument.UI.NormalWindow;
+import cn.cbdi.log.Lg;
 import io.reactivex.Observable;
 import io.reactivex.Observer;
 import io.reactivex.android.schedulers.AndroidSchedulers;
+import io.reactivex.annotations.NonNull;
 import io.reactivex.disposables.Disposable;
 import io.reactivex.schedulers.Schedulers;
 import okhttp3.ResponseBody;
@@ -77,9 +79,8 @@ import static cn.cbdi.hunaninstrument.Function.Func_Face.mvp.presenter.FacePrese
 import static cn.cbdi.hunaninstrument.Function.Func_Face.mvp.presenter.FacePresenter.FaceResultType.IMG_MATCH_IMG_Score;
 import static cn.cbdi.hunaninstrument.Function.Func_Face.mvp.presenter.FacePresenter.FaceResultType.Identify;
 import static cn.cbdi.hunaninstrument.Function.Func_Face.mvp.presenter.FacePresenter.FaceResultType.Identify_non;
-import static cn.cbdi.hunaninstrument.Tool.Update.UpdateConstant.SIGN_MD5;
 
-public class HebeiMainActivity extends BaseActivity implements NormalWindow.OptionTypeListener {
+public class LNMainActivity extends BaseActivity implements NormalWindow.OptionTypeListener {
 
     private SimpleDateFormat formatter = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss");
 
@@ -90,8 +91,6 @@ public class HebeiMainActivity extends BaseActivity implements NormalWindow.Opti
     private Intent intent;
 
     private NormalWindow normalWindow;
-
-    ServerConnectionUtil connectionUtil = new ServerConnectionUtil();
 
     Alert_Message alert_message = new Alert_Message(this);
 
@@ -178,15 +177,15 @@ public class HebeiMainActivity extends BaseActivity implements NormalWindow.Opti
                 R.drawable.iv_wifi)));
         alert_message.messageInit();
         alert_password.PasswordViewInit(() -> {
-            normalWindow = new NormalWindow(HebeiMainActivity.this);
-            normalWindow.setOptionTypeListener(HebeiMainActivity.this);
+            normalWindow = new NormalWindow(LNMainActivity.this);
+            normalWindow.setOptionTypeListener(LNMainActivity.this);
             normalWindow.showAtLocation(getWindow().getDecorView().findViewById(android.R.id.content),
                     Gravity.CENTER, 0, 0);
         });
     }
 
     void openService() {
-        intent = new Intent(HebeiMainActivity.this, AppInit.getInstrumentConfig().getServiceName());
+        intent = new Intent(LNMainActivity.this, AppInit.getInstrumentConfig().getServiceName());
         startService(intent);
     }
 
@@ -195,7 +194,7 @@ public class HebeiMainActivity extends BaseActivity implements NormalWindow.Opti
         safeCheck.setURL(config.getString("ServerId"));
         paramsMap.put("daid", config.getString("daid"));
         paramsMap.put("pass", safeCheck.getPass(config.getString("daid")));
-        Log.e("pass",paramsMap.get("pass"));
+        Log.e("pass", paramsMap.get("pass"));
 
     }
 
@@ -267,41 +266,44 @@ public class HebeiMainActivity extends BaseActivity implements NormalWindow.Opti
         try {
             mdaosession.queryRaw(Employer.class, "where CARD_ID = '" + cardInfo.cardId().toUpperCase() + "'").get(0);
         } catch (IndexOutOfBoundsException e) {
-            HashMap<String, String> map = (HashMap<String, String>) paramsMap.clone();
-            map.put("dataType", "queryPersion");
-            map.put("id", cardInfo.cardId());
-            RetrofitGenerator.getHebeiApi().GeneralPersionInfo(map)
+            RetrofitGenerator.getLNApi().queryPersonInfo("queryPersonInfo", config.getString("key"), cardInfo.cardId().toUpperCase())
                     .subscribeOn(Schedulers.io())
                     .unsubscribeOn(Schedulers.io())
                     .observeOn(AndroidSchedulers.mainThread())
-                    .subscribe(new MyObserver<String>(this) {
+                    .subscribe(new MyObserver<ResponseBody>(this) {
                         @Override
-                        public void onNext(String s) {
+                        public void onNext(ResponseBody responseBody) {
                             try {
-                                if (s.equals("false")) {
+                                Map<String, String> infoMap = new Gson().fromJson(responseBody.string(),
+                                        new TypeToken<HashMap<String, String>>() {
+                                        }.getType());
+                                if (infoMap.get("result").equals("true")) {
+                                    if (infoMap.get("status").equals(String.valueOf(0))) {
+                                        String type = infoMap.get("courType");
+                                        mdaosession.insertOrReplace(new Employer(cardInfo.cardId(), Integer.valueOf(type)));
+                                        tv_info.setText("该人员尚未登记人脸信息");
+                                        sp.redLight();
+                                    } else {
+                                        Keeper inside_keeper = new Keeper();
+                                        inside_keeper.setName(cardInfo.name());
+                                        inside_keeper.setCardID(cardInfo.cardId());
+                                        unknownUser.setKeeper(inside_keeper);
+                                        fp.FaceGetAllView();
+                                        tv_info.setText("系统查无此人");
+                                    }
+                                } else {
                                     Keeper inside_keeper = new Keeper();
                                     inside_keeper.setName(cardInfo.name());
                                     inside_keeper.setCardID(cardInfo.cardId());
                                     unknownUser.setKeeper(inside_keeper);
                                     fp.FaceGetAllView();
                                     tv_info.setText("系统查无此人");
-                                    MediaHelper.play(MediaHelper.Text.man_non);
                                     sp.redLight();
-                                } else if (s.startsWith("true")) {
-                                    if (s.split("\\|").length > 1) {
-                                        String type = s.split("\\|")[1];
-                                        mdaosession.insertOrReplace(new Employer(cardInfo.cardId(), Integer.valueOf(type)));
-                                    }
-                                    tv_info.setText("该人员尚未登记人脸信息");
-                                    sp.redLight();
-                                } else if (s.equals("noUnitId")) {
-                                    sp.redLight();
-                                    tv_info.setText("该设备还未在系统上备案");
                                 }
-                            } catch (NullPointerException e) {
-                                e.printStackTrace();
+                            } catch (IOException e) {
+                                Lg.e(TAG, e.toString());
                             } catch (Exception e) {
-                                tv_info.setText("Exception");
+                                Lg.e(TAG, e.toString());
                             }
                         }
 
@@ -314,7 +316,6 @@ public class HebeiMainActivity extends BaseActivity implements NormalWindow.Opti
                             unknownUser.setKeeper(inside_keeper);
                             fp.FaceGetAllView();
                             tv_info.setText("系统查无此人");
-                            MediaHelper.play(MediaHelper.Text.man_non);
                             sp.redLight();
                         }
                     });
@@ -350,7 +351,7 @@ public class HebeiMainActivity extends BaseActivity implements NormalWindow.Opti
                         sp.greenLight();
                         DoorOpenOperation.getInstance().doNext();
                         Observable.timer(60, TimeUnit.SECONDS).subscribeOn(Schedulers.newThread())
-                                .compose(HebeiMainActivity.this.<Long>bindUntilEvent(ActivityEvent.PAUSE))
+                                .compose(LNMainActivity.this.<Long>bindUntilEvent(ActivityEvent.PAUSE))
                                 .observeOn(AndroidSchedulers.mainThread())
                                 .subscribe(new Observer<Long>() {
                                     @Override
@@ -397,7 +398,7 @@ public class HebeiMainActivity extends BaseActivity implements NormalWindow.Opti
                     if (checkChange != null) {
                         checkChange.dispose();
                     }
-                    if(AppInit.getInstrumentConfig().XungengCanOpen()) {
+                    if (AppInit.getInstrumentConfig().XungengCanOpen()) {
                         if (DoorOpenOperation.getInstance().getmDoorOpenOperation().equals(DoorOpenOperation.DoorOpenState.OneUnlock)) {
                             if (!keeper.getCardID().equals(cg_User1.getKeeper().getCardID())) {
                                 sp.greenLight();
@@ -417,7 +418,7 @@ public class HebeiMainActivity extends BaseActivity implements NormalWindow.Opti
                             cg_User1.setScenePhoto(Scene_Bitmap);
                             checkRecord(2);
                         }
-                    }else {
+                    } else {
                         cg_User1.setKeeper(keeper);
                         cg_User1.setScenePhoto(Scene_Bitmap);
                         checkRecord(2);
@@ -456,108 +457,176 @@ public class HebeiMainActivity extends BaseActivity implements NormalWindow.Opti
 
     private void checkRecord(int type) {
         SwitchPresenter.getInstance().OutD9(false);
-        connectionUtil.post(config.getString("ServerId")
-                        + AppInit.getInstrumentConfig().getUpDataPrefix()
-                        + "dataType=checkRecord"
-                        + "&daid=" + config.getString("daid")
-                        + "&checkType=" + type,
-                config.getString("ServerId"),
-                new UpCheckRecordData().toCheckRecordData(cg_User1.getKeeper().getCardID(), cg_User1.getScenePhoto(), cg_User1.getKeeper().getName()).toByteArray(),
-                (response) -> {
-                    if (response != null) {
-                        if (response.startsWith("true")) {
+        final JSONObject checkRecordJson = new JSONObject();
+        try {
+            checkRecordJson.put("id", cg_User1.getKeeper().getCardID());
+            checkRecordJson.put("name", cg_User1.getKeeper().getName());
+            checkRecordJson.put("checkType", type);
+            checkRecordJson.put("datetime", TimeUtils.getNowString());
+        } catch (JSONException e) {
+            e.printStackTrace();
+        }
+        RetrofitGenerator.getLNApi().withDataRs("checkRecord", config.getString("key"), checkRecordJson.toString())
+                .subscribeOn(Schedulers.io())
+                .unsubscribeOn(Schedulers.io())
+                .observeOn(AndroidSchedulers.mainThread())
+                .subscribe(new MyObserver<String>(this) {
+
+                    @Override
+                    public void onNext(String s) {
+                        if (s.equals("true")) {
                             tv_info.setText("巡检员" + cg_User1.getKeeper().getName() + "巡检成功");
-                            sp.greenLight();
-                        } else {
-                            tv_info.setText("巡检数据上传失败");
+                        } else if (s.equals("false")) {
+                            tv_info.setText("巡检失败");
+                        } else if (s.equals("dataErr")) {
+                            tv_info.setText("上传巡检数据失败");
+                        } else if (s.equals("dataErr")) {
+                            tv_info.setText("数据库操作有错");
                         }
 
+                    }
+
+                    @Override
+                    public void onError(@NonNull Throwable e) {
+                        super.onError(e);
+                        tv_info.setText("无法连接到服务器");
+                        mdaosession.insert(new ReUploadBean(null, "checkRecord", checkRecordJson.toString()));
+
+                    }
+
+                    @Override
+                    public void onComplete() {
+                        super.onComplete();
                         cg_User1 = new SceneKeeper();
                         cg_User2 = new SceneKeeper();
                         if (DoorOpenOperation.getInstance().getmDoorOpenOperation().equals(DoorOpenOperation.DoorOpenState.OneUnlock)) {
                             DoorOpenOperation.getInstance().setmDoorOpenOperation(DoorOpenOperation.DoorOpenState.Locking);
                         }
-                    } else {
-                        tv_info.setText("巡检数据上传失败,请检查网络,离线数据已保存");
-                        mdaosession.insert(new ReUploadWithBsBean(null, "dataType=checkRecord", new UpCheckRecordData().toCheckRecordData(cg_User1.getKeeper().getCardID(), cg_User1.getScenePhoto(), cg_User1.getKeeper().getName()).toByteArray(),
-                                type));
-                        sp.redLight();
-                        if (DoorOpenOperation.getInstance().getmDoorOpenOperation().equals(DoorOpenOperation.DoorOpenState.OneUnlock)) {
-                            DoorOpenOperation.getInstance().setmDoorOpenOperation(DoorOpenOperation.DoorOpenState.Locking);
-                        }
                     }
                 });
-
     }
 
-    UpPersonRecordData upPersonRecordData = new UpPersonRecordData();
 
     private void unknownPeople(Bitmap bmp) {
-        ByteArrayOutputStream outputStream = new ByteArrayOutputStream();
-        headphoto.compress(Bitmap.CompressFormat.JPEG, 90, outputStream);
-        upPersonRecordData.setPic(outputStream.toByteArray());
-        connectionUtil.post(config.getString("ServerId") + AppInit.getInstrumentConfig().getUpDataPrefix() + "dataType=persionRecord" + "&daid=" + config.getString("daid"),
-                config.getString("ServerId"),
-                upPersonRecordData.toPersonRecordData(unknownUser.getKeeper().getCardID(), bmp, unknownUser.getKeeper().getName()).toByteArray(),
-                (response) -> {
-                    if (response != null) {
-                        if (response.startsWith("true")) {
+        final JSONObject unknownPeopleJson = new JSONObject();
+        try {
+            unknownPeopleJson.put("visitIdcard", unknownUser.getKeeper().getCardID());
+            unknownPeopleJson.put("visitName", unknownUser.getKeeper().getName());
+            unknownPeopleJson.put("photos", Scene_Bitmap);
+        } catch (JSONException e) {
+            e.printStackTrace();
+        }
+        RetrofitGenerator.getLNApi().withDataRs("saveVisit", config.getString("key"), unknownPeopleJson.toString())
+                .subscribeOn(Schedulers.io())
+                .unsubscribeOn(Schedulers.io())
+                .observeOn(AndroidSchedulers.mainThread())
+                .subscribe(new MyObserver<String>(this) {
+
+                    @Override
+                    public void onNext(String s) {
+
+                        if (s.equals("true")) {
                             tv_info.setText("访问人" + unknownUser.getKeeper().getName() + "数据上传成功");
-                        } else {
+                        } else if (s.equals("false")) {
                             tv_info.setText("访问人上传失败");
+                        } else if (s.equals("dataErr")) {
+                            tv_info.setText("上传访问人数据失败");
+                        } else if (s.equals("dbErr")) {
+                            tv_info.setText("数据库操作有错");
                         }
-                    } else {
-                        tv_info.setText("访问人上传失败,请检查网络,离线数据已保存");
-                        mdaosession.insert(new ReUploadWithBsBean(null, "dataType=persionRecord", upPersonRecordData.toPersonRecordData(unknownUser.getKeeper().getCardID(), bmp, unknownUser.getKeeper().getName()).toByteArray(), 0));
                         unknownUser = new SceneKeeper();
+
+                    }
+
+                    @Override
+                    public void onError(@NonNull Throwable e) {
+                        super.onError(e);
+                        unknownUser = new SceneKeeper();
+                        mdaosession.insert(new ReUploadBean(null, "saveVisit", unknownPeopleJson.toString()));
+                    }
+
+                    @Override
+                    public void onComplete() {
+                        super.onComplete();
                     }
                 });
-
     }
 
 
     @Override
-    public void OpenDoor() {
-        connectionUtil.post(config.getString("ServerId")
-                        + AppInit.getInstrumentConfig().getUpDataPrefix()
-                        + "dataType=openDoor"
-                        + "&daid=" + config.getString("daid")
-                        + "&faceRecognition1="
-                        + (cg_User1.getFaceRecognition() + 100)
-                        + "&faceRecognition2="
-                        + (cg_User2.getFaceRecognition() + 100)
-                        + "&faceRecognition3="
-                        + (CompareScore + 100),
-                config.getString("ServerId"),
-                new UpOpenDoorData().toOpenDoorData((byte) 0x01,
-                        cg_User1.getKeeper().getCardID(),
-                        cg_User1.getKeeper().getName(), cg_User1.getScenePhoto(),
-                        cg_User2.getKeeper().getCardID(),
-                        cg_User2.getKeeper().getName(),
-                        cg_User2.getScenePhoto()).toByteArray(),
-                (s) -> {
-                    if (s != null) {
-                        tv_info.setText("开门记录已上传到服务器");
-                        sp.greenLight();
-                    } else {
-                        tv_info.setText("开门记录无法上传,请检查网络,离线数据已保存");
-                        sp.redLight();
-                        mdaosession.insertOrReplace(new ReUploadWithBsBean(null, "dataType=openDoor"
-                                + "&daid=" + config.getString("daid")
-                                + "&faceRecognition1="
-                                + (cg_User1.getFaceRecognition() + 100)
-                                + "&faceRecognition2="
-                                + (cg_User2.getFaceRecognition() + 100)
-                                + "&faceRecognition3="
-                                + (CompareScore + 100), new UpOpenDoorData().toOpenDoorData((byte) 0x01,
-                                cg_User1.getKeeper().getCardID(),
-                                cg_User1.getKeeper().getName(), cg_User1.getScenePhoto(),
-                                cg_User2.getKeeper().getCardID(),
-                                cg_User2.getKeeper().getName(),
-                                cg_User2.getScenePhoto()).toByteArray(), 0));
+    public void OpenDoor(boolean leagl) {
+        final JSONObject OpenDoorJson = new JSONObject();
+        if (leagl) {
+            try {
+                OpenDoorJson.put("courIds1", "no");
+                OpenDoorJson.put("courIds2", "no");
+                OpenDoorJson.put("id1", cg_User1.getKeeper().getCardID());
+                OpenDoorJson.put("id2", cg_User2.getKeeper().getCardID());
+                OpenDoorJson.put("name1", cg_User1.getKeeper().getName());
+                OpenDoorJson.put("name2", cg_User2.getKeeper().getName());
+                OpenDoorJson.put("photo1", FileUtils.bitmapToBase64(cg_User1.getScenePhoto()));
+                OpenDoorJson.put("photo2", FileUtils.bitmapToBase64(cg_User2.getScenePhoto()));
+                OpenDoorJson.put("datetime", TimeUtils.getNowString());
+                OpenDoorJson.put("state", "y");
+            } catch (JSONException e) {
+                e.printStackTrace();
+            }
+
+        } else {
+            try {
+                OpenDoorJson.put("datetime", TimeUtils.getNowString());
+                OpenDoorJson.put("state", "n");
+            } catch (JSONException e) {
+                e.printStackTrace();
+            }
+        }
+        RetrofitGenerator.getLNApi().withDataRs("openDoorRecord", config.getString("key"), OpenDoorJson.toString())
+                .subscribeOn(Schedulers.io())
+                .unsubscribeOn(Schedulers.io())
+                .observeOn(AndroidSchedulers.mainThread())
+                .subscribe(new MyObserver<String>(this) {
+                    @Override
+                    public void onNext(String s) {
+                        if (s.equals("true")) {
+                            try {
+                                if (OpenDoorJson.getString("state").equals("y")) {
+                                    tv_info.setText("正常开门数据上传成功");
+                                    sp.greenLight();
+                                } else {
+                                    tv_info.setText("非法开门数据上传成功");
+                                    sp.greenLight();
+                                }
+                            } catch (JSONException e) {
+                                e.printStackTrace();
+                            }
+
+                        } else if (s.equals("false")) {
+                            tv_info.setText("开门数据上传失败");
+                            sp.redLight();
+
+                        } else if (s.equals("dataErr")) {
+                            tv_info.setText("上传的json数据有错");
+                            sp.redLight();
+
+                        } else if (s.equals("dbErr")) {
+                            tv_info.setText("数据库操作有错");
+                            sp.redLight();
+
+                        }
                     }
-                    cg_User1 = new SceneKeeper();
-                    cg_User2 = new SceneKeeper();
+
+                    @Override
+                    public void onError(@NonNull Throwable e) {
+                        super.onError(e);
+                        mdaosession.insert(new ReUploadBean(null, "openDoorRecord", OpenDoorJson.toString()));
+                    }
+
+                    @Override
+                    public void onComplete() {
+                        super.onComplete();
+                        cg_User1 = new SceneKeeper();
+                        cg_User2 = new SceneKeeper();
+                    }
                 });
     }
 

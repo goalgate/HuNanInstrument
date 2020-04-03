@@ -233,6 +233,12 @@ public class FaceImpl2 implements IFace {
         }
     }
 
+
+    @Override
+    public Bitmap getBitmapData() {
+        return  global_bitmap;
+    }
+
     @Override
     public void Face_allView() {
 //        Bitmap bmp = Bitmap.createBitmap(global_IFrame.getArgb(), global_IFrame.getWidth(), global_IFrame.getHeight(), Bitmap.Config.ARGB_8888);

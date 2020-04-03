@@ -76,6 +76,7 @@ public class AttendanceFaceImpl implements IFace {
 
     private int trackface = 5;
 
+
     boolean reg_status = false;
 
     private final static double livnessScore = 0.0;
@@ -233,6 +234,11 @@ public class AttendanceFaceImpl implements IFace {
     @Override
     public boolean FaceRegInBackGround(ICardInfo cardInfo, Bitmap bitmap,String ps) {
         return false;
+    }
+
+    @Override
+    public Bitmap getBitmapData() {
+        return  global_bitmap;
     }
 
     @Override

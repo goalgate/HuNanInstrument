@@ -127,7 +127,7 @@ public class WYYFaceImpl2 implements IFace {
     }
 
     @Override
-    public void IMG_to_IMG(final Bitmap bmp1, final Bitmap bmp2,boolean register) {
+    public void IMG_to_IMG(final Bitmap bmp1, final Bitmap bmp2, boolean register) {
         es.submit(new Runnable() {
             @Override
             public void run() {
@@ -187,7 +187,7 @@ public class WYYFaceImpl2 implements IFace {
 
     @Override
     public void FaceIdentify() {
-        IDCardPresenter.getInstance().stopReadCard();
+//        IDCardPresenter.getInstance().stopReadCard();
         action = FacePresenter.FaceAction.Identify_ACTION;
         outOfIdentifyTime = Observable.timer(10, TimeUnit.SECONDS)
                 .observeOn(AndroidSchedulers.mainThread())
@@ -213,7 +213,7 @@ public class WYYFaceImpl2 implements IFace {
 
     @Override
     public void FaceReg(ICardInfo cardInfo, Bitmap bitmap) {
-        IDCardPresenter.getInstance().stopReadCard();
+//        IDCardPresenter.getInstance().stopReadCard();
         action = FacePresenter.FaceAction.Headphoto_MATCH_IMG;
         outOfRegTime = Observable.timer(20, TimeUnit.SECONDS)
                 .observeOn(AndroidSchedulers.mainThread())
@@ -267,6 +267,10 @@ public class WYYFaceImpl2 implements IFace {
 
     }
 
+    @Override
+    public Bitmap getBitmapData() {
+        return global_bitmap;
+    }
 
     @Override
     public void PreviewCease(CeaseListener ceaseListener) {
@@ -531,8 +535,8 @@ public class WYYFaceImpl2 implements IFace {
         if (true) { // 根据镜像调整
             float left = selfWidth - rectF.right;
             float right = left + rectF.width();
-            rectF.left = left;
-            rectF.right = right;
+            rectF.left = left + 40;
+            rectF.right = right + 40;
         }
     }
 
@@ -599,7 +603,6 @@ public class WYYFaceImpl2 implements IFace {
     }
 
 
-
     private void register(final FaceInfo faceInfo, final ImageFrame imageFrame, final ICardInfo cardInfo) {
         /*
          * 用户id（由数字、字母、下划线组成），长度限制128B
@@ -630,7 +633,7 @@ public class WYYFaceImpl2 implements IFace {
                     feature.setFeature(bytes);
                     user.getFeatureList().add(feature);
                     if (FaceApi.getInstance().userAdd(user)) {
-                        if (AppInit.getInstrumentConfig().getClass().getName().equals(HuNanConfig.class.getName())){
+                        if (AppInit.getInstrumentConfig().getClass().getName().equals(HuNanConfig.class.getName())) {
                             Keeper keeper = new Keeper(cardInfo.cardId().toUpperCase(),
                                     cardInfo.name(),
                                     FileUtils.bitmapToBase64(InputBitmap),
@@ -708,7 +711,7 @@ public class WYYFaceImpl2 implements IFace {
                     action = FacePresenter.FaceAction.No_ACTION;
                     listener.onText(FacePresenter.FaceResultType.Identify_non, "系统没有找到相关人脸信息");
                     MediaHelper.play(MediaHelper.Text.identify_non);
-                    IDCardPresenter.getInstance().readCard();
+//                    IDCardPresenter.getInstance().readCard();
                 }
             });
             return;
@@ -725,7 +728,7 @@ public class WYYFaceImpl2 implements IFace {
                         FaceSetNoAction();
                         listener.onText(FacePresenter.FaceResultType.Identify_non, "系统没有找到相关人脸信息");
                         MediaHelper.play(MediaHelper.Text.identify_non);
-                        IDCardPresenter.getInstance().readCard();
+//                        IDCardPresenter.getInstance().readCard();
 
                     }
                 });
@@ -734,7 +737,7 @@ public class WYYFaceImpl2 implements IFace {
                     @Override
                     public void run() {
                         FaceSetNoAction();
-                        IDCardPresenter.getInstance().readCard();
+//                        IDCardPresenter.getInstance().readCard();
                         listener.onBitmap(FacePresenter.FaceResultType.Identify, global_bitmap);
                         listener.onBitmap(FacePresenter.FaceResultType.headphoto, scene_Bitmap);
                         listener.onText(FacePresenter.FaceResultType.Identify, String.valueOf((int) identifyRet.getScore()));
@@ -747,7 +750,7 @@ public class WYYFaceImpl2 implements IFace {
     }
 
     @Override
-    public boolean FaceRegInBackGround(ICardInfo cardInfo, Bitmap bitmap,String ps) {
+    public boolean FaceRegInBackGround(ICardInfo cardInfo, Bitmap bitmap, String ps) {
         return false;
     }
 
@@ -771,7 +774,7 @@ public class WYYFaceImpl2 implements IFace {
         int[] landmarks = faceInfo.landmarks;
         final IdentifyRet identifyRet = FaceApi.getInstance().identity(argb, rows, cols, landmarks, "1");
         if (identifyRet.getScore() < 80) {
-            Observable.timer(3, TimeUnit.SECONDS).observeOn(Schedulers.from(es))
+            Observable.timer(1, TimeUnit.SECONDS).observeOn(Schedulers.from(es))
                     .subscribe(new Consumer<Long>() {
                         @Override
                         public void accept(Long aLong) throws Exception {

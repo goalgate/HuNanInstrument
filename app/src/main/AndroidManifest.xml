@@ -113,8 +113,17 @@
         <activity android:name=".Activity_HLJYZB.FaceDetectActivity"
             android:launchMode="standard"
             android:theme="@style/ImageTranslucentTheme">
-
         </activity>
+
+        <activity
+            android:name=".Activity_LN.LNMainActivity"
+            android:launchMode="singleTask"
+            android:theme="@style/ImageTranslucentTheme"></activity>
+
+        <activity
+            android:name=".Activity_LN.LNRegActivity"
+            android:launchMode="standard"
+            android:theme="@style/ImageTranslucentTheme"></activity>
 
         <service android:name=".Service.HuNanService"></service>
         <service android:name=".Service.WYYService"></service>
@@ -122,6 +131,7 @@
         <service android:name=".Service.SXService"></service>
         <service android:name=".Service.AttendanceService"></service>
         <service android:name=".Service.HLJYZBService"></service>
+        <service android:name=".Activity_LN.LNService"></service>
 
         <receiver android:name=".BroadcastReceiver.BootBroadcastReceiver">
             <intent-filter>

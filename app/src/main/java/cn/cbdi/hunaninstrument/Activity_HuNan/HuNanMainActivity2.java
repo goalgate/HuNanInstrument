@@ -354,10 +354,10 @@ public class HuNanMainActivity2 extends BaseActivity implements NormalWindow.Opt
     public void onText(FacePresenter.FaceResultType resultType, String text) {
         if (resultType.equals(Identify_non)) {
             tv_info.setText(text);
-            sp.redLight();
-            if(VisitUpload){
-                fp.FaceGetAllView();
-            }
+//            sp.redLight();
+//            if(VisitUpload){
+//                fp.FaceGetAllView();
+//            }
         } else if (resultType.equals(Identify)) {
             faceScore = text;
         } else if (resultType.equals(IMG_MATCH_IMG_Score)) {

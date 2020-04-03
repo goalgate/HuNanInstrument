@@ -311,6 +311,11 @@ public class HuNanFaceImpl3 implements IFace {
 
 
     @Override
+    public Bitmap getBitmapData() {
+        return  global_bitmap;
+    }
+
+    @Override
     public void PreviewCease(CeaseListener ceaseListener) {
         Camera1PreviewManager.getInstance().stopPreview();
         Camera1PreviewManager.getInstance().release();
@@ -404,7 +409,7 @@ public class HuNanFaceImpl3 implements IFace {
 
             @Override
             public void onTip(int code, final String msg) {
-//                displayTip(msg);
+
             }
         });
     }

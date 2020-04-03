@@ -15,11 +15,11 @@ import javax.crypto.spec.DESKeySpec;
 
  */ 
 
-public class DESX { 
+public class DESX {
 
-private static   String PASSWORD_CRYPT_KEY = "MBKFInst"; 
+private static   String PASSWORD_CRYPT_KEY = "MBKFInst";
 
-private final static String DES = "DES"; 
+private final static String DES = "DES";
 
 public void setKey(String key)
 {

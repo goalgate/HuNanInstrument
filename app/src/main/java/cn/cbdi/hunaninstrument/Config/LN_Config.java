@@ -1,11 +1,11 @@
 package cn.cbdi.hunaninstrument.Config;
 
+import cn.cbdi.hunaninstrument.Activity_LN.LNService;
 import cn.cbdi.hunaninstrument.Function.Func_Face.mvp.Module.HuNanFaceImpl3;
 import cn.cbdi.hunaninstrument.Function.Func_Face.mvp.Module.IFace;
 import cn.cbdi.hunaninstrument.Function.Func_IDCard.mvp.presenter.IDCardPresenter;
-import cn.cbdi.hunaninstrument.Service.HeBeiService;
 
-public class HebeiConfig extends BaseConfig {
+public class LN_Config extends BaseConfig {
     @Override
     public boolean isFace() {
         return true;
@@ -23,28 +23,23 @@ public class HebeiConfig extends BaseConfig {
 
     @Override
     public String getDev_prefix() {
-        return "800100";
+        return "";
     }
 
     @Override
     public String getPersonInfoPrefix() {
-        return "da_gzmb_persionInfo?";
+        return "";
     }
 
     @Override
     public String getUpDataPrefix() {
-        return "da_gzmb_updata?";
+        return "";
     }
 
     @Override
     public String getServerId() {
-        return "http://211.90.38.12:8081/";
+        return "http://124.172.232.89:8050/daServer/";
     }
-
-//    @Override
-//    public String getServerId() {
-//        return "http://20.1.1.10:9090/";
-//    }
 
     @Override
     public int getCheckOnlineTime() {
@@ -63,7 +58,7 @@ public class HebeiConfig extends BaseConfig {
 
     @Override
     public String getProject() {
-        return "HeBeiFB";        //河北防爆
+        return "LN";        //辽宁剧毒
     }
 
     @Override
@@ -115,17 +110,17 @@ public class HebeiConfig extends BaseConfig {
 
     @Override
     public Class getServiceName() {
-        return HeBeiService.class;
+        return LNService.class;
     }
 
     @Override
     public String getMainActivity() {
-        return ".Activity_Hebei.HebeiMainActivity";
+        return ".Activity_LN.LNMainActivity";
     }
 
     @Override
     public String getAddActivity() {
-        return ".Activity_Hebei.HeBeiRegActivity";
+        return ".Activity_LN.LNRegActivity";
     }
 
     @Override
@@ -145,11 +140,11 @@ public class HebeiConfig extends BaseConfig {
 
     @Override
     public boolean XungengCanOpen() {
-        return true;
+        return false;
     }
 
     @Override
     public boolean isHongWai() {
-            return false;
+        return false;
     }
 }

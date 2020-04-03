@@ -277,6 +277,10 @@ public class YUNFaceImpl implements IFace {
 
     }
 
+    @Override
+    public Bitmap getBitmapData() {
+        return  global_bitmap;
+    }
 
     @Override
     public void PreviewCease(IFace.CeaseListener ceaseListener) {

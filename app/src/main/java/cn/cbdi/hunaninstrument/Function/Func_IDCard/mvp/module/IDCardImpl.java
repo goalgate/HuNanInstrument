@@ -34,7 +34,7 @@ public class IDCardImpl implements IIDCard {
             else if (AppInit.getMyManager().getAndroidDisplay().startsWith("rk3368")) {
                 cardInfo = new ReadCard2(115200,"/dev/ttyS0", m_onCardState);
             } else if (AppInit.getMyManager().getAndroidDisplay().startsWith("rk3288")) {
-                cardInfo = new BoyaCardAdapter(115200, "/dev/ttyS1", m_onCardState);
+                cardInfo = new ReadCard2(115200, "/dev/ttyS1", m_onCardState);
             }
             cardInfo.setDevType("rk3368");
             cdevfd = cardInfo.open();

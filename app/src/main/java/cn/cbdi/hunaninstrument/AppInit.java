@@ -11,10 +11,14 @@ import com.squareup.leakcanary.LeakCanary;
 import cn.cbdi.hunaninstrument.Config.Attendance_Config;
 import cn.cbdi.hunaninstrument.Config.BaseConfig;
 
+import cn.cbdi.hunaninstrument.Config.GDMB_Config;
 import cn.cbdi.hunaninstrument.Config.HLJYZB_Config;
 import cn.cbdi.hunaninstrument.Config.HLJ_Config;
+import cn.cbdi.hunaninstrument.Config.HebeiConfig;
 import cn.cbdi.hunaninstrument.Config.HuNanConfig;
+import cn.cbdi.hunaninstrument.Config.LN_Config;
 import cn.cbdi.hunaninstrument.Config.WYYConfig;
+import cn.cbdi.hunaninstrument.Config.WenZhouConfig;
 import cn.cbdi.hunaninstrument.Config.XAJD_Config;
 import cn.cbdi.hunaninstrument.Config.YUNPINGTAI_Config;
 
@@ -65,7 +69,7 @@ public class AppInit extends Application {
 
         instance = this;
 
-        InstrumentConfig = new HuNanConfig();
+        InstrumentConfig = new LN_Config();
 
 //        Lg.setIsSave(true);
 

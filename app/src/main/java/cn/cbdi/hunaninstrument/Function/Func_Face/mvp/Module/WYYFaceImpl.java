@@ -119,6 +119,12 @@ public class WYYFaceImpl implements IFace {
 
     Bitmap headphotoRGB;
 
+
+    @Override
+    public Bitmap getBitmapData() {
+        return  global_bitmap;
+    }
+
     @Override
     public void Face_to_IMG(Bitmap bitmap) {
         action = FacePresenter.FaceAction.Headphoto_MATCH_IMG;

@@ -11,6 +11,10 @@ import cn.cbdi.hunaninstrument.State.LockState.Lock;
 
 public class Door {
 
+    public static final String DoorOpenString = "AAAAAA000000000000";
+
+    public static final String DoorCloseString = "AAAAAA000001000000";
+
     public enum DoorState {
         State_Open, State_Close
     }
