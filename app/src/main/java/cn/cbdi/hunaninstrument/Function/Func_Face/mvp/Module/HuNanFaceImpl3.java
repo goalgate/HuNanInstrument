@@ -97,6 +97,7 @@ public class HuNanFaceImpl3 implements IFace {
 
     @Override
     public void FaceInit(Context context, FaceSDKManager.SdkInitListener listener) {
+        FaceApi.realese();
         DBManager.getInstance().init(context);
         FaceSDKManager.getInstance().init(context, listener);
         livnessTypeTip();
@@ -191,6 +192,7 @@ public class HuNanFaceImpl3 implements IFace {
     @Override
     public void FaceIdentify_model() {
         action = FacePresenter.FaceAction.Identify_Model;
+//        identityStatus = IDENTITY_IDLE;
     }
 
     @Override
@@ -220,7 +222,7 @@ public class HuNanFaceImpl3 implements IFace {
 
 
     @Override
-    public boolean FaceRegInBackGround(ICardInfo cardInfo, Bitmap bitmap,String ps) {
+    public boolean FaceRegInBackGround(ICardInfo cardInfo, Bitmap bitmap, String ps) {
         final User user = new User();
 //        final String uid = UUID.randomUUID().toString();
         user.setUserId(cardInfo.cardId());
@@ -248,7 +250,7 @@ public class HuNanFaceImpl3 implements IFace {
                 return false;
             }
         } else {
-            Lg.e("myface", "人脸特征解析失败");
+            Lg.e("myface", "人脸特征解析失败,ret = " + ret);
             return false;
         }
     }
@@ -312,7 +314,7 @@ public class HuNanFaceImpl3 implements IFace {
 
     @Override
     public Bitmap getBitmapData() {
-        return  global_bitmap;
+        return global_bitmap;
     }
 
     @Override
@@ -420,7 +422,7 @@ public class HuNanFaceImpl3 implements IFace {
         if (model == null) {
             return;
         }
-        livenessSuccess = (model.getRgbLivenessScore() > livnessScore) ? true : false;
+        livenessSuccess = (model.getRgbLivenessScore() >= livnessScore) ? true : false;
         if (livenessSuccess) {
             switch (action) {
                 case No_ACTION:

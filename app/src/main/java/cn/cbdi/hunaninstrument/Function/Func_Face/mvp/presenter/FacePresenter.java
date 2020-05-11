@@ -2,6 +2,7 @@ package cn.cbdi.hunaninstrument.Function.Func_Face.mvp.presenter;
 
 import android.content.Context;
 import android.graphics.Bitmap;
+import android.util.Log;
 import android.view.TextureView;
 
 import com.baidu.aip.entity.User;
@@ -103,7 +104,7 @@ public class FacePresenter {
             iFace.FaceIdentify();
 
         } catch (Exception e) {
-            ToastUtils.showLong(e.toString());
+            Log.e("Exception_FaceIdentify",e.toString());
         }
     }
 

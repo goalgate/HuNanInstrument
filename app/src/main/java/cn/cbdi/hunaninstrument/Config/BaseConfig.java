@@ -65,7 +65,12 @@ public abstract class BaseConfig {
 
     public abstract boolean XungengCanOpen();
 
+    public abstract boolean DoorMonitorChosen();
+
+    boolean hongWai = false;
+
     public abstract boolean isHongWai();
 
+    public abstract void setHongWai(boolean hongWai);
 
 }

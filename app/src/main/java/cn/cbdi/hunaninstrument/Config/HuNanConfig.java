@@ -122,7 +122,7 @@ public class HuNanConfig extends BaseConfig{
 
     @Override
     public String getMainActivity() {
-        return ".Activity_HuNan.HuNanMainActivity2";
+        return ".Activity_HuNan.HuNanMainActivity3";
     }
 
     @Override
@@ -151,7 +151,17 @@ public class HuNanConfig extends BaseConfig{
     }
 
     @Override
-    public boolean isHongWai() {
+    public boolean DoorMonitorChosen() {
         return false;
+    }
+
+    @Override
+    public boolean isHongWai() {
+        return hongWai;
+    }
+
+    @Override
+    public void setHongWai(boolean hongWai) {
+        this.hongWai= hongWai;
     }
 }

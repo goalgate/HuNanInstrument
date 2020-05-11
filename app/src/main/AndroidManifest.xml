@@ -11,10 +11,12 @@
         android:supportsRtl="true"
         android:theme="@style/AppTheme">
 
-        <!--<activity-->
-        <!--android:name=".Activity_HuNan.HuNanMainActivity"-->
-        <!--android:launchMode="singleTask"-->
-        <!--android:theme="@style/ImageTranslucentTheme"></activity>-->
+
+        <activity
+            android:name=".Activity_XinWeiGuan.XinWeiGuanMainActivity"
+            android:launchMode="standard"
+            android:theme="@style/ImageTranslucentTheme"></activity>
+
         <activity
             android:name=".Activity_HuNan.HuNanRegActivity"
             android:launchMode="standard"
@@ -25,6 +27,10 @@
             android:launchMode="standard"
             android:theme="@style/ImageTranslucentTheme"></activity>
 
+        <activity
+            android:name=".Activity_HuNan.HuNanMainActivity3"
+            android:launchMode="standard"
+            android:theme="@style/ImageTranslucentTheme"></activity>
 
         <activity
             android:name=".Activity_WYY.WYYMainActivity"
@@ -132,6 +138,7 @@
         <service android:name=".Service.AttendanceService"></service>
         <service android:name=".Service.HLJYZBService"></service>
         <service android:name=".Activity_LN.LNService"></service>
+        <service android:name=".Activity_XinWeiGuan.XinWeiGuanService"></service>
 
         <receiver android:name=".BroadcastReceiver.BootBroadcastReceiver">
             <intent-filter>

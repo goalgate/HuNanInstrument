@@ -144,9 +144,21 @@ public class HLJYZB_Config extends BaseConfig{
         return true;
     }
 
+
+    @Override
+    public boolean DoorMonitorChosen() {
+        return false;
+    }
+
     @Override
     public boolean isHongWai() {
-        return false;
+        return hongWai;
+    }
+
+    @Override
+    public void setHongWai(boolean hongWai) {
+        this.hongWai= hongWai;
+
     }
 }
 

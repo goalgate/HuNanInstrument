@@ -13,6 +13,7 @@ import cn.cbdi.hunaninstrument.Retrofit.ConnectApi.HebeiApi;
 import cn.cbdi.hunaninstrument.Retrofit.ConnectApi.LNApi;
 import cn.cbdi.hunaninstrument.Retrofit.ConnectApi.SXApi;
 import cn.cbdi.hunaninstrument.Retrofit.ConnectApi.WYYConnectApi;
+import cn.cbdi.hunaninstrument.Retrofit.ConnectApi.XinWeiGuanApi;
 import okhttp3.Interceptor;
 import okhttp3.OkHttpClient;
 import okhttp3.Request;
@@ -38,6 +39,8 @@ public class RetrofitGenerator {
 
     private static LNApi lnApi;
 
+    private static XinWeiGuanApi xinWeiGuanApi;
+
     private HNMBYApi testHnmbyApi;
 
     private WYYConnectApi testWyyConnectApi;
@@ -48,6 +51,9 @@ public class RetrofitGenerator {
 
     private LNApi testLNApi;
 
+    private  XinWeiGuanApi testXinWeiGuanApi;
+
+
     private static OkHttpClient.Builder okHttpClient = new OkHttpClient.Builder();
     private static Gson gson = new GsonBuilder()
             .setLenient()
@@ -56,7 +62,7 @@ public class RetrofitGenerator {
     private static <S> S createService(Class<S> serviceClass) {
         OkHttpClient client = okHttpClient.connectTimeout(15, TimeUnit.SECONDS)
                 .writeTimeout(30, TimeUnit.SECONDS)
-                .readTimeout(30, TimeUnit.SECONDS)
+                .readTimeout(20, TimeUnit.SECONDS)
                 .addInterceptor(new Interceptor() {
                     @Override
                     public Response intercept(Chain chain) throws IOException {
@@ -159,6 +165,20 @@ public class RetrofitGenerator {
             testLNApi = createService(LNApi.class, url);
         }
         return testLNApi;
+    }
+
+    public static XinWeiGuanApi getXinWeiGuanApi(){
+        if(xinWeiGuanApi == null){
+            xinWeiGuanApi = createService(XinWeiGuanApi.class);
+        }
+        return xinWeiGuanApi;
+    }
+
+    public XinWeiGuanApi getXinWeiGuanApi(String url) {
+        if (testXinWeiGuanApi == null) {
+            testXinWeiGuanApi = createService(XinWeiGuanApi.class, url);
+        }
+        return testXinWeiGuanApi;
     }
 
 }

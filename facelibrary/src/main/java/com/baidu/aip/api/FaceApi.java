@@ -55,6 +55,13 @@ public class FaceApi {
         return instance;
     }
 
+
+    public static synchronized void realese() {
+        if (instance != null) {
+            instance = null;
+        }
+    }
+
     public boolean groupAdd(Group group) {
         if (group == null || TextUtils.isEmpty(group.getGroupId())) {
             return false;

@@ -1,11 +1,12 @@
 package cn.cbdi.hunaninstrument.Config;
 
+import cn.cbdi.hunaninstrument.Activity_YZBYPT.YZBYPT_Service;
+import cn.cbdi.hunaninstrument.Function.Func_Face.mvp.Module.HuNanFaceImpl3;
 import cn.cbdi.hunaninstrument.Function.Func_Face.mvp.Module.IFace;
-import cn.cbdi.hunaninstrument.Function.Func_Face.mvp.Module.AttendanceFaceImpl;
 import cn.cbdi.hunaninstrument.Function.Func_IDCard.mvp.presenter.IDCardPresenter;
-import cn.cbdi.hunaninstrument.Service.WYYService;
 
-public class YUNPINGTAI_Config extends BaseConfig{
+public class YZBYPT_Config extends BaseConfig {
+
     @Override
     public boolean isFace() {
         return true;
@@ -37,11 +38,8 @@ public class YUNPINGTAI_Config extends BaseConfig{
     }
 
     @Override
-//    public String getServerId() {
-//        return "http://yzbyun.wxhxp.cn:81/";
-//    }
-        public String getServerId() {
-        return "http://192.168.11.21:8231/";
+    public String getServerId() {
+        return "http://yzbyun.wxhxp.cn:81/";
     }
 
     @Override
@@ -56,12 +54,12 @@ public class YUNPINGTAI_Config extends BaseConfig{
 
     @Override
     public String getName() {
-        return "剧毒库房采集器";
+        return "库房采集器";
     }
 
     @Override
     public String getProject() {
-        return "WYY";        //危运云平台
+        return "YZBYPT";        //易制爆云平台
     }
 
     @Override
@@ -112,31 +110,32 @@ public class YUNPINGTAI_Config extends BaseConfig{
 
     @Override
     public Class getServiceName() {
-        return WYYService.class;
+        return YZBYPT_Service.class;
     }
 
     @Override
     public String getMainActivity() {
-        return ".Activity_WYY.MainActivity";
+        return ".Activity_YZBYPT.YZBYPT_MainActivity";
     }
 
     @Override
     public String getAddActivity() {
-        return ".Activity_WYY.AddActvity";
+        return ".Activity_YZBYPT.YZBYPT_AddActvity";
     }
 
     @Override
     public boolean TouchScreen() {
-        return true;
+        return false;
     }
 
     @Override
     public boolean MenKongSuo() {
         return false;
     }
+
     @Override
     public IFace getFaceImpl() {
-        return new AttendanceFaceImpl();
+        return new HuNanFaceImpl3();
     }
 
     @Override
@@ -145,8 +144,17 @@ public class YUNPINGTAI_Config extends BaseConfig{
     }
 
     @Override
-    public boolean isHongWai() {
+    public boolean DoorMonitorChosen() {
         return false;
     }
 
+    @Override
+    public boolean isHongWai() {
+        return hongWai;
+    }
+
+    @Override
+    public void setHongWai(boolean hongWai) {
+        this.hongWai= hongWai;
+    }
 }

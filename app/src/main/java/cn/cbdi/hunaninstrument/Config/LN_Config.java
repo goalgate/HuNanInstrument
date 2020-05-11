@@ -144,7 +144,18 @@ public class LN_Config extends BaseConfig {
     }
 
     @Override
-    public boolean isHongWai() {
+    public boolean DoorMonitorChosen() {
         return false;
+    }
+
+    @Override
+    public boolean isHongWai() {
+        return hongWai;
+    }
+
+    @Override
+    public void setHongWai(boolean hongWai) {
+        this.hongWai= hongWai;
+
     }
 }

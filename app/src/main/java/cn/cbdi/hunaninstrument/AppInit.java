@@ -17,10 +17,12 @@ import cn.cbdi.hunaninstrument.Config.HLJ_Config;
 import cn.cbdi.hunaninstrument.Config.HebeiConfig;
 import cn.cbdi.hunaninstrument.Config.HuNanConfig;
 import cn.cbdi.hunaninstrument.Config.LN_Config;
+import cn.cbdi.hunaninstrument.Config.NMGYZB_Config;
 import cn.cbdi.hunaninstrument.Config.WYYConfig;
 import cn.cbdi.hunaninstrument.Config.WenZhouConfig;
 import cn.cbdi.hunaninstrument.Config.XAJD_Config;
-import cn.cbdi.hunaninstrument.Config.YUNPINGTAI_Config;
+import cn.cbdi.hunaninstrument.Config.XinWeiGuan_Config;
+
 
 import cn.cbdi.hunaninstrument.Tool.DataBase.GreendaoContext;
 import cn.cbdi.hunaninstrument.Tool.WZWManager;
@@ -69,7 +71,7 @@ public class AppInit extends Application {
 
         instance = this;
 
-        InstrumentConfig = new LN_Config();
+        InstrumentConfig = new HuNanConfig();
 
 //        Lg.setIsSave(true);
 

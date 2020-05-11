@@ -590,6 +590,13 @@ public class HuNanService extends Service implements ISwitchView {
 
 
     private void getPic() {
+//        if (config.getBoolean("wzwPic", true)) {
+//            mdaoSession.insertOrReplace(new Employer("441302199308100538", 1));
+//            Bitmap wzwbitmap = BitmapFactory.decodeResource(getResources(), R.drawable.wzw);
+//            if (FacePresenter.getInstance().FaceRegInBackGround(new CardInfoBean("441302199308100538", "王振文"), wzwbitmap, FileUtils.bitmapToBase64(wzwbitmap))) {
+//                Log.e("message", "王振文照片完成");
+//            }
+//        }
         logMen = new StringBuffer();
         count = 0;
         List<Employer> employers = mdaoSession.loadAll(Employer.class);

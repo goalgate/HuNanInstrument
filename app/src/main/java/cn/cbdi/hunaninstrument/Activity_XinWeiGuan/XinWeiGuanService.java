@@ -1,4 +1,4 @@
-package cn.cbdi.hunaninstrument.Service;
+package cn.cbdi.hunaninstrument.Activity_XinWeiGuan;
 
 import android.app.Service;
 import android.content.Intent;
@@ -25,15 +25,16 @@ import org.greenrobot.eventbus.EventBus;
 import org.greenrobot.eventbus.Subscribe;
 import org.greenrobot.eventbus.ThreadMode;
 import org.json.JSONArray;
+import org.json.JSONException;
 import org.json.JSONObject;
 
 import java.io.File;
+import java.io.IOException;
 import java.text.ParseException;
 import java.text.SimpleDateFormat;
 import java.util.Date;
 import java.util.HashMap;
 import java.util.List;
-import java.util.Map;
 import java.util.Random;
 import java.util.Timer;
 import java.util.TimerTask;
@@ -44,20 +45,21 @@ import cn.cbdi.hunaninstrument.AppInit;
 import cn.cbdi.hunaninstrument.Bean.Employer;
 import cn.cbdi.hunaninstrument.Bean.Keeper;
 import cn.cbdi.hunaninstrument.Bean.ReUploadBean;
-import cn.cbdi.hunaninstrument.Bean.ReUploadWithBsBean;
 import cn.cbdi.hunaninstrument.Config.WenZhouConfig;
 import cn.cbdi.hunaninstrument.EventBus.AlarmEvent;
-import cn.cbdi.hunaninstrument.EventBus.CloseDoorEvent;
 import cn.cbdi.hunaninstrument.EventBus.LockUpEvent;
 import cn.cbdi.hunaninstrument.EventBus.NetworkEvent;
 import cn.cbdi.hunaninstrument.EventBus.PassEvent;
 import cn.cbdi.hunaninstrument.EventBus.TemHumEvent;
 import cn.cbdi.hunaninstrument.Function.Func_Face.mvp.presenter.FacePresenter;
+import cn.cbdi.hunaninstrument.Function.Func_Switch.mvp.module.ISwitching;
 import cn.cbdi.hunaninstrument.Function.Func_Switch.mvp.module.SwitchImpl;
 import cn.cbdi.hunaninstrument.Function.Func_Switch.mvp.presenter.SwitchPresenter;
 import cn.cbdi.hunaninstrument.Function.Func_Switch.mvp.view.ISwitchView;
 import cn.cbdi.hunaninstrument.R;
 import cn.cbdi.hunaninstrument.Retrofit.RetrofitGenerator;
+import cn.cbdi.hunaninstrument.Service.HeBeiService;
+import cn.cbdi.hunaninstrument.Service.HuNanService;
 import cn.cbdi.hunaninstrument.State.DoorState.Door;
 import cn.cbdi.hunaninstrument.State.LockState.Lock;
 import cn.cbdi.hunaninstrument.Tool.FileUtils;
@@ -68,7 +70,7 @@ import cn.cbdi.hunaninstrument.Tool.Update.SignUtils;
 import cn.cbdi.hunaninstrument.Tool.Update.UpdateConstant;
 import cn.cbdi.hunaninstrument.greendao.DaoSession;
 import cn.cbdi.hunaninstrument.greendao.ReUploadBeanDao;
-import cn.cbdi.hunaninstrument.greendao.ReUploadWithBsBeanDao;
+
 import cn.cbdi.log.Lg;
 import io.reactivex.Observable;
 import io.reactivex.Observer;
@@ -78,19 +80,18 @@ import io.reactivex.disposables.Disposable;
 import io.reactivex.schedulers.Schedulers;
 import okhttp3.ResponseBody;
 
+import static cn.cbdi.hunaninstrument.State.DoorState.Door.DoorState.State_Close;
+import static cn.cbdi.hunaninstrument.State.DoorState.Door.DoorState.State_Open;
 import static cn.cbdi.hunaninstrument.Tool.Update.UpdateConstant.MANUAL_PATH;
 import static cn.cbdi.hunaninstrument.Tool.Update.UpdateConstant.SIGN_MD5;
 
-public class HeBeiService extends Service implements ISwitchView {
-
-    private String TAG = HuNanService.class.getSimpleName();
+public class XinWeiGuanService extends Service implements ISwitchView {
+    private String TAG = XinWeiGuanService.class.getSimpleName();
 
     SimpleDateFormat formatter = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss");
 
     SimpleDateFormat url_timeformatter = new SimpleDateFormat("yyyy-MM-dd%20HH:mm:ss");
 
-
-    HashMap<String, String> paramsMap = new HashMap<String, String>();
 
     SwitchPresenter sp = SwitchPresenter.getInstance();
 
@@ -124,7 +125,6 @@ public class HeBeiService extends Service implements ISwitchView {
         Log.e("Md5", SignUtils.getSignMd5Str(AppInit.getInstance()));
         sp.SwitchPresenterSetView(this);
         EventBus.getDefault().register(this);
-        mapInit();
         CopySourceFile();
         autoUpdate();
         Observable.timer(10, TimeUnit.SECONDS).subscribeOn(Schedulers.io())
@@ -136,9 +136,7 @@ public class HeBeiService extends Service implements ISwitchView {
                 .subscribe((l) -> reboot());
         Observable.interval(0, 30, TimeUnit.SECONDS).observeOn(Schedulers.io())
                 .subscribe((l) -> testNet());
-        Observable.interval(0, AppInit.getInstrumentConfig().getCheckOnlineTime(), TimeUnit.MINUTES)
-                .observeOn(Schedulers.io())
-                .subscribe((l) -> checkOnline());
+
         if (AppInit.getInstrumentConfig().isTemHum()) {
             Observable.interval(0, 5, TimeUnit.SECONDS).observeOn(AndroidSchedulers.mainThread())
                     .subscribe((l) -> sp.readHum());
@@ -158,29 +156,32 @@ public class HeBeiService extends Service implements ISwitchView {
     public void onGetPassEvent(PassEvent event) {
         Lock.getInstance().setState(Lock.LockState.STATE_Unlock);
         Lock.getInstance().doNext();
-        Observable.timer(120, TimeUnit.SECONDS).subscribeOn(Schedulers.newThread())
-                .subscribe(new Observer<Long>() {
-                    @Override
-                    public void onSubscribe(Disposable d) {
-                        unlock_noOpen = d;
-                    }
+        if (!AppInit.getInstrumentConfig().isHongWai()) {
 
-                    @Override
-                    public void onNext(Long aLong) {
-                        Lock.getInstance().setState(Lock.LockState.STATE_Lockup);
-                        sp.buzz(SwitchImpl.Hex.H2);
-                        EventBus.getDefault().post(new LockUpEvent());
-                    }
+            Observable.timer(120, TimeUnit.SECONDS).subscribeOn(Schedulers.newThread())
+                    .subscribe(new Observer<Long>() {
+                        @Override
+                        public void onSubscribe(Disposable d) {
+                            unlock_noOpen = d;
+                        }
 
-                    @Override
-                    public void onError(Throwable e) {
+                        @Override
+                        public void onNext(Long aLong) {
+                            Lock.getInstance().setState(Lock.LockState.STATE_Lockup);
+                            sp.buzz(SwitchImpl.Hex.H2);
+                            EventBus.getDefault().post(new LockUpEvent());
+                        }
 
-                    }
+                        @Override
+                        public void onError(Throwable e) {
 
-                    @Override
-                    public void onComplete() {
-                    }
-                });
+                        }
+
+                        @Override
+                        public void onComplete() {
+                        }
+                    });
+        }
     }
 
     @Override
@@ -197,158 +198,115 @@ public class HeBeiService extends Service implements ISwitchView {
 
     @Override
     public void onSwitchingText(String value) {
-//        if (value.startsWith("AAAAAA")) {
-//            if ((Last_Value == null || Last_Value.equals(""))) {
-//                Last_Value = value;
-//            }
-//            if (!value.equals(Last_Value)) {
-//                Last_Value = value;
-//                if (Last_Value.equals("AAAAAA000000000000")) {
-//                    if (Lock.getInstance().getState().equals(Lock.LockState.STATE_Lockup)) {
-//                        Lock.getInstance().doNext();
-//                        alarmRecord();
-//                    }
-//                }
-//            }
-//        }
-        Lg.e("switchValue", value);
-        if ((Last_Value == null || Last_Value.equals(""))) {
+        if (AppInit.getInstrumentConfig().isHongWai()) {
             if (value.startsWith("AAAAAA")) {
-                Last_Value = value;
-                if (value.equals("AAAAAA000000000000")) {
-                    Door.getInstance().setMdoorState(Door.DoorState.State_Open);
-                    Door.getInstance().doNext();
-                    alarmRecord();
+                if ((Last_Value == null || Last_Value.equals(""))) {
+                    Last_Value = value;
                 }
-            }
-        } else {
-            if (value.startsWith("AAAAAA") && value.endsWith("000000")) {
                 if (!value.equals(Last_Value)) {
                     Last_Value = value;
                     if (Last_Value.equals("AAAAAA000000000000")) {
-                        if (Door.getInstance().getMdoorState().equals(Door.DoorState.State_Close)) {
-                            Door.getInstance().setMdoorState(Door.DoorState.State_Open);
-                            Door.getInstance().doNext();
-                            if (Lock.getInstance().getState().equals(Lock.LockState.STATE_Lockup)) {
-                                alarmRecord();
-                            }
-                        }
-                        if (unlock_noOpen != null) {
-                            unlock_noOpen.dispose();
-                        }
-                        if (rx_delay != null) {
-                            rx_delay.dispose();
-                        }
-                    } else if (Last_Value.equals("AAAAAA000001000000")) {
-                        if (Lock.getInstance().getState().equals(Lock.LockState.STATE_Unlock)) {
-                            final String closeDoorTime = formatter.format(new Date(System.currentTimeMillis()));
-                            Observable.timer(10, TimeUnit.SECONDS).subscribeOn(Schedulers.newThread())
-                                    .subscribe(new Observer<Long>() {
-                                        @Override
-                                        public void onSubscribe(Disposable d) {
-                                            rx_delay = d;
-                                        }
-
-                                        @Override
-                                        public void onNext(Long aLong) {
-                                            Lock.getInstance().setState(Lock.LockState.STATE_Lockup);
-                                            Door.getInstance().setMdoorState(Door.DoorState.State_Close);
-                                            sp.buzz(SwitchImpl.Hex.H2);
-                                            if (unlock_noOpen != null) {
-                                                unlock_noOpen.dispose();
-                                            }
-                                            CloseDoorRecord(closeDoorTime);
-                                            EventBus.getDefault().post(new LockUpEvent());
-                                        }
-
-                                        @Override
-                                        public void onError(Throwable e) {
-
-                                        }
-
-                                        @Override
-                                        public void onComplete() {
-
-                                        }
-                                    });
-                        } else {
-                            Door.getInstance().setMdoorState(Door.DoorState.State_Close);
+                        if (Lock.getInstance().getState().equals(Lock.LockState.STATE_Lockup)) {
+                            Lock.getInstance().doNext();
+                            alarmRecord();
                         }
                     }
                 }
+            }
+        } else {
+            Lg.e("switchValue", value);
+            if ((Last_Value == null || Last_Value.equals(""))) {
+                if (value.startsWith("AAAAAA")) {
+                    Last_Value = value;
+                    if (value.equals("AAAAAA000000000000")) {
+                        Door.getInstance().setMdoorState(State_Open);
+                        Door.getInstance().doNext();
+                        alarmRecord();
+                    }
+                }
             } else {
-                if (value.startsWith("BBBBBB") && value.endsWith("C1EF")) {
-                    THSwitchValue = value;
+                if (value.startsWith("AAAAAA") && value.endsWith("000000")) {
+                    if (!value.equals(Last_Value)) {
+                        Last_Value = value;
+                        if (Last_Value.equals("AAAAAA000000000000")) {
+                            if (Door.getInstance().getMdoorState().equals(State_Close)) {
+                                Door.getInstance().setMdoorState(State_Open);
+                                Door.getInstance().doNext();
+                                if (Lock.getInstance().getState().equals(Lock.LockState.STATE_Lockup)) {
+                                    alarmRecord();
+                                }
+                            }
+                            if (unlock_noOpen != null) {
+                                unlock_noOpen.dispose();
+                            }
+                            if (rx_delay != null) {
+                                rx_delay.dispose();
+                            }
+                        } else if (Last_Value.equals("AAAAAA000001000000")) {
+                            if (Lock.getInstance().getState().equals(Lock.LockState.STATE_Unlock)) {
+                                final String closeDoorTime = formatter.format(new Date(System.currentTimeMillis()));
+                                Observable.timer(10, TimeUnit.SECONDS).subscribeOn(Schedulers.newThread())
+                                        .subscribe(new Observer<Long>() {
+                                            @Override
+                                            public void onSubscribe(Disposable d) {
+                                                rx_delay = d;
+                                            }
+
+                                            @Override
+                                            public void onNext(Long aLong) {
+                                                Lock.getInstance().setState(Lock.LockState.STATE_Lockup);
+                                                Door.getInstance().setMdoorState(State_Close);
+                                                sp.buzz(SwitchImpl.Hex.H2);
+                                                if (unlock_noOpen != null) {
+                                                    unlock_noOpen.dispose();
+                                                }
+                                                CloseDoorRecord(closeDoorTime);
+                                                EventBus.getDefault().post(new LockUpEvent());
+                                            }
+
+                                            @Override
+                                            public void onError(Throwable e) {
+
+                                            }
+
+                                            @Override
+                                            public void onComplete() {
+
+                                            }
+                                        });
+                            } else {
+                                Door.getInstance().setMdoorState(State_Close);
+                            }
+                        }
+                    }
+                } else {
+                    if (value.startsWith("BBBBBB") && value.endsWith("C1EF")) {
+                        THSwitchValue = value;
+                    }
                 }
             }
         }
+
     }
 
     private Handler handler = new Handler();
 
     private void reUpload() {
-        ReUploadWithBsBeanDao reUploadWithBsBeanDao = mdaoSession.getReUploadWithBsBeanDao();
-        List<ReUploadWithBsBean> list = reUploadWithBsBeanDao.queryBuilder().list();
-        for (final ReUploadWithBsBean bean : list) {
-            if (bean.getContent() != null) {
-                if (bean.getType_patrol() != 0) {
-                    connectionUtil.post_SingleThread(config.getString("ServerId") + AppInit.getInstrumentConfig().getUpDataPrefix() + bean.getMethod() + "&daid=" + config.getString("daid") + "&checkType=" + bean.getType_patrol(),
-                            config.getString("ServerId"), bean.getContent(), new ServerConnectionUtil.Callback() {
-                                @Override
-                                public void onResponse(String response) {
-                                    if (response != null) {
-                                        if (response.startsWith("true")) {
-                                            Log.e("程序执行记录", "已执行删除" + bean.getMethod());
-                                            reUploadWithBsBeanDao.delete(bean);
-                                        }
-                                    }
-                                }
-                            });
-                } else {
-                    connectionUtil.post_SingleThread(config.getString("ServerId") + AppInit.getInstrumentConfig().getUpDataPrefix() + bean.getMethod() + "&daid=" + config.getString("daid"),
-                            config.getString("ServerId"), bean.getContent(), new ServerConnectionUtil.Callback() {
-                                @Override
-                                public void onResponse(String response) {
-                                    if (response != null) {
-                                        if (response.startsWith("true")) {
-                                            Log.e("程序执行记录", "已执行删除" + bean.getMethod());
-                                            reUploadWithBsBeanDao.delete(bean);
-                                        }
-                                    }
-                                }
-                            });
-                }
-            } else {
-                connectionUtil.post_SingleThread(config.getString("ServerId") + AppInit.getInstrumentConfig().getUpDataPrefix() + bean.getMethod() + "&daid=" + config.getString("daid"),
-                        config.getString("ServerId"), new ServerConnectionUtil.Callback() {
-                            @Override
-                            public void onResponse(String response) {
-                                if (response != null) {
-                                    if (response.startsWith("true")) {
-                                        Log.e("程序执行记录", "已执行删除" + bean.getMethod());
-                                        reUploadWithBsBeanDao.delete(bean);
-                                    }
-                                }
-                            }
-                        });
-            }
-        }
-        ReUploadBeanDao reUploadBeanDao = mdaoSession.getReUploadBeanDao();
-        List<ReUploadBean> list1 = reUploadBeanDao.queryBuilder().list();
-        for (final ReUploadBean bean : list1) {
-//            RetrofitGenerator.getHebeiApi().withDataRs(bean.getMethod(), config.getString("key"), bean.getContent())
-            RetrofitGenerator.getHebeiApi().faceUpload("faceUpload", paramsMap.get("daid"), paramsMap.get("pass"), bean.getContent())
+        final ReUploadBeanDao reUploadBeanDao = mdaoSession.getReUploadBeanDao();
+        List<ReUploadBean> list = reUploadBeanDao.queryBuilder().list();
+        for (final ReUploadBean bean : list) {
+            RetrofitGenerator.getXinWeiGuanApi().withDataRr(bean.getMethod(), config.getString("key"), bean.getContent())
                     .subscribeOn(Schedulers.single())
                     .unsubscribeOn(Schedulers.single())
                     .observeOn(Schedulers.single())
-                    .subscribe(new Observer<String>() {
+                    .subscribe(new Observer<ResponseBody>() {
                         @Override
                         public void onSubscribe(@NonNull Disposable d) {
 
                         }
 
                         @Override
-                        public void onNext(@NonNull String s) {
+                        public void onNext(@NonNull ResponseBody responseBody) {
                             Log.e("信息提示", bean.getMethod());
                             reUploadBeanDao.delete(bean);
 
@@ -434,13 +392,12 @@ public class HeBeiService extends Service implements ISwitchView {
     }
 
     private void CopySourceFile() {
-//        if (config.getBoolean("CopySourceFileVer1", true)) {
         if (AppUtils.getAppVersionName().equals("1.1") ||
                 (AppUtils.getAppVersionName().equals("1.4") &&
                         AppInit.getInstrumentConfig().getClass().getName().equals(WenZhouConfig.class.getName()))) {
             Observable.create((emitter) -> {
                 emitter.onNext(ApkUtils.copyfile(
-                        new File(ApkUtils.getSourceApkPath(HeBeiService.this, UpdateConstant.TEST_PACKAGENAME)),
+                        new File(ApkUtils.getSourceApkPath(XinWeiGuanService.this, UpdateConstant.TEST_PACKAGENAME)),
                         new File(UpdateConstant.ORIGINAL_APK_PATH),
                         true));
             })
@@ -463,29 +420,32 @@ public class HeBeiService extends Service implements ISwitchView {
     }
 
     private void syncData() {
-        syncFace();
-        HashMap<String, String> map = (HashMap<String, String>) paramsMap.clone();
-        map.put("dataType", "updatePersion");
-        map.put("persionType", String.valueOf(3));
-        RetrofitGenerator.getHebeiApi().GeneralPersionInfo(map)
+        final JSONObject obj = new JSONObject();
+        try {
+            obj.put("personType", "2");
+        } catch (JSONException e) {
+            e.printStackTrace();
+        }
+        RetrofitGenerator.getXinWeiGuanApi().withDataRr("updatePerson", config.getString("key"), obj.toString())
                 .subscribeOn(Schedulers.io())
                 .unsubscribeOn(Schedulers.io())
                 .observeOn(AndroidSchedulers.mainThread())
-                .subscribe(new Observer<String>() {
+                .subscribe(new Observer<ResponseBody>() {
                     @Override
                     public void onSubscribe(Disposable d) {
 
                     }
 
                     @Override
-                    public void onNext(String s) {
+                    public void onNext(ResponseBody responseBody) {
                         try {
-                            Log.e("persionType = 3", s);
+                            String s = ParsingTool.extractMainContent(responseBody);
+
                             mdaoSession.getEmployerDao().deleteAll();
                             String[] idList = s.split("\\|");
                             if (idList.length > 0) {
                                 for (String id : idList) {
-                                    mdaoSession.insertOrReplace(new Employer(id, 3));
+                                    mdaoSession.insertOrReplace(new Employer(id, 2));
                                 }
                             }
                         } catch (Exception e) {
@@ -500,25 +460,31 @@ public class HeBeiService extends Service implements ISwitchView {
 
                     @Override
                     public void onComplete() {
-                        map.put("persionType", String.valueOf(2));
-                        RetrofitGenerator.getHebeiApi().GeneralPersionInfo(map)
+                        try {
+                            obj.put("personType", "1");
+                        } catch (JSONException e) {
+                            e.printStackTrace();
+                        }
+
+                        RetrofitGenerator.getXinWeiGuanApi().withDataRr("updatePerson", config.getString("key"), obj.toString())
                                 .subscribeOn(Schedulers.io())
                                 .unsubscribeOn(Schedulers.io())
                                 .observeOn(AndroidSchedulers.mainThread())
-                                .subscribe(new Observer<String>() {
+                                .subscribe(new Observer<ResponseBody>() {
                                     @Override
                                     public void onSubscribe(Disposable d) {
 
                                     }
 
                                     @Override
-                                    public void onNext(String s) {
+                                    public void onNext(ResponseBody responseBody) {
                                         try {
-                                            Log.e("persionType = 2", s);
+                                            String s = ParsingTool.extractMainContent(responseBody);
+
                                             String[] idList = s.split("\\|");
                                             if (idList.length > 0) {
                                                 for (String id : idList) {
-                                                    mdaoSession.insertOrReplace(new Employer(id, 2));
+                                                    mdaoSession.insertOrReplace(new Employer(id, 1));
                                                 }
                                             }
                                         } catch (Exception e) {
@@ -533,56 +499,21 @@ public class HeBeiService extends Service implements ISwitchView {
 
                                     @Override
                                     public void onComplete() {
-                                        map.put("persionType", String.valueOf(1));
-                                        RetrofitGenerator.getHebeiApi().GeneralPersionInfo(map)
-                                                .subscribeOn(Schedulers.io())
-                                                .unsubscribeOn(Schedulers.io())
-                                                .observeOn(AndroidSchedulers.mainThread())
-                                                .subscribe(new Observer<String>() {
-                                                    @Override
-                                                    public void onSubscribe(Disposable d) {
+                                        try {
+                                            List<Keeper> keeperList = mdaoSession.getKeeperDao().loadAll();
+                                            for (Keeper keeper : keeperList) {
+                                                try {
+                                                    mdaoSession.queryRaw(Employer.class, "where CARD_ID = '" + keeper.getCardID() + "'").get(0);
+                                                } catch (IndexOutOfBoundsException e) {
+                                                    mdaoSession.delete(keeper);
+                                                    FaceApi.getInstance().userDelete(keeper.getFaceUserId(), "1");
+                                                }
+                                            }
+                                        } catch (SQLiteException e) {
+                                            Lg.e(TAG, e.toString());
+                                        }
+                                        getPic();
 
-                                                    }
-
-                                                    @Override
-                                                    public void onNext(String s) {
-                                                        try {
-                                                            Log.e("persionType = 1", s);
-                                                            String[] idList = s.split("\\|");
-                                                            if (idList.length > 0) {
-                                                                for (String id : idList) {
-                                                                    mdaoSession.insertOrReplace(new Employer(id, 1));
-                                                                }
-                                                            }
-                                                        } catch (Exception e) {
-                                                            e.printStackTrace();
-                                                        }
-                                                    }
-
-                                                    @Override
-                                                    public void onError(Throwable e) {
-
-                                                    }
-
-                                                    @Override
-                                                    public void onComplete() {
-                                                        try {
-                                                            List<Keeper> keeperList = mdaoSession.getKeeperDao().loadAll();
-                                                            for (Keeper keeper : keeperList) {
-                                                                try {
-                                                                    mdaoSession.queryRaw(Employer.class, "where CARD_ID = '" + keeper.getCardID() + "'").get(0);
-                                                                } catch (IndexOutOfBoundsException e) {
-                                                                    mdaoSession.delete(keeper);
-                                                                    FaceApi.getInstance().userDelete(keeper.getFaceUserId(), "1");
-                                                                }
-                                                            }
-                                                        } catch (SQLiteException e) {
-                                                            Lg.e(TAG, e.toString());
-                                                        }
-                                                        getPic();
-
-                                                    }
-                                                });
                                     }
                                 });
                     }
@@ -606,7 +537,7 @@ public class HeBeiService extends Service implements ISwitchView {
         List<Employer> employers = mdaoSession.loadAll(Employer.class);
         if (employers.size() > 0) {
             for (Employer employer : employers) {
-                RetrofitGenerator.getHebeiApi().recentPicNew("recentPic", paramsMap.get("daid"), paramsMap.get("pass"), employer.getCardID())
+                RetrofitGenerator.getXinWeiGuanApi().queryPersonInfo("recentPic", config.getString("key"), employer.getCardID())
                         .subscribeOn(Schedulers.single())
                         .unsubscribeOn(Schedulers.single())
                         .observeOn(Schedulers.single())
@@ -620,8 +551,8 @@ public class HeBeiService extends Service implements ISwitchView {
                             public void onNext(ResponseBody responseBody) {
                                 try {
                                     count++;
-                                    JSONObject jsonObject = new JSONObject(responseBody.string());
-
+                                    String s = ParsingTool.extractMainContent(responseBody);
+                                    JSONObject jsonObject = new JSONObject(s);
                                     String result = jsonObject.getString("result");
                                     if (result.equals("true")) {
                                         String ps = jsonObject.getString("returnPic");
@@ -694,91 +625,21 @@ public class HeBeiService extends Service implements ISwitchView {
         }
     }
 
-    private void syncFace() {
-        if (config.getBoolean("syncFace", true)) {
-            RetrofitGenerator.getHebeiApi().getAllFace("getAllFace", paramsMap.get("daid"), paramsMap.get("pass"))
-                    .subscribeOn(Schedulers.io())
-                    .unsubscribeOn(Schedulers.io())
-                    .observeOn(AndroidSchedulers.mainThread())
-                    .subscribe(new Observer<String>() {
-                        @Override
-                        public void onSubscribe(Disposable d) {
-
-                        }
-
-                        @Override
-                        public void onNext(String s) {
-                            try {
-                                JSONObject data = new JSONObject(s);
-                                if (("true").equals(data.getString("result"))) {
-                                    JSONArray jsonArray = data.getJSONArray("returnData");
-                                    if (null != jsonArray && jsonArray.length() != 0) {
-                                        for (int i = 0; i < jsonArray.length(); i++) {
-                                            JSONObject item = jsonArray.getJSONObject(i);
-                                            Keeper keeper = new Keeper();
-                                            keeper.setCardID(item.getString("cardID"));
-                                            keeper.setName(item.getString("name"));
-                                            byte[] faceFeature = Base64.decode(item.getString("feature"), Base64.DEFAULT);
-                                            keeper.setFeature(faceFeature);
-                                            mdaoSession.insertOrReplace(keeper);
-                                            User user = new User();
-                                            user.setUserId(keeper.getCardID());
-                                            user.setUserInfo(keeper.getName());
-                                            user.setGroupId("1");
-                                            Feature feature = new Feature();
-                                            feature.setGroupId("1");
-                                            feature.setUserId(keeper.getCardID());
-                                            feature.setFeature(keeper.getFeature());
-                                            user.getFeatureList().add(feature);
-                                            FaceApi.getInstance().userAdd(user);
-                                        }
-                                    }
-
-                                }
-                            } catch (Exception e) {
-                                Lg.e(TAG, e.toString());
-                            }
-
-                        }
-
-
-                        @Override
-                        public void onError(Throwable e) {
-
-                        }
-
-                        @Override
-                        public void onComplete() {
-                            FacePresenter.getInstance().FaceIdentifyReady();
-                            config.put("syncFace", false);
-                        }
-                    });
-        }
-    }
-
-
-    private void mapInit() {
-        SafeCheck safeCheck = new SafeCheck();
-        safeCheck.setURL(config.getString("ServerId"));
-        paramsMap.put("daid", config.getString("daid"));
-        paramsMap.put("pass", safeCheck.getPass(config.getString("daid")));
-    }
 
     private void testNet() {
-        HashMap<String, String> map = (HashMap<String, String>) paramsMap.clone();
-        map.put("dataType", "test");
-        RetrofitGenerator.getHebeiApi().GeneralUpdata(map)
+        RetrofitGenerator.getXinWeiGuanApi().noData("testNet", config.getString("key"))
                 .subscribeOn(Schedulers.io())
                 .unsubscribeOn(Schedulers.io())
                 .observeOn(AndroidSchedulers.mainThread())
-                .subscribe(new Observer<String>() {
+                .subscribe(new Observer<ResponseBody>() {
                     @Override
                     public void onSubscribe(Disposable d) {
 
                     }
 
                     @Override
-                    public void onNext(String s) {
+                    public void onNext(ResponseBody responseBody) {
+                        String s = ParsingTool.extractMainContent(responseBody);
                         if (s.startsWith("true")) {
                             EventBus.getDefault().post(new NetworkEvent(true));
                         } else {
@@ -799,59 +660,32 @@ public class HeBeiService extends Service implements ISwitchView {
                 });
     }
 
-    private void checkOnline() {
-        HashMap<String, String> map = (HashMap<String, String>) paramsMap.clone();
-        map.put("dataType", "checkOnline");
-        RetrofitGenerator.getHebeiApi().GeneralUpdata(map)
-                .subscribeOn(Schedulers.io())
-                .unsubscribeOn(Schedulers.io())
-                .observeOn(AndroidSchedulers.mainThread())
-                .subscribe(new Observer<String>() {
-                    @Override
-                    public void onSubscribe(Disposable d) {
-
-                    }
-
-                    @Override
-                    public void onNext(String s) {
-
-
-                    }
-
-                    @Override
-                    public void onError(Throwable e) {
-
-                    }
-
-                    @Override
-                    public void onComplete() {
-
-                    }
-                });
-    }
 
     private void CloseDoorRecord(String time) {
-        HashMap<String, String> map = (HashMap<String, String>) paramsMap.clone();
-        map.put("dataType", "closeDoor");
-        map.put("time", time);
-        RetrofitGenerator.getHebeiApi().GeneralUpdata(map)
+        JSONObject CloseDoorRecordJson = new JSONObject();
+        try {
+            CloseDoorRecordJson.put("datetime", time);
+        } catch (JSONException e) {
+            e.printStackTrace();
+        }
+        RetrofitGenerator.getXinWeiGuanApi().withDataRr("closeDoorRecord", config.getString("key"), CloseDoorRecordJson.toString())
                 .subscribeOn(Schedulers.io())
                 .unsubscribeOn(Schedulers.io())
                 .observeOn(AndroidSchedulers.mainThread())
-                .subscribe(new Observer<String>() {
+                .subscribe(new Observer<ResponseBody>() {
                     @Override
                     public void onSubscribe(Disposable d) {
 
                     }
 
                     @Override
-                    public void onNext(String s) {
+                    public void onNext(ResponseBody responseBody) {
 
                     }
 
                     @Override
                     public void onError(Throwable e) {
-                        mdaoSession.insert(new ReUploadWithBsBean(null, "dataType=closeDoor" + "&time=" + url_timeformatter.format(new Date(System.currentTimeMillis())), null, 0));
+                        mdaoSession.insert(new ReUploadBean(null, "closeDoorRecord", CloseDoorRecordJson.toString()));
 
                     }
 
@@ -864,28 +698,32 @@ public class HeBeiService extends Service implements ISwitchView {
 
     private void alarmRecord() {
         EventBus.getDefault().post(new AlarmEvent());
-        HashMap<String, String> map = (HashMap<String, String>) paramsMap.clone();
-        map.put("dataType", "alarm");
-        map.put("alarmType", String.valueOf(1));
-        map.put("time", formatter.format(new Date(System.currentTimeMillis())));
-        RetrofitGenerator.getHebeiApi().GeneralUpdata(map)
+        final JSONObject alarmRecordJson = new JSONObject();
+        try {
+            alarmRecordJson.put("datetime", TimeUtils.getNowString());// 报警时间
+            alarmRecordJson.put("alarmType", String.valueOf(1));  //报警类型
+            alarmRecordJson.put("alarmValue", String.valueOf(0));  //报警值
+        } catch (JSONException e) {
+            e.printStackTrace();
+        }
+        RetrofitGenerator.getXinWeiGuanApi().withDataRr("alarmRecord", config.getString("key"), alarmRecordJson.toString())
                 .subscribeOn(Schedulers.io())
                 .unsubscribeOn(Schedulers.io())
                 .observeOn(AndroidSchedulers.mainThread())
-                .subscribe(new Observer<String>() {
+                .subscribe(new Observer<ResponseBody>() {
                     @Override
                     public void onSubscribe(Disposable d) {
 
                     }
 
                     @Override
-                    public void onNext(String s) {
+                    public void onNext(ResponseBody responseBody) {
 
                     }
 
                     @Override
                     public void onError(Throwable e) {
-                        mdaoSession.insert(new ReUploadWithBsBean(null, "dataType=alarm&alarmType=1" + "&time=" + url_timeformatter.format(new Date(System.currentTimeMillis())), null, 0));
+                        mdaoSession.insert(new ReUploadBean(null, "alarmRecord", alarmRecordJson.toString()));
                     }
 
                     @Override
@@ -897,23 +735,32 @@ public class HeBeiService extends Service implements ISwitchView {
     }
 
     private void StateRecord() {
-        HashMap<String, String> map = (HashMap<String, String>) paramsMap.clone();
-        map.put("dataType", "temHum");
-        map.put("tem", String.valueOf(last_mTemperature));
-        map.put("hum", String.valueOf(last_mHumidity));
-        map.put("time", formatter.format(new Date(System.currentTimeMillis())));
-        RetrofitGenerator.getHebeiApi().GeneralUpdata(map)
+        JSONObject jsonObject = new JSONObject();
+        try {
+            jsonObject.put("datetime", TimeUtils.getNowString());
+            jsonObject.put("switching", THSwitchValue);
+            jsonObject.put("temperature", last_mTemperature);
+            jsonObject.put("humidity", last_mHumidity);
+            if (Door.getInstance().getMdoorState().equals(State_Open)) {
+                jsonObject.put("state", "0");
+            } else {
+                jsonObject.put("state", "1");
+            }
+        } catch (JSONException e) {
+            e.printStackTrace();
+        }
+        RetrofitGenerator.getXinWeiGuanApi().withDataRr("stateRecord", config.getString("key"), jsonObject.toString())
                 .subscribeOn(Schedulers.io())
                 .unsubscribeOn(Schedulers.io())
                 .observeOn(AndroidSchedulers.mainThread())
-                .subscribe(new Observer<String>() {
+                .subscribe(new Observer<ResponseBody>() {
                     @Override
                     public void onSubscribe(Disposable d) {
 
                     }
 
                     @Override
-                    public void onNext(String s) {
+                    public void onNext(ResponseBody responseBody) {
 
                     }
 
@@ -954,8 +801,6 @@ public class HeBeiService extends Service implements ISwitchView {
                     autoUpdate();
                     syncData();
                     reUpload();
-//                    reboot();
-//                    AppInit.getMyManager().reboot();
                     Log.e("信息提示", "关机了");
                 }
             };
@@ -964,4 +809,5 @@ public class HeBeiService extends Service implements ISwitchView {
             e.printStackTrace();
         }
     }
+
 }

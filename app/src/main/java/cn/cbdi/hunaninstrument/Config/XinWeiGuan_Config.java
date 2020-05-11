@@ -1,12 +1,11 @@
 package cn.cbdi.hunaninstrument.Config;
 
+import cn.cbdi.hunaninstrument.Activity_XinWeiGuan.XinWeiGuanService;
 import cn.cbdi.hunaninstrument.Function.Func_Face.mvp.Module.HuNanFaceImpl3;
 import cn.cbdi.hunaninstrument.Function.Func_Face.mvp.Module.IFace;
 import cn.cbdi.hunaninstrument.Function.Func_IDCard.mvp.presenter.IDCardPresenter;
-import cn.cbdi.hunaninstrument.Service.HeBeiService;
-import cn.cbdi.hunaninstrument.Service.SXService;
 
-public class XAYZB_Config extends BaseConfig {
+public class XinWeiGuan_Config extends BaseConfig {
 
     @Override
     public boolean isFace() {
@@ -15,7 +14,7 @@ public class XAYZB_Config extends BaseConfig {
 
     @Override
     public boolean isTemHum() {
-        return false;
+        return true;
     }
 
     @Override
@@ -25,22 +24,24 @@ public class XAYZB_Config extends BaseConfig {
 
     @Override
     public String getDev_prefix() {
-        return "800100";
+        return "";
     }
 
     @Override
     public String getPersonInfoPrefix() {
-        return "cjy/s/fbcjy_updata?";
+        return "";
     }
 
     @Override
     public String getUpDataPrefix() {
-        return "cjy/s/fbcjy_updata?";
+        return "";
     }
 
     @Override
     public String getServerId() {
-        return "http://xajy.snaq.cn:8884/";
+//        return "http://116.239.32.71:8160/";
+        return "http://116.239.32.71:8152/";
+
     }
 
     @Override
@@ -50,17 +51,17 @@ public class XAYZB_Config extends BaseConfig {
 
     @Override
     public String getModel() {
-        return "CBDI-DA-01";
+        return "CBDI-P-IC";
     }
 
     @Override
     public String getName() {
-        return "防爆采集器";
+        return "库房采集器";
     }
 
     @Override
     public String getProject() {
-        return "XAYZB";        //西安易制爆
+        return "XinWeiGuan";        //新危管
     }
 
     @Override
@@ -95,13 +96,11 @@ public class XAYZB_Config extends BaseConfig {
 
     @Override
     public void readCard() {
-        IDCardPresenter.getInstance().readCard();
         IDCardPresenter.getInstance().ReadIC();
     }
 
     @Override
     public void stopReadCard() {
-        IDCardPresenter.getInstance().stopReadCard();
         IDCardPresenter.getInstance().StopReadIC();
     }
 
@@ -112,17 +111,17 @@ public class XAYZB_Config extends BaseConfig {
 
     @Override
     public Class getServiceName() {
-        return SXService.class;
+            return XinWeiGuanService.class;
     }
 
     @Override
     public String getMainActivity() {
-        return ".Activity_SX.SXMainActivity";
+        return ".Activity_XinWeiGuan.XinWeiGuanMainActivity";
     }
 
     @Override
     public String getAddActivity() {
-        return ".Activity_SX.SXRegActivity";
+        return "";
     }
 
     @Override
@@ -142,8 +141,9 @@ public class XAYZB_Config extends BaseConfig {
 
     @Override
     public boolean XungengCanOpen() {
-        return false;
+        return true;
     }
+
 
     @Override
     public boolean DoorMonitorChosen() {

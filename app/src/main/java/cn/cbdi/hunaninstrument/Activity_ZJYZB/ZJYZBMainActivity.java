@@ -1,4 +1,4 @@
-package cn.cbdi.hunaninstrument.Activity_SX;
+package cn.cbdi.hunaninstrument.Activity_ZJYZB;
 
 import android.content.Intent;
 import android.gesture.GestureLibraries;
@@ -9,6 +9,7 @@ import android.graphics.Bitmap;
 import android.graphics.BitmapFactory;
 import android.os.Bundle;
 import android.provider.Settings;
+import android.util.Log;
 import android.view.Gravity;
 import android.widget.Button;
 
@@ -43,14 +44,12 @@ import cn.cbdi.hunaninstrument.Bean.Employer;
 import cn.cbdi.hunaninstrument.Bean.Keeper;
 import cn.cbdi.hunaninstrument.Bean.ReUploadWithBsBean;
 import cn.cbdi.hunaninstrument.Bean.SceneKeeper;
-import cn.cbdi.hunaninstrument.EventBus.LockUpEvent;
 import cn.cbdi.hunaninstrument.EventBus.PassEvent;
 import cn.cbdi.hunaninstrument.Function.Func_Face.mvp.presenter.FacePresenter;
 import cn.cbdi.hunaninstrument.Function.Func_Switch.mvp.module.ISwitching;
 import cn.cbdi.hunaninstrument.Function.Func_Switch.mvp.presenter.SwitchPresenter;
 import cn.cbdi.hunaninstrument.R;
 import cn.cbdi.hunaninstrument.Retrofit.RetrofitGenerator;
-import cn.cbdi.hunaninstrument.State.LockState.Lock;
 import cn.cbdi.hunaninstrument.State.OperationState.DoorOpenOperation;
 import cn.cbdi.hunaninstrument.Tool.MediaHelper;
 import cn.cbdi.hunaninstrument.Tool.MyObserver;
@@ -68,11 +67,9 @@ import static cn.cbdi.hunaninstrument.Function.Func_Face.mvp.presenter.FacePrese
 import static cn.cbdi.hunaninstrument.Function.Func_Face.mvp.presenter.FacePresenter.FaceResultType.Identify;
 import static cn.cbdi.hunaninstrument.Function.Func_Face.mvp.presenter.FacePresenter.FaceResultType.Identify_non;
 
-public class SXMainActivity extends BaseActivity implements NormalWindow.OptionTypeListener {
+public class ZJYZBMainActivity extends BaseActivity implements NormalWindow.OptionTypeListener {
 
     private SimpleDateFormat formatter = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss");
-
-    SimpleDateFormat url_timeformatter = new SimpleDateFormat("yyyy-MM-dd%20HH:mm:ss");
 
     private Disposable disposableTips;
 
@@ -169,15 +166,15 @@ public class SXMainActivity extends BaseActivity implements NormalWindow.OptionT
                 R.drawable.iv_wifi)));
         alert_message.messageInit();
         alert_password.PasswordViewInit(() -> {
-            normalWindow = new NormalWindow(SXMainActivity.this);
-            normalWindow.setOptionTypeListener(SXMainActivity.this);
+            normalWindow = new NormalWindow(ZJYZBMainActivity.this);
+            normalWindow.setOptionTypeListener(ZJYZBMainActivity.this);
             normalWindow.showAtLocation(getWindow().getDecorView().findViewById(android.R.id.content),
                     Gravity.CENTER, 0, 0);
         });
     }
 
     void openService() {
-        intent = new Intent(SXMainActivity.this, AppInit.getInstrumentConfig().getServiceName());
+        intent = new Intent(ZJYZBMainActivity.this, AppInit.getInstrumentConfig().getServiceName());
         startService(intent);
     }
 
@@ -186,6 +183,8 @@ public class SXMainActivity extends BaseActivity implements NormalWindow.OptionT
         safeCheck.setURL(config.getString("ServerId"));
         paramsMap.put("daid", config.getString("daid"));
         paramsMap.put("pass", safeCheck.getPass(config.getString("daid")));
+        Log.e("pass",paramsMap.get("pass"));
+
     }
 
     private void setGestures() {
@@ -259,7 +258,7 @@ public class SXMainActivity extends BaseActivity implements NormalWindow.OptionT
             HashMap<String, String> map = (HashMap<String, String>) paramsMap.clone();
             map.put("dataType", "queryPersion");
             map.put("id", cardInfo.cardId());
-            RetrofitGenerator.getSxApi().GeneralPersionInfo(map)
+            RetrofitGenerator.getHebeiApi().GeneralPersionInfo(map)
                     .subscribeOn(Schedulers.io())
                     .unsubscribeOn(Schedulers.io())
                     .observeOn(AndroidSchedulers.mainThread())
@@ -339,7 +338,7 @@ public class SXMainActivity extends BaseActivity implements NormalWindow.OptionT
                         sp.greenLight();
                         DoorOpenOperation.getInstance().doNext();
                         Observable.timer(60, TimeUnit.SECONDS).subscribeOn(Schedulers.newThread())
-                                .compose(SXMainActivity.this.<Long>bindUntilEvent(ActivityEvent.PAUSE))
+                                .compose(ZJYZBMainActivity.this.<Long>bindUntilEvent(ActivityEvent.PAUSE))
                                 .observeOn(AndroidSchedulers.mainThread())
                                 .subscribe(new Observer<Long>() {
                                     @Override
@@ -380,20 +379,13 @@ public class SXMainActivity extends BaseActivity implements NormalWindow.OptionT
                             return;
                         }
                     } else if (DoorOpenOperation.getInstance().getmDoorOpenOperation().equals(DoorOpenOperation.DoorOpenState.TwoUnlock)) {
-                        if (AppInit.getInstrumentConfig().isHongWai()) {
-                            Lock.getInstance().setState(Lock.LockState.STATE_Lockup);
-                            String closeDoorTime = formatter.format(new Date(System.currentTimeMillis()));
-                            CloseDoorRecord(closeDoorTime);
-                            EventBus.getDefault().post(new LockUpEvent());
-                        } else {
-                            tv_info.setText("仓库门已解锁");
-                        }
+                        tv_info.setText("仓库门已解锁");
                     }
                 } else if (employer.getType() == 2) {
                     if (checkChange != null) {
                         checkChange.dispose();
                     }
-                    if (AppInit.getInstrumentConfig().XungengCanOpen()) {
+                    if(AppInit.getInstrumentConfig().XungengCanOpen()) {
                         if (DoorOpenOperation.getInstance().getmDoorOpenOperation().equals(DoorOpenOperation.DoorOpenState.OneUnlock)) {
                             if (!keeper.getCardID().equals(cg_User1.getKeeper().getCardID())) {
                                 sp.greenLight();
@@ -413,7 +405,7 @@ public class SXMainActivity extends BaseActivity implements NormalWindow.OptionT
                             cg_User1.setScenePhoto(Scene_Bitmap);
                             checkRecord(2);
                         }
-                    } else {
+                    }else {
                         cg_User1.setKeeper(keeper);
                         cg_User1.setScenePhoto(Scene_Bitmap);
                         checkRecord(2);
@@ -436,7 +428,7 @@ public class SXMainActivity extends BaseActivity implements NormalWindow.OptionT
     public void onText(FacePresenter.FaceResultType resultType, String text) {
         if (resultType.equals(Identify_non)) {
             tv_info.setText(text);
-            sp.redLight();
+//            sp.redLight();
         } else if (resultType.equals(Identify)) {
             faceScore = text;
         } else if (resultType.equals(IMG_MATCH_IMG_Score)) {
@@ -467,6 +459,7 @@ public class SXMainActivity extends BaseActivity implements NormalWindow.OptionT
                         } else {
                             tv_info.setText("巡检数据上传失败");
                         }
+
                         cg_User1 = new SceneKeeper();
                         cg_User2 = new SceneKeeper();
                         if (DoorOpenOperation.getInstance().getmDoorOpenOperation().equals(DoorOpenOperation.DoorOpenState.OneUnlock)) {
@@ -537,7 +530,7 @@ public class SXMainActivity extends BaseActivity implements NormalWindow.OptionT
                     } else {
                         tv_info.setText("开门记录无法上传,请检查网络,离线数据已保存");
                         sp.redLight();
-                        mdaosession.insert(new ReUploadWithBsBean(null, "dataType=openDoor"
+                        mdaosession.insertOrReplace(new ReUploadWithBsBean(null, "dataType=openDoor"
                                 + "&daid=" + config.getString("daid")
                                 + "&faceRecognition1="
                                 + (cg_User1.getFaceRecognition() + 100)
@@ -553,38 +546,6 @@ public class SXMainActivity extends BaseActivity implements NormalWindow.OptionT
                     }
                     cg_User1 = new SceneKeeper();
                     cg_User2 = new SceneKeeper();
-                });
-    }
-
-    private void CloseDoorRecord(String time) {
-        HashMap<String, String> map = (HashMap<String, String>) paramsMap.clone();
-        map.put("dataType", "closeDoor");
-        map.put("time", time);
-        RetrofitGenerator.getSxApi().GeneralUpdata(map)
-                .subscribeOn(Schedulers.io())
-                .unsubscribeOn(Schedulers.io())
-                .observeOn(AndroidSchedulers.mainThread())
-                .subscribe(new Observer<String>() {
-                    @Override
-                    public void onSubscribe(Disposable d) {
-
-                    }
-
-                    @Override
-                    public void onNext(String s) {
-
-                    }
-
-                    @Override
-                    public void onError(Throwable e) {
-                        mdaosession.insert(new ReUploadWithBsBean(null, "dataType=closeDoor" + "&time=" + url_timeformatter.format(new Date(System.currentTimeMillis())), null, 0));
-
-                    }
-
-                    @Override
-                    public void onComplete() {
-
-                    }
                 });
     }
 

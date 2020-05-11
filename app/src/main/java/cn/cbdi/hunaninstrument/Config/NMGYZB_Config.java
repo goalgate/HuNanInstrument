@@ -146,7 +146,18 @@ public class NMGYZB_Config extends BaseConfig {
     }
 
     @Override
+    public boolean DoorMonitorChosen() {
+        return false;
+    }
+
+    @Override
     public boolean isHongWai() {
-        return true;
+        return hongWai;
+    }
+
+    @Override
+    public void setHongWai(boolean hongWai) {
+        this.hongWai= hongWai;
+
     }
 }
