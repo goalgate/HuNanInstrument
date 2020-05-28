@@ -33,9 +33,10 @@ import java.io.IOException;
 import java.text.ParseException;
 import java.text.SimpleDateFormat;
 import java.util.Date;
-import java.util.HashMap;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Random;
+import java.util.Set;
 import java.util.Timer;
 import java.util.TimerTask;
 import java.util.concurrent.TimeUnit;
@@ -83,6 +84,7 @@ import okhttp3.ResponseBody;
 import static cn.cbdi.hunaninstrument.State.DoorState.Door.DoorState.State_Close;
 import static cn.cbdi.hunaninstrument.State.DoorState.Door.DoorState.State_Open;
 import static cn.cbdi.hunaninstrument.Tool.Update.UpdateConstant.MANUAL_PATH;
+import static cn.cbdi.hunaninstrument.Tool.Update.UpdateConstant.NEW_APK_PATH;
 import static cn.cbdi.hunaninstrument.Tool.Update.UpdateConstant.SIGN_MD5;
 
 public class XinWeiGuanService extends Service implements ISwitchView {
@@ -91,7 +93,6 @@ public class XinWeiGuanService extends Service implements ISwitchView {
     SimpleDateFormat formatter = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss");
 
     SimpleDateFormat url_timeformatter = new SimpleDateFormat("yyyy-MM-dd%20HH:mm:ss");
-
 
     SwitchPresenter sp = SwitchPresenter.getInstance();
 
@@ -127,7 +128,7 @@ public class XinWeiGuanService extends Service implements ISwitchView {
         EventBus.getDefault().register(this);
         CopySourceFile();
         autoUpdate();
-        Observable.timer(10, TimeUnit.SECONDS).subscribeOn(Schedulers.io())
+        Observable.timer(20, TimeUnit.SECONDS).subscribeOn(Schedulers.io())
                 .unsubscribeOn(Schedulers.io())
                 .observeOn(AndroidSchedulers.mainThread())
                 .subscribe((l) -> syncData());
@@ -144,6 +145,7 @@ public class XinWeiGuanService extends Service implements ISwitchView {
                     .subscribe((l) -> StateRecord());
         }
     }
+
 
     @Override
     public void onDestroy() {
@@ -333,15 +335,24 @@ public class XinWeiGuanService extends Service implements ISwitchView {
         if (config.getBoolean("CopySourceFileVer1", true)) {
 
         } else {
+            try {
+                File file = new File(NEW_APK_PATH);
+                if (file.exists()) {
+                    file.delete();
+                }
+            }catch (Exception e){
+                e.printStackTrace();
+            }
+
             File manual_patch = new File(MANUAL_PATH);
             if (manual_patch.exists()) {
                 if (SignUtils.getSignMd5Str(AppInit.getInstance()).equals(SIGN_MD5)) {
                     ToastUtils.showLong("正在合成APK，请稍候");
                     new Thread(() -> {
-                        int patchResult = PatchUtils.patch(UpdateConstant.ORIGINAL_APK_PATH, UpdateConstant.NEW_APK_PATH, UpdateConstant.MANUAL_PATH);
+                        int patchResult = PatchUtils.patch(UpdateConstant.ORIGINAL_APK_PATH, NEW_APK_PATH, UpdateConstant.MANUAL_PATH);
                         manual_patch.delete();
                         if (patchResult == 0) {
-                            handler.post(() -> ApkUtils.installApk(AppInit.getContext(), UpdateConstant.NEW_APK_PATH));
+                            handler.post(() -> ApkUtils.installApk(AppInit.getContext(), NEW_APK_PATH));
                         } else {
                             handler.post(() -> ToastUtils.showLong("apk合成失败"));
                         }
@@ -372,9 +383,9 @@ public class XinWeiGuanService extends Service implements ISwitchView {
                                                     if (SignUtils.getSignMd5Str(AppInit.getInstance()).equals(SIGN_MD5)) {
                                                         ToastUtils.showLong("正在合成APK，请稍候");
                                                         new Thread(() -> {
-                                                            int patchResult = PatchUtils.patch(UpdateConstant.ORIGINAL_APK_PATH, UpdateConstant.NEW_APK_PATH, UpdateConstant.PATCH_PATH);
+                                                            int patchResult = PatchUtils.patch(UpdateConstant.ORIGINAL_APK_PATH, NEW_APK_PATH, UpdateConstant.PATCH_PATH);
                                                             if (patchResult == 0) {
-                                                                handler.post(() -> ApkUtils.installApk(AppInit.getContext(), UpdateConstant.NEW_APK_PATH));
+                                                                handler.post(() -> ApkUtils.installApk(AppInit.getContext(), NEW_APK_PATH));
                                                             } else {
                                                                 handler.post(() -> ToastUtils.showLong("apk合成失败"));
                                                             }
@@ -445,7 +456,7 @@ public class XinWeiGuanService extends Service implements ISwitchView {
                             String[] idList = s.split("\\|");
                             if (idList.length > 0) {
                                 for (String id : idList) {
-                                    mdaoSession.insertOrReplace(new Employer(id, 2));
+                                    mdaoSession.insertOrReplace(new Employer(id.toUpperCase(), 2));
                                 }
                             }
                         } catch (Exception e) {
@@ -484,7 +495,7 @@ public class XinWeiGuanService extends Service implements ISwitchView {
                                             String[] idList = s.split("\\|");
                                             if (idList.length > 0) {
                                                 for (String id : idList) {
-                                                    mdaoSession.insertOrReplace(new Employer(id, 1));
+                                                    mdaoSession.insertOrReplace(new Employer(id.toUpperCase(), 1));
                                                 }
                                             }
                                         } catch (Exception e) {
@@ -524,14 +535,113 @@ public class XinWeiGuanService extends Service implements ISwitchView {
 
     StringBuffer logMen;
 
-    private void getPic() {
-//        if (config.getBoolean("wzwPic", true)) {
-//            mdaoSession.insertOrReplace(new Employer("441302199308100538", 1));
-//            Bitmap wzwbitmap = BitmapFactory.decodeResource(getResources(), R.drawable.wzw);
-//            if (FacePresenter.getInstance().FaceRegInBackGround(new CardInfoBean("441302199308100538", "王振文"), wzwbitmap, FileUtils.bitmapToBase64(wzwbitmap))) {
-//                Log.e("message","王振文照片完成");
+//    private void getPic() {
+////        if (config.getBoolean("wzwPic", true)) {
+////            mdaoSession.insertOrReplace(new Employer("441302199308100538", 1));
+////            Bitmap wzwbitmap = BitmapFactory.decodeResource(getResources(), R.drawable.wzw);
+////            if (FacePresenter.getInstance().FaceRegInBackGround(new CardInfoBean("441302199308100538", "王振文"), wzwbitmap, FileUtils.bitmapToBase64(wzwbitmap))) {
+////                Log.e("message","王振文照片完成");
+////            }
+////            mdaoSession.insertOrReplace(new Employer("441282198308200403X", 1));
+////            Bitmap yjbitmap = BitmapFactory.decodeResource(getResources(), R.drawable.yj);
+////            if (FacePresenter.getInstance().FaceRegInBackGround(new CardInfoBean("441282198308200403X", "彭艺煊"), yjbitmap, FileUtils.bitmapToBase64(yjbitmap))) {
+////                Log.e("message","彭艺煊照片完成");
+////            }
+////        }
+//        logMen = new StringBuffer();
+//        count = 0;
+//        List<Employer> employers = mdaoSession.loadAll(Employer.class);
+//        if (employers.size() > 0) {
+//            for (Employer employer : employers) {
+//                RetrofitGenerator.getXinWeiGuanApi().queryPersonInfo("recentPic", config.getString("key"), employer.getCardID())
+//                        .subscribeOn(Schedulers.single())
+//                        .unsubscribeOn(Schedulers.single())
+//                        .observeOn(Schedulers.single())
+//                        .subscribe(new Observer<ResponseBody>() {
+//                            @Override
+//                            public void onSubscribe(Disposable d) {
+//
+//                            }
+//
+//                            @Override
+//                            public void onNext(ResponseBody responseBody) {
+//                                try {
+//                                    count++;
+//                                    String s = ParsingTool.extractMainContent(responseBody);
+//                                    JSONObject jsonObject = new JSONObject(s);
+//                                    String result = jsonObject.getString("result");
+//                                    if (result.equals("true")) {
+//                                        String ps = jsonObject.getString("returnPic");
+//                                        String name = jsonObject.getString("personName");
+//                                        try {
+//                                            Keeper keeper = mdaoSession.queryRaw(Keeper.class, "where CARD_ID = '" + employer.getCardID().toUpperCase() + "'").get(0);
+//                                            if (!TextUtils.isEmpty(ps) && keeper.getHeadphoto().length() != ps.length()) {
+//                                                Log.e("ps_len", String.valueOf(ps.length()));
+//                                                Log.e("keeper_len", String.valueOf(keeper.getHeadphoto().replaceAll("\r|\n", "").length()));
+//                                                Bitmap bitmap = FileUtils.base64ToBitmap(ps);
+//                                                if (FacePresenter.getInstance().FaceRegInBackGround(new CardInfoBean(employer.getCardID(), name), bitmap, ps)) {
+//                                                    logMen.append(name + "、");
+//                                                }
+//                                            } else {
+//                                                logMen.append(name + "、");
+//                                            }
+//                                        } catch (IndexOutOfBoundsException e) {
+//                                            if (!TextUtils.isEmpty(ps)) {
+//                                                Bitmap bitmap = FileUtils.base64ToBitmap(ps);
+//                                                if (FacePresenter.getInstance().FaceRegInBackGround(new CardInfoBean(employer.getCardID(), name), bitmap, ps)) {
+//                                                    logMen.append(name + "、");
+//                                                }
+//                                            }
+//                                        }
+//                                    }
+//                                    if (count == employers.size()) {
+//                                        FacePresenter.getInstance().FaceIdentifyReady();
+//                                        if (logMen.length() > 0) {
+//                                            logMen.deleteCharAt(logMen.length() - 1);
+//                                            handler.post(() -> ToastUtils.showLong(logMen.toString() + "人脸特征已准备完毕"));
+//                                        } else {
+//                                            handler.post(() -> ToastUtils.showLong("该设备没有可使用的人脸特征"));
+//                                        }
+//                                    }
+//                                } catch (Exception e) {
+//                                    Lg.e(TAG, e.toString());
+//                                    if (count == employers.size()) {
+//                                        FacePresenter.getInstance().FaceIdentifyReady();
+//                                        if (logMen.length() > 0) {
+//                                            logMen.deleteCharAt(logMen.length() - 1);
+//                                            handler.post(() -> ToastUtils.showLong(logMen.toString() + "人脸特征已准备完毕"));
+//                                        } else {
+//                                            handler.post(() -> ToastUtils.showLong("该设备没有可使用的人脸特征"));
+//                                        }
+//                                    }
+//                                }
+//                            }
+//
+//                            @Override
+//                            public void onError(Throwable e) {
+//                                count++;
+//                                if (count == employers.size()) {
+//                                    FacePresenter.getInstance().FaceIdentifyReady();
+//                                    if (logMen.length() > 0) {
+//                                        logMen.deleteCharAt(logMen.length() - 1);
+//                                        handler.post(() -> ToastUtils.showLong(logMen.toString() + "人脸特征已准备完毕"));
+//                                    } else {
+//                                        handler.post(() -> ToastUtils.showLong("该设备没有可使用的人脸特征"));
+//                                    }
+//                                }
+//                            }
+//
+//                            @Override
+//                            public void onComplete() {
+//
+//                            }
+//                        });
 //            }
 //        }
+//    }
+
+
+    private void getPic() {
         logMen = new StringBuffer();
         count = 0;
         List<Employer> employers = mdaoSession.loadAll(Employer.class);
@@ -563,39 +673,59 @@ public class XinWeiGuanService extends Service implements ISwitchView {
                                                 Log.e("ps_len", String.valueOf(ps.length()));
                                                 Log.e("keeper_len", String.valueOf(keeper.getHeadphoto().replaceAll("\r|\n", "").length()));
                                                 Bitmap bitmap = FileUtils.base64ToBitmap(ps);
-                                                if (FacePresenter.getInstance().FaceRegInBackGround(new CardInfoBean(employer.getCardID(), name), bitmap, ps)) {
-                                                    logMen.append(name + "、");
-                                                }
-                                            } else {
-                                                logMen.append(name + "、");
+                                                FacePresenter.getInstance().FaceRegInBackGround(new CardInfoBean(employer.getCardID(), name), bitmap, ps);
+
                                             }
                                         } catch (IndexOutOfBoundsException e) {
                                             if (!TextUtils.isEmpty(ps)) {
                                                 Bitmap bitmap = FileUtils.base64ToBitmap(ps);
-                                                if (FacePresenter.getInstance().FaceRegInBackGround(new CardInfoBean(employer.getCardID(), name), bitmap, ps)) {
-                                                    logMen.append(name + "、");
-                                                }
+                                                FacePresenter.getInstance().FaceRegInBackGround(new CardInfoBean(employer.getCardID(), name), bitmap, ps);
+
                                             }
                                         }
                                     }
                                     if (count == employers.size()) {
                                         FacePresenter.getInstance().FaceIdentifyReady();
-                                        if (logMen.length() > 0) {
+                                        List<Keeper> keeperList = mdaoSession.loadAll(Keeper.class);
+                                        if (keeperList.size() > 0) {
+                                            Set<String> list = new HashSet<>();
+                                            for (Keeper keeper : keeperList) {
+                                                list.add(keeper.getName());
+                                            }
+                                            for (String name : list) {
+                                                logMen.append(name + "、");
+                                            }
                                             logMen.deleteCharAt(logMen.length() - 1);
+
                                             handler.post(() -> ToastUtils.showLong(logMen.toString() + "人脸特征已准备完毕"));
+                                            Log.e(TAG,logMen.toString());
+
                                         } else {
                                             handler.post(() -> ToastUtils.showLong("该设备没有可使用的人脸特征"));
+                                            Log.e(TAG,logMen.toString());
+
                                         }
                                     }
                                 } catch (Exception e) {
                                     Lg.e(TAG, e.toString());
                                     if (count == employers.size()) {
                                         FacePresenter.getInstance().FaceIdentifyReady();
-                                        if (logMen.length() > 0) {
+                                        List<Keeper> keeperList = mdaoSession.loadAll(Keeper.class);
+                                        if (keeperList.size() > 0) {
+                                            Set<String> list = new HashSet<>();
+                                            for (Keeper keeper : keeperList) {
+                                                list.add(keeper.getName());
+                                            }
+                                            for (String name : list) {
+                                                logMen.append(name + "、");
+                                            }
                                             logMen.deleteCharAt(logMen.length() - 1);
                                             handler.post(() -> ToastUtils.showLong(logMen.toString() + "人脸特征已准备完毕"));
+                                            Log.e(TAG,logMen.toString());
                                         } else {
                                             handler.post(() -> ToastUtils.showLong("该设备没有可使用的人脸特征"));
+                                            Log.e(TAG,logMen.toString());
+
                                         }
                                     }
                                 }
@@ -606,11 +736,22 @@ public class XinWeiGuanService extends Service implements ISwitchView {
                                 count++;
                                 if (count == employers.size()) {
                                     FacePresenter.getInstance().FaceIdentifyReady();
-                                    if (logMen.length() > 0) {
+                                    List<Keeper> keeperList = mdaoSession.loadAll(Keeper.class);
+                                    if (keeperList.size() > 0) {
+                                        Set<String> list = new HashSet<>();
+                                        for (Keeper keeper : keeperList) {
+                                            list.add(keeper.getName());
+                                        }
+                                        for (String name : list) {
+                                            logMen.append(name + "、");
+                                        }
                                         logMen.deleteCharAt(logMen.length() - 1);
                                         handler.post(() -> ToastUtils.showLong(logMen.toString() + "人脸特征已准备完毕"));
+                                        Log.e(TAG,logMen.toString());
+
                                     } else {
                                         handler.post(() -> ToastUtils.showLong("该设备没有可使用的人脸特征"));
+                                        Log.e(TAG,logMen.toString());
 
                                     }
                                 }
@@ -622,9 +763,10 @@ public class XinWeiGuanService extends Service implements ISwitchView {
                             }
                         });
             }
+        } else {
+            handler.post(() -> ToastUtils.showLong("该设备没有可使用的人脸特征"));
         }
     }
-
 
     private void testNet() {
         RetrofitGenerator.getXinWeiGuanApi().noData("testNet", config.getString("key"))

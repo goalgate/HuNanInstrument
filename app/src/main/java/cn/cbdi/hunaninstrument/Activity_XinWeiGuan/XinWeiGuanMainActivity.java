@@ -10,10 +10,12 @@ import android.graphics.Bitmap;
 import android.graphics.BitmapFactory;
 import android.os.Bundle;
 import android.provider.Settings;
+import android.util.Log;
 import android.view.Gravity;
 import android.widget.Button;
 
 import com.baidu.aip.entity.User;
+import com.blankj.utilcode.util.ActivityUtils;
 import com.blankj.utilcode.util.TimeUtils;
 import com.blankj.utilcode.util.ToastUtils;
 import com.jakewharton.rxbinding2.widget.RxTextView;
@@ -53,6 +55,7 @@ import cn.cbdi.hunaninstrument.State.OperationState.DoorOpenOperation;
 import cn.cbdi.hunaninstrument.Tool.FileUtils;
 import cn.cbdi.hunaninstrument.Tool.MyObserver;
 import cn.cbdi.hunaninstrument.UI.NormalWindow;
+import cn.cbdi.hunaninstrument.UI.SuperWindow2;
 import cn.cbdi.log.Lg;
 import io.reactivex.Observable;
 import io.reactivex.ObservableSource;
@@ -72,7 +75,7 @@ import static cn.cbdi.hunaninstrument.Function.Func_Face.mvp.presenter.FacePrese
 import static cn.cbdi.hunaninstrument.State.DoorState.Door.DoorState.State_Close;
 import static cn.cbdi.hunaninstrument.State.DoorState.Door.DoorState.State_Open;
 
-public class XinWeiGuanMainActivity extends BaseActivity implements NormalWindow.OptionTypeListener {
+public class XinWeiGuanMainActivity extends BaseActivity implements SuperWindow2.OptionTypeListener {
 
     SimpleDateFormat formatter = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss");
 
@@ -88,7 +91,7 @@ public class XinWeiGuanMainActivity extends BaseActivity implements NormalWindow
 
     Alert_Password alert_password = new Alert_Password(this);
 
-    private NormalWindow normalWindow;
+    private SuperWindow2 normalWindow;
 
     Bitmap Scene_Bitmap;
 
@@ -113,6 +116,12 @@ public class XinWeiGuanMainActivity extends BaseActivity implements NormalWindow
     @OnClick(R.id.lay_network)
     void showMessage() {
         alert_message.showMessage();
+    }
+
+
+    @OnClick(R.id.lay_lock)
+    void showoff() {
+        Log.e(TAG, "unReUploadSize"+String.valueOf(mdaosession.loadAll(ReUploadBean.class).size()));
     }
 
     @Override
@@ -154,7 +163,7 @@ public class XinWeiGuanMainActivity extends BaseActivity implements NormalWindow
         alert_password.PasswordViewInit(new Alert_Password.Callback() {
             @Override
             public void normal_call() {
-                normalWindow = new NormalWindow(XinWeiGuanMainActivity.this);
+                normalWindow = new SuperWindow2(XinWeiGuanMainActivity.this);
                 normalWindow.setOptionTypeListener(XinWeiGuanMainActivity.this);
                 normalWindow.showAtLocation(getWindow().getDecorView().findViewById(android.R.id.content), Gravity.CENTER, 0, 0);
             }
@@ -224,6 +233,7 @@ public class XinWeiGuanMainActivity extends BaseActivity implements NormalWindow
         if (disposableTips != null) {
             disposableTips.dispose();
         }
+        stopService(intent);
     }
 
 
@@ -256,7 +266,7 @@ public class XinWeiGuanMainActivity extends BaseActivity implements NormalWindow
             tv_info.setText("仓管员" + cg_User2.getKeeper().getName() + "操作成功,仓库门已解锁");
             DoorOpenOperation.getInstance().doNext();
             EventBus.getDefault().post(new PassEvent());
-            if(AppInit.getInstrumentConfig().isHongWai()){
+            if (AppInit.getInstrumentConfig().isHongWai()) {
                 Door.getInstance().setMdoorState(State_Open);
                 Door.getInstance().doNext();
             }
@@ -268,8 +278,8 @@ public class XinWeiGuanMainActivity extends BaseActivity implements NormalWindow
     public void onUser(FacePresenter.FaceResultType resultType, User user) {
         if (resultType.equals(Identify)) {
             try {
-                Keeper keeper = mdaosession.queryRaw(Keeper.class, "where CARD_ID = '" + user.getUserId().toUpperCase() + "'").get(0);
-                Employer employer = mdaosession.queryRaw(Employer.class, "where CARD_ID = '" + user.getUserId().toUpperCase() + "'").get(0);
+                Keeper keeper = mdaosession.queryRaw(Keeper.class, "where CARD_ID = '" + user.getUserInfo().toUpperCase() + "'").get(0);
+                Employer employer = mdaosession.queryRaw(Employer.class, "where CARD_ID = '" + user.getUserInfo().toUpperCase() + "'").get(0);
                 if (employer.getType() == 1) {
                     if (DoorOpenOperation.getInstance().getmDoorOpenOperation().equals(DoorOpenOperation.DoorOpenState.Locking)) {
                         sp.greenLight();
@@ -291,7 +301,6 @@ public class XinWeiGuanMainActivity extends BaseActivity implements NormalWindow
                                     @Override
                                     public void onNext(Long aLong) {
                                         checkRecord(String.valueOf(2));
-
                                     }
 
                                     @Override
@@ -368,11 +377,13 @@ public class XinWeiGuanMainActivity extends BaseActivity implements NormalWindow
 
 
     @Override
-    public void onOptionType(Button view, int type) {
+    public void onSuperOptionType(Button view, int type) {
         normalWindow.dismiss();
         if (type == 1) {
-            alert_server.show();
+            fp.PreviewCease(() -> ActivityUtils.startActivity(getPackageName(), getPackageName() + AppInit.getInstrumentConfig().getAddActivity()));
         } else if (type == 2) {
+            alert_server.show();
+        } else if (type == 3) {
             alert_ip.show();
         }
     }
@@ -415,6 +426,7 @@ public class XinWeiGuanMainActivity extends BaseActivity implements NormalWindow
     }
 
     private void checkRecord(String type) {
+        SwitchPresenter.getInstance().greenLight();
         SwitchPresenter.getInstance().OutD9(false);
         final JSONObject checkRecordJson = new JSONObject();
         try {
@@ -485,6 +497,11 @@ public class XinWeiGuanMainActivity extends BaseActivity implements NormalWindow
                 .subscribe(new MyObserver<ResponseBody>(this) {
 
                     @Override
+                    public void onSubscribe(Disposable d) {
+
+                    }
+
+                    @Override
                     public void onNext(ResponseBody responseBody) {
                         String s = ParsingTool.extractMainContent(responseBody);
 
@@ -503,7 +520,6 @@ public class XinWeiGuanMainActivity extends BaseActivity implements NormalWindow
 
                     @Override
                     public void onError(@NonNull Throwable e) {
-                        super.onError(e);
                         tv_info.setText("无法连接服务器,请检查网络,离线数据已保存");
                         unknownUser = new SceneKeeper();
                         mdaosession.insert(new ReUploadBean(null, "saveVisit", unknownPeopleJson.toString()));
@@ -525,6 +541,10 @@ public class XinWeiGuanMainActivity extends BaseActivity implements NormalWindow
                 .unsubscribeOn(Schedulers.io())
                 .observeOn(AndroidSchedulers.mainThread())
                 .subscribe(new MyObserver<ResponseBody>(this) {
+                    @Override
+                    public void onSubscribe(Disposable d) {
+
+                    }
 
                     @Override
                     public void onNext(ResponseBody responseBody) {
@@ -545,7 +565,6 @@ public class XinWeiGuanMainActivity extends BaseActivity implements NormalWindow
 
                     @Override
                     public void onError(@NonNull Throwable e) {
-                        super.onError(e);
                         tv_info.setText("无法连接服务器,请检查网络,离线数据已保存");
                         unknownUser = new SceneKeeper();
                         mdaosession.insert(new ReUploadBean(null, "saveVisit", unknownPeopleJson.toString()));
@@ -586,7 +605,6 @@ public class XinWeiGuanMainActivity extends BaseActivity implements NormalWindow
             }
         } else {
             return;
-
         }
         RetrofitGenerator.getXinWeiGuanApi().withDataRr("openDoorRecord", config.getString("key"), OpenDoorJson.toString())
                 .subscribeOn(Schedulers.io())
