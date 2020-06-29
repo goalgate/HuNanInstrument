@@ -23,7 +23,7 @@ android {
         minSdkVersion 19
         targetSdkVersion 28
         versionCode 1
-        versionName "1.8"
+        versionName "1.4"
         testInstrumentationRunner "android.support.test.runner.AndroidJUnitRunner"
         multiDexEnabled true
     }
@@ -45,7 +45,7 @@ android {
     }
 }
 greendao {
-    schemaVersion 10//数据库版本号
+    schemaVersion 11//数据库版本号
     daoPackage 'cn.cbdi.hunaninstrument.greendao'//设置DaoMaster、DaoSession、Dao包名
     targetGenDir 'src/main/java'//设置DaoMaster、DaoSession、Dao目录
     //targetGenDirTest：设置生成单元测试目录

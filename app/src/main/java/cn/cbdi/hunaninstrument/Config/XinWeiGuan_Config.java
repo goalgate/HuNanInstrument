@@ -1,8 +1,10 @@
 package cn.cbdi.hunaninstrument.Config;
 
 import cn.cbdi.hunaninstrument.Activity_XinWeiGuan.XinWeiGuanService;
+import cn.cbdi.hunaninstrument.Activity_XinWeiGuan.XinWeiGuanService2;
 import cn.cbdi.hunaninstrument.Function.Func_Face.mvp.Module.HuNanFaceImpl3;
 import cn.cbdi.hunaninstrument.Function.Func_Face.mvp.Module.IFace;
+import cn.cbdi.hunaninstrument.Function.Func_Face.mvp.Module.XinWeiGuanFaceImpl3;
 import cn.cbdi.hunaninstrument.Function.Func_IDCard.mvp.presenter.IDCardPresenter;
 
 public class XinWeiGuan_Config extends BaseConfig {
@@ -41,7 +43,6 @@ public class XinWeiGuan_Config extends BaseConfig {
     public String getServerId() {
 //        return "http://116.239.32.71:8160/";
         return "http://116.239.32.71:8152/";
-
     }
 
     @Override
@@ -106,22 +107,22 @@ public class XinWeiGuan_Config extends BaseConfig {
 
     @Override
     public boolean fingerprint() {
-        return false;
+        return true;
     }
 
     @Override
     public Class getServiceName() {
-            return XinWeiGuanService.class;
+            return XinWeiGuanService2.class;
     }
 
     @Override
     public String getMainActivity() {
-        return ".Activity_XinWeiGuan.XinWeiGuanMainActivity";
+        return ".Activity_XinWeiGuan.XinWeiGuanMainActivity2";
     }
 
     @Override
     public String getAddActivity() {
-        return "";
+        return ".Activity_XinWeiGuan.XinWeiGuanAddActivity2";
     }
 
     @Override
@@ -136,7 +137,7 @@ public class XinWeiGuan_Config extends BaseConfig {
 
     @Override
     public IFace getFaceImpl() {
-        return new HuNanFaceImpl3();
+        return new XinWeiGuanFaceImpl3();
     }
 
     @Override

@@ -15,7 +15,7 @@ import cn.cbdi.hunaninstrument.Bean.Keeper;
 /** 
  * DAO for table "KEEPER".
 */
-public class KeeperDao extends AbstractDao<Keeper, String> {
+public class KeeperDao extends AbstractDao<Keeper, Long> {
 
     public static final String TABLENAME = "KEEPER";
 
@@ -24,13 +24,14 @@ public class KeeperDao extends AbstractDao<Keeper, String> {
      * Can be used for QueryBuilder and for referencing column names.
      */
     public static class Properties {
-        public final static Property CardID = new Property(0, String.class, "cardID", true, "CARD_ID");
-        public final static Property Name = new Property(1, String.class, "name", false, "NAME");
-        public final static Property Headphoto = new Property(2, String.class, "headphoto", false, "HEADPHOTO");
-        public final static Property HeadphotoRGB = new Property(3, String.class, "headphotoRGB", false, "HEADPHOTO_RGB");
-        public final static Property HeadphotoBW = new Property(4, String.class, "headphotoBW", false, "HEADPHOTO_BW");
-        public final static Property FaceUserId = new Property(5, String.class, "FaceUserId", false, "FACE_USER_ID");
-        public final static Property Feature = new Property(6, byte[].class, "feature", false, "FEATURE");
+        public final static Property Id = new Property(0, Long.class, "id", true, "_id");
+        public final static Property CardID = new Property(1, String.class, "cardID", false, "CARD_ID");
+        public final static Property Name = new Property(2, String.class, "name", false, "NAME");
+        public final static Property Headphoto = new Property(3, String.class, "headphoto", false, "HEADPHOTO");
+        public final static Property HeadphotoRGB = new Property(4, String.class, "headphotoRGB", false, "HEADPHOTO_RGB");
+        public final static Property HeadphotoBW = new Property(5, String.class, "headphotoBW", false, "HEADPHOTO_BW");
+        public final static Property FaceUserId = new Property(6, String.class, "FaceUserId", false, "FACE_USER_ID");
+        public final static Property Feature = new Property(7, byte[].class, "feature", false, "FEATURE");
     }
 
 
@@ -46,13 +47,14 @@ public class KeeperDao extends AbstractDao<Keeper, String> {
     public static void createTable(Database db, boolean ifNotExists) {
         String constraint = ifNotExists? "IF NOT EXISTS ": "";
         db.execSQL("CREATE TABLE " + constraint + "\"KEEPER\" (" + //
-                "\"CARD_ID\" TEXT PRIMARY KEY NOT NULL ," + // 0: cardID
-                "\"NAME\" TEXT," + // 1: name
-                "\"HEADPHOTO\" TEXT," + // 2: headphoto
-                "\"HEADPHOTO_RGB\" TEXT," + // 3: headphotoRGB
-                "\"HEADPHOTO_BW\" TEXT," + // 4: headphotoBW
-                "\"FACE_USER_ID\" TEXT," + // 5: FaceUserId
-                "\"FEATURE\" BLOB);"); // 6: feature
+                "\"_id\" INTEGER PRIMARY KEY AUTOINCREMENT ," + // 0: id
+                "\"CARD_ID\" TEXT," + // 1: cardID
+                "\"NAME\" TEXT," + // 2: name
+                "\"HEADPHOTO\" TEXT," + // 3: headphoto
+                "\"HEADPHOTO_RGB\" TEXT," + // 4: headphotoRGB
+                "\"HEADPHOTO_BW\" TEXT," + // 5: headphotoBW
+                "\"FACE_USER_ID\" TEXT," + // 6: FaceUserId
+                "\"FEATURE\" BLOB);"); // 7: feature
     }
 
     /** Drops the underlying database table. */
@@ -65,39 +67,44 @@ public class KeeperDao extends AbstractDao<Keeper, String> {
     protected final void bindValues(DatabaseStatement stmt, Keeper entity) {
         stmt.clearBindings();
  
+        Long id = entity.getId();
+        if (id != null) {
+            stmt.bindLong(1, id);
+        }
+ 
         String cardID = entity.getCardID();
         if (cardID != null) {
-            stmt.bindString(1, cardID);
+            stmt.bindString(2, cardID);
         }
  
         String name = entity.getName();
         if (name != null) {
-            stmt.bindString(2, name);
+            stmt.bindString(3, name);
         }
  
         String headphoto = entity.getHeadphoto();
         if (headphoto != null) {
-            stmt.bindString(3, headphoto);
+            stmt.bindString(4, headphoto);
         }
  
         String headphotoRGB = entity.getHeadphotoRGB();
         if (headphotoRGB != null) {
-            stmt.bindString(4, headphotoRGB);
+            stmt.bindString(5, headphotoRGB);
         }
  
         String headphotoBW = entity.getHeadphotoBW();
         if (headphotoBW != null) {
-            stmt.bindString(5, headphotoBW);
+            stmt.bindString(6, headphotoBW);
         }
  
         String FaceUserId = entity.getFaceUserId();
         if (FaceUserId != null) {
-            stmt.bindString(6, FaceUserId);
+            stmt.bindString(7, FaceUserId);
         }
  
         byte[] feature = entity.getFeature();
         if (feature != null) {
-            stmt.bindBlob(7, feature);
+            stmt.bindBlob(8, feature);
         }
     }
 
@@ -105,81 +112,89 @@ public class KeeperDao extends AbstractDao<Keeper, String> {
     protected final void bindValues(SQLiteStatement stmt, Keeper entity) {
         stmt.clearBindings();
  
+        Long id = entity.getId();
+        if (id != null) {
+            stmt.bindLong(1, id);
+        }
+ 
         String cardID = entity.getCardID();
         if (cardID != null) {
-            stmt.bindString(1, cardID);
+            stmt.bindString(2, cardID);
         }
  
         String name = entity.getName();
         if (name != null) {
-            stmt.bindString(2, name);
+            stmt.bindString(3, name);
         }
  
         String headphoto = entity.getHeadphoto();
         if (headphoto != null) {
-            stmt.bindString(3, headphoto);
+            stmt.bindString(4, headphoto);
         }
  
         String headphotoRGB = entity.getHeadphotoRGB();
         if (headphotoRGB != null) {
-            stmt.bindString(4, headphotoRGB);
+            stmt.bindString(5, headphotoRGB);
         }
  
         String headphotoBW = entity.getHeadphotoBW();
         if (headphotoBW != null) {
-            stmt.bindString(5, headphotoBW);
+            stmt.bindString(6, headphotoBW);
         }
  
         String FaceUserId = entity.getFaceUserId();
         if (FaceUserId != null) {
-            stmt.bindString(6, FaceUserId);
+            stmt.bindString(7, FaceUserId);
         }
  
         byte[] feature = entity.getFeature();
         if (feature != null) {
-            stmt.bindBlob(7, feature);
+            stmt.bindBlob(8, feature);
         }
     }
 
     @Override
-    public String readKey(Cursor cursor, int offset) {
-        return cursor.isNull(offset + 0) ? null : cursor.getString(offset + 0);
+    public Long readKey(Cursor cursor, int offset) {
+        return cursor.isNull(offset + 0) ? null : cursor.getLong(offset + 0);
     }    
 
     @Override
     public Keeper readEntity(Cursor cursor, int offset) {
         Keeper entity = new Keeper( //
-            cursor.isNull(offset + 0) ? null : cursor.getString(offset + 0), // cardID
-            cursor.isNull(offset + 1) ? null : cursor.getString(offset + 1), // name
-            cursor.isNull(offset + 2) ? null : cursor.getString(offset + 2), // headphoto
-            cursor.isNull(offset + 3) ? null : cursor.getString(offset + 3), // headphotoRGB
-            cursor.isNull(offset + 4) ? null : cursor.getString(offset + 4), // headphotoBW
-            cursor.isNull(offset + 5) ? null : cursor.getString(offset + 5), // FaceUserId
-            cursor.isNull(offset + 6) ? null : cursor.getBlob(offset + 6) // feature
+            cursor.isNull(offset + 0) ? null : cursor.getLong(offset + 0), // id
+            cursor.isNull(offset + 1) ? null : cursor.getString(offset + 1), // cardID
+            cursor.isNull(offset + 2) ? null : cursor.getString(offset + 2), // name
+            cursor.isNull(offset + 3) ? null : cursor.getString(offset + 3), // headphoto
+            cursor.isNull(offset + 4) ? null : cursor.getString(offset + 4), // headphotoRGB
+            cursor.isNull(offset + 5) ? null : cursor.getString(offset + 5), // headphotoBW
+            cursor.isNull(offset + 6) ? null : cursor.getString(offset + 6), // FaceUserId
+            cursor.isNull(offset + 7) ? null : cursor.getBlob(offset + 7) // feature
         );
         return entity;
     }
      
     @Override
     public void readEntity(Cursor cursor, Keeper entity, int offset) {
-        entity.setCardID(cursor.isNull(offset + 0) ? null : cursor.getString(offset + 0));
-        entity.setName(cursor.isNull(offset + 1) ? null : cursor.getString(offset + 1));
-        entity.setHeadphoto(cursor.isNull(offset + 2) ? null : cursor.getString(offset + 2));
-        entity.setHeadphotoRGB(cursor.isNull(offset + 3) ? null : cursor.getString(offset + 3));
-        entity.setHeadphotoBW(cursor.isNull(offset + 4) ? null : cursor.getString(offset + 4));
-        entity.setFaceUserId(cursor.isNull(offset + 5) ? null : cursor.getString(offset + 5));
-        entity.setFeature(cursor.isNull(offset + 6) ? null : cursor.getBlob(offset + 6));
+        entity.setId(cursor.isNull(offset + 0) ? null : cursor.getLong(offset + 0));
+        entity.setCardID(cursor.isNull(offset + 1) ? null : cursor.getString(offset + 1));
+        entity.setName(cursor.isNull(offset + 2) ? null : cursor.getString(offset + 2));
+        entity.setHeadphoto(cursor.isNull(offset + 3) ? null : cursor.getString(offset + 3));
+        entity.setHeadphotoRGB(cursor.isNull(offset + 4) ? null : cursor.getString(offset + 4));
+        entity.setHeadphotoBW(cursor.isNull(offset + 5) ? null : cursor.getString(offset + 5));
+        entity.setFaceUserId(cursor.isNull(offset + 6) ? null : cursor.getString(offset + 6));
+        entity.setFeature(cursor.isNull(offset + 7) ? null : cursor.getBlob(offset + 7));
      }
     
     @Override
-    protected final String updateKeyAfterInsert(Keeper entity, long rowId) {
-        return entity.getCardID();
+    protected final Long updateKeyAfterInsert(Keeper entity, long rowId) {
+        entity.setId(rowId);
+        return rowId;
     }
     
     @Override
-    public String getKey(Keeper entity) {
+    public Long getKey(Keeper entity) {
         if(entity != null) {
-            return entity.getCardID();
+            return entity.getId();
         } else {
             return null;
         }
@@ -187,7 +202,7 @@ public class KeeperDao extends AbstractDao<Keeper, String> {
 
     @Override
     public boolean hasKey(Keeper entity) {
-        return entity.getCardID() != null;
+        return entity.getId() != null;
     }
 
     @Override

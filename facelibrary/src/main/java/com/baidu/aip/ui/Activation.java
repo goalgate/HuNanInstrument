@@ -35,10 +35,10 @@ import com.baidu.idl.license.AndroidLicenser;
 public class Activation {
 
     private Context context;
-    private Button activateBtn;
+    public Button activateBtn;
     private Button backBtn;
     private TextView deviceIdTv;
-    private EditText keyEt;
+    public EditText keyEt;
     private String device = "";
     private Dialog activationDialog;
     private Handler handler = new Handler(Looper.getMainLooper());

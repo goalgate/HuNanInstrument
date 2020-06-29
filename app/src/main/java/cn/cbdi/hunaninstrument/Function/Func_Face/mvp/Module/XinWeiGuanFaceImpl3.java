@@ -40,6 +40,7 @@ import com.blankj.utilcode.util.ToastUtils;
 import com.serenegiant.usb.UVCCamera;
 
 import java.io.File;
+import java.util.UUID;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.TimeUnit;
@@ -50,7 +51,6 @@ import cn.cbdi.hunaninstrument.Bean.Keeper;
 import cn.cbdi.hunaninstrument.Function.Func_Face.mvp.presenter.FacePresenter;
 import cn.cbdi.hunaninstrument.Function.Func_IDCard.mvp.presenter.IDCardPresenter;
 import cn.cbdi.hunaninstrument.Function.Func_Switch.mvp.presenter.SwitchPresenter;
-import cn.cbdi.hunaninstrument.Tool.BitmapTools;
 import cn.cbdi.hunaninstrument.Tool.FileUtils;
 import cn.cbdi.hunaninstrument.Tool.MediaHelper;
 import cn.cbdi.log.Lg;
@@ -61,7 +61,7 @@ import io.reactivex.functions.Consumer;
 import io.reactivex.schedulers.Schedulers;
 
 
-public class HuNanFaceImpl3 implements IFace {
+public class XinWeiGuanFaceImpl3 implements IFace {
 
     boolean reg_status = false;
 
@@ -224,27 +224,16 @@ public class HuNanFaceImpl3 implements IFace {
     @Override
     public boolean FaceRegInBackGround(ICardInfo cardInfo, Bitmap bitmap, String ps) {
         final User user = new User();
-//        final String uid = UUID.randomUUID().toString();
-        user.setUserId(cardInfo.cardId());
+        final String uid = UUID.randomUUID().toString();
+        user.setUserId(uid);
         user.setUserInfo(cardInfo.name());
         user.setGroupId("1");
         byte[] bytes = new byte[512];
-
-        Bitmap mBitmap;
-        if (bitmap.getWidth() < 300) {
-            mBitmap = BitmapTools.scaleMatrix(bitmap, 300);
-        } else if (bitmap.getWidth() > 500) {
-            mBitmap = BitmapTools.scaleMatrix(bitmap, 500);
-        } else {
-            mBitmap = bitmap;
-        }
-
-        float ret = FaceApi.getInstance().extractVisFeature(mBitmap, bytes, 20);
+        float ret = FaceApi.getInstance().extractVisFeature(bitmap, bytes, 20);
         if (ret != -1) {
-            FaceApi.getInstance().userDelete(cardInfo.cardId(), "1");
             Feature feature = new Feature();
             feature.setGroupId("1");
-            feature.setUserId(cardInfo.cardId());
+            feature.setUserId(uid);
             feature.setFeature(bytes);
             user.getFeatureList().add(feature);
             if (FaceApi.getInstance().userAdd(user)) {
@@ -253,10 +242,10 @@ public class HuNanFaceImpl3 implements IFace {
                         ps, null, null,
                         user.getUserId(), bytes);
                 AppInit.getInstance().getDaoSession().getKeeperDao().insertOrReplace(keeper);
-                Lg.e("myface", cardInfo.cardId() + "人脸特征已存");
+                Lg.e("myface", cardInfo.name() + "人脸特征已存");
                 return true;
             } else {
-                Lg.e("myface", "人脸特征存储失败");
+                Lg.e("myface", cardInfo.name()+"人脸特征存储失败");
                 return false;
             }
         } else {
@@ -442,7 +431,7 @@ public class HuNanFaceImpl3 implements IFace {
                         outOfRegTime.dispose();
                     }
                     action = FacePresenter.FaceAction.No_ACTION;
-                    reg_status = true;
+//                    reg_status = true;
                     headphotoBW = FaceCropper.getFace(model.getImageFrame().getArgb(), model.getFaceInfo(), model.getImageFrame().getWidth());
                     register(model.getFaceInfo(), model.getImageFrame(), InputCardInfo);
                     IDCardPresenter.getInstance().readCard();
@@ -671,9 +660,9 @@ public class HuNanFaceImpl3 implements IFace {
          */
         // String uid = 修改为自己用户系统中用户的id;
         final User user = new User();
-//        final String uid = UUID.randomUUID().toString();
-        user.setUserId(cardInfo.cardId());
-        user.setUserInfo(cardInfo.name());
+        final String uid = UUID.randomUUID().toString();
+        user.setUserId(uid);
+        user.setUserInfo(cardInfo.cardId());
         user.setGroupId("1");
         es.submit(new Runnable() {
             @Override
@@ -689,7 +678,7 @@ public class HuNanFaceImpl3 implements IFace {
                 if (ret != -1) {
                     Feature feature = new Feature();
                     feature.setGroupId("1");
-                    feature.setUserId(cardInfo.cardId());
+                    feature.setUserId(uid);
                     feature.setFeature(bytes);
                     user.getFeatureList().add(feature);
                     if (FaceApi.getInstance().userAdd(user)) {
@@ -825,8 +814,8 @@ public class HuNanFaceImpl3 implements IFace {
         int cols = imageFrame.getWidth();
         int[] landmarks = faceInfo.landmarks;
         final IdentifyRet identifyRet = FaceApi.getInstance().identity(argb, rows, cols, landmarks, "1");
-        if (identifyRet.getScore() < 70) {
-            Observable.timer(3, TimeUnit.SECONDS).observeOn(Schedulers.from(es))
+        if (identifyRet.getScore() < 65) {
+            Observable.timer(1, TimeUnit.SECONDS).observeOn(Schedulers.from(es))
                     .subscribe(new Consumer<Long>() {
                         @Override
                         public void accept(Long aLong) throws Exception {
@@ -842,7 +831,7 @@ public class HuNanFaceImpl3 implements IFace {
             });
             return;
         } else {
-            Observable.timer(3, TimeUnit.SECONDS).observeOn(Schedulers.from(es))
+            Observable.timer(2, TimeUnit.SECONDS).observeOn(Schedulers.from(es))
                     .subscribe(new Consumer<Long>() {
                         @Override
                         public void accept(Long aLong) throws Exception {

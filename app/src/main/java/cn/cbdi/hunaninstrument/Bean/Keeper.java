@@ -10,7 +10,9 @@ import org.greenrobot.greendao.annotation.Generated;
 @Entity
 public class Keeper {
 
-    @Id
+    @Id(autoincrement = true)
+    private Long id;
+
     String cardID;
 
     String name;
@@ -25,9 +27,23 @@ public class Keeper {
 
     byte[] feature;
 
-    @Generated(hash = 1599095074)
-    public Keeper(String cardID, String name, String headphoto, String headphotoRGB,
-            String headphotoBW, String FaceUserId, byte[] feature) {
+    @Generated(hash = 2033730960)
+    public Keeper(Long id, String cardID, String name, String headphoto,
+            String headphotoRGB, String headphotoBW, String FaceUserId,
+            byte[] feature) {
+        this.id = id;
+        this.cardID = cardID;
+        this.name = name;
+        this.headphoto = headphoto;
+        this.headphotoRGB = headphotoRGB;
+        this.headphotoBW = headphotoBW;
+        this.FaceUserId = FaceUserId;
+        this.feature = feature;
+    }
+
+    public Keeper(String cardID, String name, String headphoto,
+                  String headphotoRGB, String headphotoBW, String FaceUserId,
+                  byte[] feature) {
         this.cardID = cardID;
         this.name = name;
         this.headphoto = headphoto;
@@ -95,6 +111,14 @@ public class Keeper {
 
     public void setFeature(byte[] feature) {
         this.feature = feature;
+    }
+
+    public Long getId() {
+        return this.id;
+    }
+
+    public void setId(Long id) {
+        this.id = id;
     }
 
 

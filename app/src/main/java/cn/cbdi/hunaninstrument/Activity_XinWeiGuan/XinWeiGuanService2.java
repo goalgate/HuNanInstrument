@@ -1,65 +1,69 @@
-package cn.cbdi.hunaninstrument.Service;
+package cn.cbdi.hunaninstrument.Activity_XinWeiGuan;
 
 import android.app.Service;
 import android.content.Intent;
 import android.database.sqlite.SQLiteException;
+import android.graphics.Bitmap;
 import android.os.Environment;
 import android.os.Handler;
 import android.os.IBinder;
-import android.util.Base64;
+import android.text.TextUtils;
 import android.util.Log;
 
 import com.baidu.aip.api.FaceApi;
-import com.baidu.aip.entity.Feature;
-import com.baidu.aip.entity.User;
 import com.blankj.utilcode.util.AppUtils;
 import com.blankj.utilcode.util.FileIOUtils;
 import com.blankj.utilcode.util.SPUtils;
+import com.blankj.utilcode.util.TimeUtils;
 import com.blankj.utilcode.util.ToastUtils;
 import com.cundong.utils.PatchUtils;
 
 import org.greenrobot.eventbus.EventBus;
 import org.greenrobot.eventbus.Subscribe;
 import org.greenrobot.eventbus.ThreadMode;
-import org.json.JSONArray;
+import org.json.JSONException;
 import org.json.JSONObject;
 
 import java.io.File;
 import java.text.ParseException;
 import java.text.SimpleDateFormat;
 import java.util.Date;
-import java.util.HashMap;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Random;
+import java.util.Set;
 import java.util.Timer;
 import java.util.TimerTask;
 import java.util.concurrent.TimeUnit;
 
+import cn.cbdi.drv.card.CardInfoBean;
 import cn.cbdi.hunaninstrument.AppInit;
 import cn.cbdi.hunaninstrument.Bean.Employer;
 import cn.cbdi.hunaninstrument.Bean.Keeper;
 import cn.cbdi.hunaninstrument.Bean.ReUploadBean;
-import cn.cbdi.hunaninstrument.Bean.ReUploadWithBsBean;
+import cn.cbdi.hunaninstrument.Config.WenZhouConfig;
 import cn.cbdi.hunaninstrument.EventBus.AlarmEvent;
+import cn.cbdi.hunaninstrument.EventBus.FingerPrintIdentityEvent;
 import cn.cbdi.hunaninstrument.EventBus.LockUpEvent;
 import cn.cbdi.hunaninstrument.EventBus.NetworkEvent;
 import cn.cbdi.hunaninstrument.EventBus.PassEvent;
+import cn.cbdi.hunaninstrument.EventBus.RebootEvent;
 import cn.cbdi.hunaninstrument.EventBus.TemHumEvent;
 import cn.cbdi.hunaninstrument.Function.Func_Face.mvp.presenter.FacePresenter;
+import cn.cbdi.hunaninstrument.Function.Func_Fingerprint.mvp.presenter.FingerPrintPresenter;
 import cn.cbdi.hunaninstrument.Function.Func_Switch.mvp.module.SwitchImpl;
 import cn.cbdi.hunaninstrument.Function.Func_Switch.mvp.presenter.SwitchPresenter;
 import cn.cbdi.hunaninstrument.Function.Func_Switch.mvp.view.ISwitchView;
 import cn.cbdi.hunaninstrument.Retrofit.RetrofitGenerator;
 import cn.cbdi.hunaninstrument.State.DoorState.Door;
 import cn.cbdi.hunaninstrument.State.LockState.Lock;
-import cn.cbdi.hunaninstrument.Tool.SafeCheck;
+import cn.cbdi.hunaninstrument.Tool.FileUtils;
 import cn.cbdi.hunaninstrument.Tool.ServerConnectionUtil;
 import cn.cbdi.hunaninstrument.Tool.Update.ApkUtils;
 import cn.cbdi.hunaninstrument.Tool.Update.SignUtils;
 import cn.cbdi.hunaninstrument.Tool.Update.UpdateConstant;
 import cn.cbdi.hunaninstrument.greendao.DaoSession;
 import cn.cbdi.hunaninstrument.greendao.ReUploadBeanDao;
-import cn.cbdi.hunaninstrument.greendao.ReUploadWithBsBeanDao;
 import cn.cbdi.log.Lg;
 import io.reactivex.Observable;
 import io.reactivex.Observer;
@@ -67,19 +71,20 @@ import io.reactivex.android.schedulers.AndroidSchedulers;
 import io.reactivex.annotations.NonNull;
 import io.reactivex.disposables.Disposable;
 import io.reactivex.schedulers.Schedulers;
+import okhttp3.ResponseBody;
 
+import static cn.cbdi.hunaninstrument.State.DoorState.Door.DoorState.State_Close;
+import static cn.cbdi.hunaninstrument.State.DoorState.Door.DoorState.State_Open;
 import static cn.cbdi.hunaninstrument.Tool.Update.UpdateConstant.MANUAL_PATH;
+import static cn.cbdi.hunaninstrument.Tool.Update.UpdateConstant.NEW_APK_PATH;
 import static cn.cbdi.hunaninstrument.Tool.Update.UpdateConstant.SIGN_MD5;
 
-public class SXService extends Service implements ISwitchView {
-
-    private String TAG = HuNanService.class.getSimpleName();
+public class XinWeiGuanService2 extends Service implements ISwitchView {
+    private String TAG = XinWeiGuanService2.class.getSimpleName();
 
     SimpleDateFormat formatter = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss");
 
     SimpleDateFormat url_timeformatter = new SimpleDateFormat("yyyy-MM-dd%20HH:mm:ss");
-
-    HashMap<String, String> paramsMap = new HashMap<String, String>();
 
     SwitchPresenter sp = SwitchPresenter.getInstance();
 
@@ -88,6 +93,8 @@ public class SXService extends Service implements ISwitchView {
     DaoSession mdaoSession = AppInit.getInstance().getDaoSession();
 
     ServerConnectionUtil connectionUtil = new ServerConnectionUtil();
+
+    private SPUtils fingerprintBooksRevert = SPUtils.getInstance("fingerprintBooksRevert");
 
     String Last_Value;
 
@@ -112,18 +119,18 @@ public class SXService extends Service implements ISwitchView {
         Log.e("Md5", SignUtils.getSignMd5Str(AppInit.getInstance()));
         sp.SwitchPresenterSetView(this);
         EventBus.getDefault().register(this);
-        mapInit();
-        autoUpdate();
         CopySourceFile();
-        syncData();
+//        autoUpdate();
+        Observable.timer(20, TimeUnit.SECONDS).subscribeOn(Schedulers.io())
+                .unsubscribeOn(Schedulers.io())
+                .observeOn(AndroidSchedulers.mainThread())
+                .subscribe((l) -> syncData());
         reUpload();
         Observable.timer(10, TimeUnit.SECONDS).observeOn(AndroidSchedulers.mainThread())
                 .subscribe((l) -> reboot());
         Observable.interval(0, 30, TimeUnit.SECONDS).observeOn(Schedulers.io())
                 .subscribe((l) -> testNet());
-        Observable.interval(0, AppInit.getInstrumentConfig().getCheckOnlineTime(), TimeUnit.MINUTES)
-                .observeOn(Schedulers.io())
-                .subscribe((l) -> checkOnline());
+
         if (AppInit.getInstrumentConfig().isTemHum()) {
             Observable.interval(0, 5, TimeUnit.SECONDS).observeOn(AndroidSchedulers.mainThread())
                     .subscribe((l) -> sp.readHum());
@@ -131,6 +138,7 @@ public class SXService extends Service implements ISwitchView {
                     .subscribe((l) -> StateRecord());
         }
     }
+
 
     @Override
     public void onDestroy() {
@@ -143,7 +151,8 @@ public class SXService extends Service implements ISwitchView {
     public void onGetPassEvent(PassEvent event) {
         Lock.getInstance().setState(Lock.LockState.STATE_Unlock);
         Lock.getInstance().doNext();
-        if(!AppInit.getInstrumentConfig().isHongWai()){
+        if (!AppInit.getInstrumentConfig().isHongWai()) {
+
             Observable.timer(120, TimeUnit.SECONDS).subscribeOn(Schedulers.newThread())
                     .subscribe(new Observer<Long>() {
                         @Override
@@ -168,7 +177,6 @@ public class SXService extends Service implements ISwitchView {
                         }
                     });
         }
-
     }
 
     @Override
@@ -206,7 +214,7 @@ public class SXService extends Service implements ISwitchView {
                 if (value.startsWith("AAAAAA")) {
                     Last_Value = value;
                     if (value.equals("AAAAAA000000000000")) {
-                        Door.getInstance().setMdoorState(Door.DoorState.State_Open);
+                        Door.getInstance().setMdoorState(State_Open);
                         Door.getInstance().doNext();
                         alarmRecord();
                     }
@@ -216,8 +224,8 @@ public class SXService extends Service implements ISwitchView {
                     if (!value.equals(Last_Value)) {
                         Last_Value = value;
                         if (Last_Value.equals("AAAAAA000000000000")) {
-                            if (Door.getInstance().getMdoorState().equals(Door.DoorState.State_Close)) {
-                                Door.getInstance().setMdoorState(Door.DoorState.State_Open);
+                            if (Door.getInstance().getMdoorState().equals(State_Close)) {
+                                Door.getInstance().setMdoorState(State_Open);
                                 Door.getInstance().doNext();
                                 if (Lock.getInstance().getState().equals(Lock.LockState.STATE_Lockup)) {
                                     alarmRecord();
@@ -242,7 +250,7 @@ public class SXService extends Service implements ISwitchView {
                                             @Override
                                             public void onNext(Long aLong) {
                                                 Lock.getInstance().setState(Lock.LockState.STATE_Lockup);
-                                                Door.getInstance().setMdoorState(Door.DoorState.State_Close);
+                                                Door.getInstance().setMdoorState(State_Close);
                                                 sp.buzz(SwitchImpl.Hex.H2);
                                                 if (unlock_noOpen != null) {
                                                     unlock_noOpen.dispose();
@@ -262,7 +270,7 @@ public class SXService extends Service implements ISwitchView {
                                             }
                                         });
                             } else {
-                                Door.getInstance().setMdoorState(Door.DoorState.State_Close);
+                                Door.getInstance().setMdoorState(State_Close);
                             }
                         }
                     }
@@ -273,72 +281,27 @@ public class SXService extends Service implements ISwitchView {
                 }
             }
         }
+
     }
 
     private Handler handler = new Handler();
 
     private void reUpload() {
-        ReUploadWithBsBeanDao reUploadWithBsBeanDao = mdaoSession.getReUploadWithBsBeanDao();
-        List<ReUploadWithBsBean> list = reUploadWithBsBeanDao.queryBuilder().list();
-        for (final ReUploadWithBsBean bean : list) {
-            if (bean.getContent() != null) {
-                if (bean.getType_patrol() != 0) {
-                    connectionUtil.post_SingleThread(config.getString("ServerId") + AppInit.getInstrumentConfig().getUpDataPrefix() + bean.getMethod() + "&daid=" + config.getString("daid") + "&checkType=" + bean.getType_patrol(),
-                            config.getString("ServerId"), bean.getContent(), new ServerConnectionUtil.Callback() {
-                                @Override
-                                public void onResponse(String response) {
-                                    if (response != null) {
-                                        if (response.startsWith("true")) {
-                                            Log.e("程序执行记录", "已执行删除" + bean.getMethod());
-                                            reUploadWithBsBeanDao.delete(bean);
-                                        }
-                                    }
-                                }
-                            });
-                } else {
-                    connectionUtil.post_SingleThread(config.getString("ServerId") + AppInit.getInstrumentConfig().getUpDataPrefix() + bean.getMethod() + "&daid=" + config.getString("daid"),
-                            config.getString("ServerId"), bean.getContent(), new ServerConnectionUtil.Callback() {
-                                @Override
-                                public void onResponse(String response) {
-                                    if (response != null) {
-                                        if (response.startsWith("true")) {
-                                            Log.e("程序执行记录", "已执行删除" + bean.getMethod());
-                                            reUploadWithBsBeanDao.delete(bean);
-                                        }
-                                    }
-                                }
-                            });
-                }
-            } else {
-                connectionUtil.post_SingleThread(config.getString("ServerId") + AppInit.getInstrumentConfig().getUpDataPrefix() + bean.getMethod() + "&daid=" + config.getString("daid"),
-                        config.getString("ServerId"), new ServerConnectionUtil.Callback() {
-                            @Override
-                            public void onResponse(String response) {
-                                if (response != null) {
-                                    if (response.startsWith("true")) {
-                                        Log.e("程序执行记录", "已执行删除" + bean.getMethod());
-                                        reUploadWithBsBeanDao.delete(bean);
-                                    }
-                                }
-                            }
-                        });
-            }
-        }
-        ReUploadBeanDao reUploadBeanDao = mdaoSession.getReUploadBeanDao();
-        List<ReUploadBean> list1 = reUploadBeanDao.queryBuilder().list();
-        for (final ReUploadBean bean : list1) {
-            RetrofitGenerator.getSxApi().withDataRs(bean.getMethod(), config.getString("key"), bean.getContent())
+        final ReUploadBeanDao reUploadBeanDao = mdaoSession.getReUploadBeanDao();
+        List<ReUploadBean> list = reUploadBeanDao.queryBuilder().list();
+        for (final ReUploadBean bean : list) {
+            RetrofitGenerator.getXinWeiGuanApi().withDataRr(bean.getMethod(), config.getString("key"), bean.getContent())
                     .subscribeOn(Schedulers.single())
                     .unsubscribeOn(Schedulers.single())
                     .observeOn(Schedulers.single())
-                    .subscribe(new Observer<String>() {
+                    .subscribe(new Observer<ResponseBody>() {
                         @Override
                         public void onSubscribe(@NonNull Disposable d) {
 
                         }
 
                         @Override
-                        public void onNext(@NonNull String s) {
+                        public void onNext(@NonNull ResponseBody responseBody) {
                             Log.e("信息提示", bean.getMethod());
                             reUploadBeanDao.delete(bean);
 
@@ -365,15 +328,24 @@ public class SXService extends Service implements ISwitchView {
         if (config.getBoolean("CopySourceFileVer1", true)) {
 
         } else {
+            try {
+                File file = new File(NEW_APK_PATH);
+                if (file.exists()) {
+                    file.delete();
+                }
+            }catch (Exception e){
+                e.printStackTrace();
+            }
+
             File manual_patch = new File(MANUAL_PATH);
             if (manual_patch.exists()) {
                 if (SignUtils.getSignMd5Str(AppInit.getInstance()).equals(SIGN_MD5)) {
                     ToastUtils.showLong("正在合成APK，请稍候");
                     new Thread(() -> {
-                        int patchResult = PatchUtils.patch(UpdateConstant.ORIGINAL_APK_PATH, UpdateConstant.NEW_APK_PATH, UpdateConstant.MANUAL_PATH);
+                        int patchResult = PatchUtils.patch(UpdateConstant.ORIGINAL_APK_PATH, NEW_APK_PATH, UpdateConstant.MANUAL_PATH);
                         manual_patch.delete();
                         if (patchResult == 0) {
-                            handler.post(() -> ApkUtils.installApk(AppInit.getContext(), UpdateConstant.NEW_APK_PATH));
+                            handler.post(() -> ApkUtils.installApk(AppInit.getContext(), NEW_APK_PATH));
                         } else {
                             handler.post(() -> ToastUtils.showLong("apk合成失败"));
                         }
@@ -404,9 +376,9 @@ public class SXService extends Service implements ISwitchView {
                                                     if (SignUtils.getSignMd5Str(AppInit.getInstance()).equals(SIGN_MD5)) {
                                                         ToastUtils.showLong("正在合成APK，请稍候");
                                                         new Thread(() -> {
-                                                            int patchResult = PatchUtils.patch(UpdateConstant.ORIGINAL_APK_PATH, UpdateConstant.NEW_APK_PATH, UpdateConstant.PATCH_PATH);
+                                                            int patchResult = PatchUtils.patch(UpdateConstant.ORIGINAL_APK_PATH, NEW_APK_PATH, UpdateConstant.PATCH_PATH);
                                                             if (patchResult == 0) {
-                                                                handler.post(() -> ApkUtils.installApk(AppInit.getContext(), UpdateConstant.NEW_APK_PATH));
+                                                                handler.post(() -> ApkUtils.installApk(AppInit.getContext(), NEW_APK_PATH));
                                                             } else {
                                                                 handler.post(() -> ToastUtils.showLong("apk合成失败"));
                                                             }
@@ -424,10 +396,12 @@ public class SXService extends Service implements ISwitchView {
     }
 
     private void CopySourceFile() {
-        if (config.getBoolean("CopySourceFileVer1", true)) {
+        if (AppUtils.getAppVersionName().equals("1.1") ||
+                (AppUtils.getAppVersionName().equals("1.4") &&
+                        AppInit.getInstrumentConfig().getClass().getName().equals(WenZhouConfig.class.getName()))) {
             Observable.create((emitter) -> {
                 emitter.onNext(ApkUtils.copyfile(
-                        new File(ApkUtils.getSourceApkPath(SXService.this, UpdateConstant.TEST_PACKAGENAME)),
+                        new File(ApkUtils.getSourceApkPath(XinWeiGuanService2.this, UpdateConstant.TEST_PACKAGENAME)),
                         new File(UpdateConstant.ORIGINAL_APK_PATH),
                         true));
             })
@@ -444,32 +418,38 @@ public class SXService extends Service implements ISwitchView {
                             ToastUtils.showLong("源文件复制失败");
                         }
                     });
+        } else {
+            config.put("CopySourceFileVer1", false);
         }
     }
 
     private void syncData() {
-        syncFace();
-        HashMap<String, String> map = (HashMap<String, String>) paramsMap.clone();
-        map.put("dataType", "updatePersion");
-        map.put("persionType", String.valueOf(3));
-        RetrofitGenerator.getSxApi().GeneralPersionInfo(map)
+        final JSONObject obj = new JSONObject();
+        try {
+            obj.put("personType", "2");
+        } catch (JSONException e) {
+            e.printStackTrace();
+        }
+        RetrofitGenerator.getXinWeiGuanApi().withDataRr("updatePerson", config.getString("key"), obj.toString())
                 .subscribeOn(Schedulers.io())
                 .unsubscribeOn(Schedulers.io())
                 .observeOn(AndroidSchedulers.mainThread())
-                .subscribe(new Observer<String>() {
+                .subscribe(new Observer<ResponseBody>() {
                     @Override
                     public void onSubscribe(Disposable d) {
 
                     }
 
                     @Override
-                    public void onNext(String s) {
+                    public void onNext(ResponseBody responseBody) {
                         try {
+                            String s = ParsingTool.extractMainContent(responseBody);
+
                             mdaoSession.getEmployerDao().deleteAll();
                             String[] idList = s.split("\\|");
                             if (idList.length > 0) {
                                 for (String id : idList) {
-                                    mdaoSession.insertOrReplace(new Employer(id.toUpperCase(), 3));
+                                    mdaoSession.insertOrReplace(new Employer(id.toUpperCase(), 2));
                                 }
                             }
                         } catch (Exception e) {
@@ -479,29 +459,36 @@ public class SXService extends Service implements ISwitchView {
 
                     @Override
                     public void onError(Throwable e) {
-
+                        EventBus.getDefault().post(new FingerPrintIdentityEvent());
                     }
 
                     @Override
                     public void onComplete() {
-                        map.put("persionType", String.valueOf(2));
-                        RetrofitGenerator.getSxApi().GeneralPersionInfo(map)
+                        try {
+                            obj.put("personType", "1");
+                        } catch (JSONException e) {
+                            e.printStackTrace();
+                        }
+
+                        RetrofitGenerator.getXinWeiGuanApi().withDataRr("updatePerson", config.getString("key"), obj.toString())
                                 .subscribeOn(Schedulers.io())
                                 .unsubscribeOn(Schedulers.io())
                                 .observeOn(AndroidSchedulers.mainThread())
-                                .subscribe(new Observer<String>() {
+                                .subscribe(new Observer<ResponseBody>() {
                                     @Override
                                     public void onSubscribe(Disposable d) {
 
                                     }
 
                                     @Override
-                                    public void onNext(String s) {
+                                    public void onNext(ResponseBody responseBody) {
                                         try {
+                                            String s = ParsingTool.extractMainContent(responseBody);
+
                                             String[] idList = s.split("\\|");
                                             if (idList.length > 0) {
                                                 for (String id : idList) {
-                                                    mdaoSession.insertOrReplace(new Employer(id.toUpperCase(), 2));
+                                                    mdaoSession.insertOrReplace(new Employer(id.toUpperCase(), 1));
                                                 }
                                             }
                                         } catch (Exception e) {
@@ -511,148 +498,181 @@ public class SXService extends Service implements ISwitchView {
 
                                     @Override
                                     public void onError(Throwable e) {
-
+                                        EventBus.getDefault().post(new FingerPrintIdentityEvent());
                                     }
 
                                     @Override
                                     public void onComplete() {
-                                        map.put("persionType", String.valueOf(1));
-                                        RetrofitGenerator.getSxApi().GeneralPersionInfo(map)
-                                                .subscribeOn(Schedulers.io())
-                                                .unsubscribeOn(Schedulers.io())
-                                                .observeOn(AndroidSchedulers.mainThread())
-                                                .subscribe(new Observer<String>() {
-                                                    @Override
-                                                    public void onSubscribe(Disposable d) {
+                                        try {
+                                            List<Keeper> keeperList = mdaoSession.getKeeperDao().loadAll();
+                                            for (Keeper keeper : keeperList) {
+                                                try {
+                                                    mdaoSession.queryRaw(Employer.class, "where CARD_ID = '" + keeper.getCardID() + "'").get(0);
+                                                } catch (IndexOutOfBoundsException e) {
+                                                    mdaoSession.delete(keeper);
+                                                    FaceApi.getInstance().userDelete(keeper.getFaceUserId(), "1");
+                                                    FingerPrintPresenter.getInstance().fpRemoveTmpl(fingerprintBooksRevert.getString(keeper.getFaceUserId()));
+                                                }
+                                            }
+                                        } catch (SQLiteException e) {
+                                            Lg.e(TAG, e.toString());
+                                        }
+                                        getPic();
+                                        EventBus.getDefault().post(new FingerPrintIdentityEvent());
 
-                                                    }
-
-                                                    @Override
-                                                    public void onNext(String s) {
-                                                        try {
-                                                            String[] idList = s.split("\\|");
-                                                            if (idList.length > 0) {
-                                                                for (String id : idList) {
-                                                                    mdaoSession.insertOrReplace(new Employer(id.toUpperCase(), 1));
-                                                                }
-                                                            }
-                                                        } catch (Exception e) {
-                                                            e.printStackTrace();
-                                                        }
-                                                    }
-
-                                                    @Override
-                                                    public void onError(Throwable e) {
-
-                                                    }
-
-                                                    @Override
-                                                    public void onComplete() {
-                                                        try {
-                                                            List<Keeper> keeperList = mdaoSession.getKeeperDao().loadAll();
-                                                            for (Keeper keeper : keeperList) {
-                                                                try {
-                                                                    mdaoSession.queryRaw(Employer.class, "where CARD_ID = '" + keeper.getCardID() + "'").get(0);
-                                                                } catch (IndexOutOfBoundsException e) {
-                                                                    mdaoSession.delete(keeper);
-                                                                    FaceApi.getInstance().userDelete(keeper.getFaceUserId(), "1");
-                                                                }
-                                                            }
-                                                        } catch (SQLiteException e) {
-                                                            Lg.e(TAG, e.toString());
-                                                        }
-                                                    }
-                                                });
                                     }
                                 });
                     }
                 });
     }
 
-    private void syncFace() {
-        if (config.getBoolean("syncFace", true)) {
-            RetrofitGenerator.getSxApi().getAllFace("getAllFace", paramsMap.get("daid"), paramsMap.get("pass"))
-                    .subscribeOn(Schedulers.io())
-                    .unsubscribeOn(Schedulers.io())
-                    .observeOn(AndroidSchedulers.mainThread())
-                    .subscribe(new Observer<String>() {
-                        @Override
-                        public void onSubscribe(Disposable d) {
+    int count = 0;
 
-                        }
+    StringBuffer logMen;
 
-                        @Override
-                        public void onNext(String s) {
-                            try {
-                                JSONObject data = new JSONObject(s);
-                                if (("true").equals(data.getString("result"))) {
-                                    JSONArray jsonArray = data.getJSONArray("returnData");
-                                    if (null != jsonArray && jsonArray.length() != 0) {
-                                        for (int i = 0; i < jsonArray.length(); i++) {
-                                            JSONObject item = jsonArray.getJSONObject(i);
-                                            Keeper keeper = new Keeper();
-                                            keeper.setCardID(item.getString("cardID"));
-                                            keeper.setName(item.getString("name"));
-                                            byte[] faceFeature = Base64.decode(item.getString("feature"), Base64.DEFAULT);
-                                            keeper.setFeature(faceFeature);
-                                            mdaoSession.insertOrReplace(keeper);
-                                            User user = new User();
-                                            user.setUserId(keeper.getCardID());
-                                            user.setUserInfo(keeper.getName());
-                                            user.setGroupId("1");
-                                            Feature feature = new Feature();
-                                            feature.setGroupId("1");
-                                            feature.setUserId(keeper.getCardID());
-                                            feature.setFeature(keeper.getFeature());
-                                            user.getFeatureList().add(feature);
-                                            FaceApi.getInstance().userAdd(user);
-                                        }
-                                    }
 
-                                }
-                            } catch (Exception e) {
-                                Lg.e(TAG, e.toString());
+
+    private void getPic() {
+        logMen = new StringBuffer();
+        count = 0;
+        List<Employer> employers = mdaoSession.loadAll(Employer.class);
+        if (employers.size() > 0) {
+            for (Employer employer : employers) {
+                RetrofitGenerator.getXinWeiGuanApi().queryPersonInfo("recentPic", config.getString("key"), employer.getCardID())
+                        .subscribeOn(Schedulers.single())
+                        .unsubscribeOn(Schedulers.single())
+                        .observeOn(Schedulers.single())
+                        .subscribe(new Observer<ResponseBody>() {
+                            @Override
+                            public void onSubscribe(Disposable d) {
+
                             }
 
-                        }
+                            @Override
+                            public void onNext(ResponseBody responseBody) {
+                                try {
+                                    count++;
+                                    String s = ParsingTool.extractMainContent(responseBody);
+                                    JSONObject jsonObject = new JSONObject(s);
+                                    String result = jsonObject.getString("result");
+                                    if (result.equals("true")) {
+                                        String ps = jsonObject.getString("returnPic");
+                                        String name = jsonObject.getString("personName");
+                                        try {
+                                            Keeper keeper = mdaoSession.queryRaw(Keeper.class, "where CARD_ID = '" + employer.getCardID().toUpperCase() + "'").get(0);
+                                            if (!TextUtils.isEmpty(ps) && keeper.getHeadphoto().length() != ps.length()) {
+                                                Log.e("ps_len", String.valueOf(ps.length()));
+                                                Log.e("keeper_len", String.valueOf(keeper.getHeadphoto().replaceAll("\r|\n", "").length()));
+                                                Bitmap bitmap = FileUtils.base64ToBitmap(ps);
+                                                FacePresenter.getInstance().FaceRegInBackGround(new CardInfoBean(employer.getCardID(), name), bitmap, ps);
 
+                                            }
+                                        } catch (IndexOutOfBoundsException e) {
+                                            if (!TextUtils.isEmpty(ps)) {
+                                                Bitmap bitmap = FileUtils.base64ToBitmap(ps);
+                                                FacePresenter.getInstance().FaceRegInBackGround(new CardInfoBean(employer.getCardID(), name), bitmap, ps);
 
-                        @Override
-                        public void onError(Throwable e) {
+                                            }
+                                        }
+                                    }
+                                    if (count == employers.size()) {
+                                        FacePresenter.getInstance().FaceIdentifyReady();
+                                        List<Keeper> keeperList = mdaoSession.loadAll(Keeper.class);
+                                        if (keeperList.size() > 0) {
+                                            Set<String> list = new HashSet<>();
+                                            for (Keeper keeper : keeperList) {
+                                                list.add(keeper.getName());
+                                            }
+                                            for (String name : list) {
+                                                logMen.append(name + "、");
+                                            }
+                                            logMen.deleteCharAt(logMen.length() - 1);
 
-                        }
+                                            handler.post(() -> ToastUtils.showLong(logMen.toString() + "人脸特征已准备完毕"));
+                                            Log.e(TAG,logMen.toString());
 
-                        @Override
-                        public void onComplete() {
-                            FacePresenter.getInstance().FaceIdentifyReady();
-                            config.put("syncFace", false);
-                        }
-                    });
+                                        } else {
+                                            handler.post(() -> ToastUtils.showLong("该设备没有可使用的人脸特征"));
+                                            Log.e(TAG,logMen.toString());
+
+                                        }
+                                    }
+                                } catch (Exception e) {
+                                    Lg.e(TAG, e.toString());
+                                    if (count == employers.size()) {
+                                        FacePresenter.getInstance().FaceIdentifyReady();
+                                        List<Keeper> keeperList = mdaoSession.loadAll(Keeper.class);
+                                        if (keeperList.size() > 0) {
+                                            Set<String> list = new HashSet<>();
+                                            for (Keeper keeper : keeperList) {
+                                                list.add(keeper.getName());
+                                            }
+                                            for (String name : list) {
+                                                logMen.append(name + "、");
+                                            }
+                                            logMen.deleteCharAt(logMen.length() - 1);
+                                            handler.post(() -> ToastUtils.showLong(logMen.toString() + "人脸特征已准备完毕"));
+                                            Log.e(TAG,logMen.toString());
+                                        } else {
+                                            handler.post(() -> ToastUtils.showLong("该设备没有可使用的人脸特征"));
+                                            Log.e(TAG,logMen.toString());
+
+                                        }
+                                    }
+                                }
+                            }
+
+                            @Override
+                            public void onError(Throwable e) {
+                                count++;
+                                if (count == employers.size()) {
+                                    FacePresenter.getInstance().FaceIdentifyReady();
+                                    List<Keeper> keeperList = mdaoSession.loadAll(Keeper.class);
+                                    if (keeperList.size() > 0) {
+                                        Set<String> list = new HashSet<>();
+                                        for (Keeper keeper : keeperList) {
+                                            list.add(keeper.getName());
+                                        }
+                                        for (String name : list) {
+                                            logMen.append(name + "、");
+                                        }
+                                        logMen.deleteCharAt(logMen.length() - 1);
+                                        handler.post(() -> ToastUtils.showLong(logMen.toString() + "人脸特征已准备完毕"));
+                                        Log.e(TAG,logMen.toString());
+
+                                    } else {
+                                        handler.post(() -> ToastUtils.showLong("该设备没有可使用的人脸特征"));
+                                        Log.e(TAG,logMen.toString());
+
+                                    }
+                                }
+                            }
+
+                            @Override
+                            public void onComplete() {
+
+                            }
+                        });
+            }
+        } else {
+            handler.post(() -> ToastUtils.showLong("该设备没有可使用的人脸特征"));
         }
     }
 
-    private void mapInit() {
-        SafeCheck safeCheck = new SafeCheck();
-        safeCheck.setURL(config.getString("ServerId"));
-        paramsMap.put("daid", config.getString("daid"));
-        paramsMap.put("pass", safeCheck.getPass(config.getString("daid")));
-    }
-
     private void testNet() {
-        HashMap<String, String> map = (HashMap<String, String>) paramsMap.clone();
-        map.put("dataType", "test");
-        RetrofitGenerator.getSxApi().GeneralUpdata(map)
+        RetrofitGenerator.getXinWeiGuanApi().noData("testNet", config.getString("key"))
                 .subscribeOn(Schedulers.io())
                 .unsubscribeOn(Schedulers.io())
                 .observeOn(AndroidSchedulers.mainThread())
-                .subscribe(new Observer<String>() {
+                .subscribe(new Observer<ResponseBody>() {
                     @Override
                     public void onSubscribe(Disposable d) {
 
                     }
 
                     @Override
-                    public void onNext(String s) {
+                    public void onNext(ResponseBody responseBody) {
+                        String s = ParsingTool.extractMainContent(responseBody);
                         if (s.startsWith("true")) {
                             EventBus.getDefault().post(new NetworkEvent(true));
                         } else {
@@ -673,59 +693,32 @@ public class SXService extends Service implements ISwitchView {
                 });
     }
 
-    private void checkOnline() {
-        HashMap<String, String> map = (HashMap<String, String>) paramsMap.clone();
-        map.put("dataType", "checkOnline");
-        RetrofitGenerator.getSxApi().GeneralUpdata(map)
-                .subscribeOn(Schedulers.io())
-                .unsubscribeOn(Schedulers.io())
-                .observeOn(AndroidSchedulers.mainThread())
-                .subscribe(new Observer<String>() {
-                    @Override
-                    public void onSubscribe(Disposable d) {
-
-                    }
-
-                    @Override
-                    public void onNext(String s) {
-
-
-                    }
-
-                    @Override
-                    public void onError(Throwable e) {
-
-                    }
-
-                    @Override
-                    public void onComplete() {
-
-                    }
-                });
-    }
 
     private void CloseDoorRecord(String time) {
-        HashMap<String, String> map = (HashMap<String, String>) paramsMap.clone();
-        map.put("dataType", "closeDoor");
-        map.put("time", time);
-        RetrofitGenerator.getSxApi().GeneralUpdata(map)
+        JSONObject CloseDoorRecordJson = new JSONObject();
+        try {
+            CloseDoorRecordJson.put("datetime", time);
+        } catch (JSONException e) {
+            e.printStackTrace();
+        }
+        RetrofitGenerator.getXinWeiGuanApi().withDataRr("closeDoorRecord", config.getString("key"), CloseDoorRecordJson.toString())
                 .subscribeOn(Schedulers.io())
                 .unsubscribeOn(Schedulers.io())
                 .observeOn(AndroidSchedulers.mainThread())
-                .subscribe(new Observer<String>() {
+                .subscribe(new Observer<ResponseBody>() {
                     @Override
                     public void onSubscribe(Disposable d) {
 
                     }
 
                     @Override
-                    public void onNext(String s) {
+                    public void onNext(ResponseBody responseBody) {
 
                     }
 
                     @Override
                     public void onError(Throwable e) {
-                        mdaoSession.insert(new ReUploadWithBsBean(null, "dataType=closeDoor" + "&time=" + url_timeformatter.format(new Date(System.currentTimeMillis())), null, 0));
+                        mdaoSession.insert(new ReUploadBean(null, "closeDoorRecord", CloseDoorRecordJson.toString()));
 
                     }
 
@@ -738,28 +731,32 @@ public class SXService extends Service implements ISwitchView {
 
     private void alarmRecord() {
         EventBus.getDefault().post(new AlarmEvent());
-        HashMap<String, String> map = (HashMap<String, String>) paramsMap.clone();
-        map.put("dataType", "alarm");
-        map.put("alarmType", String.valueOf(1));
-        map.put("time", formatter.format(new Date(System.currentTimeMillis())));
-        RetrofitGenerator.getSxApi().GeneralUpdata(map)
+        final JSONObject alarmRecordJson = new JSONObject();
+        try {
+            alarmRecordJson.put("datetime", TimeUtils.getNowString());// 报警时间
+            alarmRecordJson.put("alarmType", String.valueOf(1));  //报警类型
+            alarmRecordJson.put("alarmValue", String.valueOf(0));  //报警值
+        } catch (JSONException e) {
+            e.printStackTrace();
+        }
+        RetrofitGenerator.getXinWeiGuanApi().withDataRr("alarmRecord", config.getString("key"), alarmRecordJson.toString())
                 .subscribeOn(Schedulers.io())
                 .unsubscribeOn(Schedulers.io())
                 .observeOn(AndroidSchedulers.mainThread())
-                .subscribe(new Observer<String>() {
+                .subscribe(new Observer<ResponseBody>() {
                     @Override
                     public void onSubscribe(Disposable d) {
 
                     }
 
                     @Override
-                    public void onNext(String s) {
+                    public void onNext(ResponseBody responseBody) {
 
                     }
 
                     @Override
                     public void onError(Throwable e) {
-                        mdaoSession.insert(new ReUploadWithBsBean(null, "dataType=alarm&alarmType=1" + "&time=" + url_timeformatter.format(new Date(System.currentTimeMillis())), null, 0));
+                        mdaoSession.insert(new ReUploadBean(null, "alarmRecord", alarmRecordJson.toString()));
                     }
 
                     @Override
@@ -771,23 +768,32 @@ public class SXService extends Service implements ISwitchView {
     }
 
     private void StateRecord() {
-        HashMap<String, String> map = (HashMap<String, String>) paramsMap.clone();
-        map.put("dataType", "temHum");
-        map.put("tem", String.valueOf(last_mTemperature));
-        map.put("hum", String.valueOf(last_mHumidity));
-        map.put("time", formatter.format(new Date(System.currentTimeMillis())));
-        RetrofitGenerator.getSxApi().GeneralUpdata(map)
+        JSONObject jsonObject = new JSONObject();
+        try {
+            jsonObject.put("datetime", TimeUtils.getNowString());
+            jsonObject.put("switching", THSwitchValue);
+            jsonObject.put("temperature", last_mTemperature);
+            jsonObject.put("humidity", last_mHumidity);
+            if (Door.getInstance().getMdoorState().equals(State_Open)) {
+                jsonObject.put("state", "0");
+            } else {
+                jsonObject.put("state", "1");
+            }
+        } catch (JSONException e) {
+            e.printStackTrace();
+        }
+        RetrofitGenerator.getXinWeiGuanApi().withDataRr("stateRecord", config.getString("key"), jsonObject.toString())
                 .subscribeOn(Schedulers.io())
                 .unsubscribeOn(Schedulers.io())
                 .observeOn(AndroidSchedulers.mainThread())
-                .subscribe(new Observer<String>() {
+                .subscribe(new Observer<ResponseBody>() {
                     @Override
                     public void onSubscribe(Disposable d) {
 
                     }
 
                     @Override
-                    public void onNext(String s) {
+                    public void onNext(ResponseBody responseBody) {
 
                     }
 
@@ -825,7 +831,10 @@ public class SXService extends Service implements ISwitchView {
                 @Override
                 public void run() {
                     // 要执行的代码
-                    AppInit.getMyManager().reboot();
+                    autoUpdate();
+                    syncData();
+                    reUpload();
+//                    EventBus.getDefault().post(new RebootEvent());
                     Log.e("信息提示", "关机了");
                 }
             };
@@ -834,4 +843,5 @@ public class SXService extends Service implements ISwitchView {
             e.printStackTrace();
         }
     }
+
 }

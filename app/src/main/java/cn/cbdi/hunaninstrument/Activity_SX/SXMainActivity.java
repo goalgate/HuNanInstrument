@@ -50,6 +50,7 @@ import cn.cbdi.hunaninstrument.Function.Func_Switch.mvp.module.ISwitching;
 import cn.cbdi.hunaninstrument.Function.Func_Switch.mvp.presenter.SwitchPresenter;
 import cn.cbdi.hunaninstrument.R;
 import cn.cbdi.hunaninstrument.Retrofit.RetrofitGenerator;
+import cn.cbdi.hunaninstrument.State.DoorState.Door;
 import cn.cbdi.hunaninstrument.State.LockState.Lock;
 import cn.cbdi.hunaninstrument.State.OperationState.DoorOpenOperation;
 import cn.cbdi.hunaninstrument.Tool.MediaHelper;
@@ -67,6 +68,8 @@ import static cn.cbdi.hunaninstrument.Function.Func_Face.mvp.presenter.FacePrese
 import static cn.cbdi.hunaninstrument.Function.Func_Face.mvp.presenter.FacePresenter.FaceResultType.IMG_MATCH_IMG_Score;
 import static cn.cbdi.hunaninstrument.Function.Func_Face.mvp.presenter.FacePresenter.FaceResultType.Identify;
 import static cn.cbdi.hunaninstrument.Function.Func_Face.mvp.presenter.FacePresenter.FaceResultType.Identify_non;
+import static cn.cbdi.hunaninstrument.State.DoorState.Door.DoorState.State_Close;
+import static cn.cbdi.hunaninstrument.State.DoorState.Door.DoorState.State_Open;
 
 public class SXMainActivity extends BaseActivity implements NormalWindow.OptionTypeListener {
 
@@ -385,6 +388,7 @@ public class SXMainActivity extends BaseActivity implements NormalWindow.OptionT
                             String closeDoorTime = formatter.format(new Date(System.currentTimeMillis()));
                             CloseDoorRecord(closeDoorTime);
                             EventBus.getDefault().post(new LockUpEvent());
+                            Door.getInstance().setMdoorState(State_Close);
                         } else {
                             tv_info.setText("仓库门已解锁");
                         }
@@ -446,6 +450,10 @@ public class SXMainActivity extends BaseActivity implements NormalWindow.OptionT
             tv_info.setText("信息处理完毕,仓库门已解锁");
             DoorOpenOperation.getInstance().doNext();
             EventBus.getDefault().post(new PassEvent());
+            if (AppInit.getInstrumentConfig().isHongWai()) {
+                Door.getInstance().setMdoorState(State_Open);
+                Door.getInstance().doNext();
+            }
             iv_lock.setImageBitmap(BitmapFactory.decodeResource(getResources(), R.drawable.iv_mj1));
         }
     }

@@ -15,8 +15,12 @@ import com.baidu.idl.facesdk.FaceAuth;
 import com.baidu.idl.facesdk.FaceDetect;
 import com.baidu.idl.facesdk.callback.Callback;
 
+import java.io.BufferedReader;
 import java.io.File;
 import java.io.FileWriter;
+import java.io.IOException;
+import java.io.InputStream;
+import java.io.InputStreamReader;
 
 /**
  * @Time: 2019/1/15
@@ -66,7 +70,7 @@ public class FaceSDKManager {
         return HolderClass.instance;
     }
 
-    public void release(){
+    public void release() {
         context = null;
     }
 
@@ -112,36 +116,85 @@ public class FaceSDKManager {
             showActivation(sdkInitListener);
             return;
         } else {
-            if (sdkInitListener != null) {
-                sdkInitListener.initStart();
-            }
-            Log.e("FaceSDK", "初始化授权");
-            check(context, licenseKey, new FaceCallback() {
-                @Override
-                public void onResponse(int code, String response) {
-                    if (code == 0) {
-                        Log.e("FaceSDK", "授权成功");
-                        if (sdkInitListener != null) {
-                            SaveTxt(licenseKey);
-                            initStatus = SDK_SUCCESS;
-                            sdkInitListener.initSuccess();
-                            initModel();
-                        }
-                        return;
-                    } else {
-                        Log.e("FaceSDK", "授权失败:" + response);
-                        if (sdkInitListener != null) {
-                            sdkInitListener.initFail(code, "授权失败:" + response);
-                        }
-                        handler.post(new Runnable() {
-                            @Override
-                            public void run() {
-                                showActivation(sdkInitListener);
-                            }
-                        });
-                    }
+            if (licenseKey.equals("LMPW-TXGV-9C28-AFTR") ||
+                    licenseKey.equals("ULME-2JXX-EAQY-LEDV") ||
+                    licenseKey.equals("GB78-TWDK-MVMC-KGBX") ||
+                    licenseKey.equals("GHXX-CDLX-SVNV-MCUX") ||
+                    licenseKey.equals("XNW7-HGCU-DDRK-HHCJ") ||
+                    licenseKey.equals("JD4B-2CGD-TKNW-XTAN")) {
+                String real_licenseKey = "";
+                if (licenseKey.equals("LMPW-TXGV-9C28-AFTR")) {
+                    real_licenseKey = "NBGA-KYHY-ZTD9-8XAV";
+                } else if (licenseKey.equals("ULME-2JXX-EAQY-LEDV")) {
+                    real_licenseKey = "GHXX-CDLX-SVNV-MCUX";
+                } else if (licenseKey.equals("GB78-TWDK-MVMC-KGBX")) {
+                    real_licenseKey = "YUPX-YSNZ-NYE8-LBPX";
+                } else if (licenseKey.equals("GHXX-CDLX-SVNV-MCUX")) {
+                    real_licenseKey = "TZJF-CQQQ-WXSK-JNXU";
+                } else if (licenseKey.equals("XNW7-HGCU-DDRK-HHCJ")) {
+                    real_licenseKey = "WCFF-X5HB-VXMX-2XNX";
+                } else if (licenseKey.equals("JD4B-2CGD-TKNW-XTAN")) {
+                    real_licenseKey = "ALSF-XKXC-VXKY-VVNY";
                 }
-            });
+                toast("人脸激活号正在转换，请稍候...");
+                activation = new Activation(context);
+                activation.show();
+                activation.setActivationCallback(new Activation.ActivationCallback() {
+                    @Override
+                    public void callback(int code, String response, String licenseKey) {
+                        if (code == 0) {
+                            Log.e("FaceSDK", "授权成功");
+                            if (sdkInitListener != null) {
+                                PreferencesUtil.putString("activate_key", licenseKey);
+                                initStatus = SDK_SUCCESS;
+                                sdkInitListener.initSuccess();
+                                initModel();
+                            }
+                            return;
+                        } else {
+                            Log.e("FaceSDK", "授权失败:" + response);
+                            if (sdkInitListener != null) {
+                                dissDialog();
+//                                sdkInitListener.initFail(code, "授权失败:" + response);
+                                toast("人脸号更换失败，请确定设备已联网");
+                            }
+                        }
+                    }
+                });
+                activation.keyEt.setText(real_licenseKey);
+                activation.activateBtn.performClick();
+            } else {
+                if (sdkInitListener != null) {
+                    sdkInitListener.initStart();
+                }
+                Log.e("FaceSDK", "初始化授权");
+                check(context, licenseKey, new FaceCallback() {
+                    @Override
+                    public void onResponse(int code, String response) {
+                        if (code == 0) {
+                            Log.e("FaceSDK", "授权成功");
+                            if (sdkInitListener != null) {
+                                SaveTxt(licenseKey);
+                                initStatus = SDK_SUCCESS;
+                                sdkInitListener.initSuccess();
+                                initModel();
+                            }
+                            return;
+                        } else {
+                            Log.e("FaceSDK", "授权失败:" + response);
+                            if (sdkInitListener != null) {
+                                sdkInitListener.initFail(code, "授权失败:" + response);
+                            }
+                            handler.post(new Runnable() {
+                                @Override
+                                public void run() {
+                                    showActivation(sdkInitListener);
+                                }
+                            });
+                        }
+                    }
+                });
+            }
         }
     }
 
@@ -197,7 +250,7 @@ public class FaceSDKManager {
     }
 
     public FaceEnvironment getFaceEnvironmentConfig() {
-        faceEnvironment.setMinFaceSize(100);
+        faceEnvironment.setMinFaceSize(160);
         faceEnvironment.setMaxFaceSize(-1);
         faceEnvironment.setDetectInterval(1000);
         faceEnvironment.setTrackInterval(500);
@@ -287,9 +340,9 @@ public class FaceSDKManager {
         public void initFail(int errorCode, String msg);
     }
 
-    public static void SaveTxt(String str){
+    public static void SaveTxt(String str) {
         try {
-            FileWriter fw = new FileWriter(Environment.getExternalStorageDirectory()+File.separator + "key.txt");//SD卡中的路径
+            FileWriter fw = new FileWriter(Environment.getExternalStorageDirectory() + File.separator + "key.txt");//SD卡中的路径
             fw.flush();
             fw.write(str);
             fw.close();

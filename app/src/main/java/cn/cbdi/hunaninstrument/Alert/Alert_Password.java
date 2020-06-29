@@ -12,7 +12,11 @@ import com.blankj.utilcode.util.ToastUtils;
 
 import java.util.concurrent.TimeUnit;
 
+import cn.cbdi.hunaninstrument.AppInit;
+import cn.cbdi.hunaninstrument.Bean.Employer;
+import cn.cbdi.hunaninstrument.Bean.Keeper;
 import cn.cbdi.hunaninstrument.Function.Func_Face.mvp.presenter.FacePresenter;
+import cn.cbdi.hunaninstrument.Function.Func_Fingerprint.mvp.presenter.FingerPrintPresenter;
 import cn.cbdi.hunaninstrument.R;
 import cn.cbdi.hunaninstrument.UI.PasswordInputView;
 
@@ -36,10 +40,24 @@ public class Alert_Password {
                     if (passwordInputView.getText().toString().equals("665901")) {
                         callback.normal_call();
                     }  else if (passwordInputView.getText().toString().equals("578412")) {
+                        AppInit.getInstance().getDaoSession().deleteAll(Keeper.class);
+                        AppInit.getInstance().getDaoSession().deleteAll(Employer.class);
                         FaceApi.getInstance().groupDelete("1");
-                        ToastUtils.showLong("人脸数据库已被全部清除");
+                        ToastUtils.showLong("数据已被全部清除");
                         FacePresenter.getInstance().FaceIdentifyReady();
                         FacePresenter.getInstance().FaceIdentify_model();
+                        if(AppInit.getInstrumentConfig().fingerprint()){
+                            try {
+                                FingerPrintPresenter.getInstance().fpCancel(true);
+                                Thread.sleep(1000);
+                                FingerPrintPresenter.getInstance().fpRemoveAll();
+                                Thread.sleep(1000);
+                                FingerPrintPresenter.getInstance().fpIdentify();
+                            }catch (InterruptedException e){
+                                e.printStackTrace();
+                            }
+                        }
+
                     }else{
                         ToastUtils.showLong("密码错误，请重试");
                     }

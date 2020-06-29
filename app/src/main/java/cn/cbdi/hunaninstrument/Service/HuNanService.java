@@ -105,7 +105,7 @@ public class HuNanService extends Service implements ISwitchView {
         sp.SwitchPresenterSetView(this);
         EventBus.getDefault().register(this);
         CopySourceFile();
-        autoUpdate();
+//        autoUpdate();
         Observable.timer(10, TimeUnit.SECONDS).subscribeOn(Schedulers.io())
                 .unsubscribeOn(Schedulers.io())
                 .observeOn(AndroidSchedulers.mainThread())
@@ -408,7 +408,7 @@ public class HuNanService extends Service implements ISwitchView {
                                 if (idList.length > 0) {
                                     for (String id : idList) {
                                         if (!id.equals("")) {
-                                            mdaoSession.insertOrReplace(new Employer(id, 3));
+                                            mdaoSession.insertOrReplace(new Employer(id.toUpperCase(), 3));
                                         }
                                     }
                                 }
@@ -446,7 +446,7 @@ public class HuNanService extends Service implements ISwitchView {
                                                 if (idList.length > 0) {
                                                     for (String id : idList) {
                                                         if (!id.equals("")) {
-                                                            mdaoSession.insertOrReplace(new Employer(id, 2));
+                                                            mdaoSession.insertOrReplace(new Employer(id.toUpperCase(), 2));
                                                         }
                                                     }
                                                 }
@@ -484,7 +484,7 @@ public class HuNanService extends Service implements ISwitchView {
                                                                 if (idList.length > 0) {
                                                                     for (String id : idList) {
                                                                         if (!id.equals("")) {
-                                                                            mdaoSession.insertOrReplace(new Employer(id, 1));
+                                                                            mdaoSession.insertOrReplace(new Employer(id.toUpperCase(), 1));
                                                                         }
                                                                     }
                                                                 }

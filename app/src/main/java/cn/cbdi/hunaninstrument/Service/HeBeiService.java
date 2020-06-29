@@ -126,7 +126,7 @@ public class HeBeiService extends Service implements ISwitchView {
         EventBus.getDefault().register(this);
         mapInit();
         CopySourceFile();
-        autoUpdate();
+//        autoUpdate();
         Observable.timer(10, TimeUnit.SECONDS).subscribeOn(Schedulers.io())
                 .unsubscribeOn(Schedulers.io())
                 .observeOn(AndroidSchedulers.mainThread())
@@ -158,29 +158,55 @@ public class HeBeiService extends Service implements ISwitchView {
     public void onGetPassEvent(PassEvent event) {
         Lock.getInstance().setState(Lock.LockState.STATE_Unlock);
         Lock.getInstance().doNext();
-        Observable.timer(120, TimeUnit.SECONDS).subscribeOn(Schedulers.newThread())
-                .subscribe(new Observer<Long>() {
-                    @Override
-                    public void onSubscribe(Disposable d) {
-                        unlock_noOpen = d;
-                    }
+        if (!AppInit.getInstrumentConfig().isHongWai()) {
+            Observable.timer(120, TimeUnit.SECONDS).subscribeOn(Schedulers.newThread())
+                    .subscribe(new Observer<Long>() {
+                        @Override
+                        public void onSubscribe(Disposable d) {
+                            unlock_noOpen = d;
+                        }
 
-                    @Override
-                    public void onNext(Long aLong) {
-                        Lock.getInstance().setState(Lock.LockState.STATE_Lockup);
-                        sp.buzz(SwitchImpl.Hex.H2);
-                        EventBus.getDefault().post(new LockUpEvent());
-                    }
+                        @Override
+                        public void onNext(Long aLong) {
+                            Lock.getInstance().setState(Lock.LockState.STATE_Lockup);
+                            sp.buzz(SwitchImpl.Hex.H0);
+                            EventBus.getDefault().post(new LockUpEvent());
+                        }
 
-                    @Override
-                    public void onError(Throwable e) {
+                        @Override
+                        public void onError(Throwable e) {
 
-                    }
+                        }
 
-                    @Override
-                    public void onComplete() {
-                    }
-                });
+                        @Override
+                        public void onComplete() {
+                        }
+                    });
+        }
+//
+//        Observable.timer(120, TimeUnit.SECONDS).subscribeOn(Schedulers.newThread())
+//                .subscribe(new Observer<Long>() {
+//                    @Override
+//                    public void onSubscribe(Disposable d) {
+//                        unlock_noOpen = d;
+//                    }
+//
+//                    @Override
+//                    public void onNext(Long aLong) {
+//                        Lock.getInstance().setState(Lock.LockState.STATE_Lockup);
+//                        sp.buzz(SwitchImpl.Hex.H2);
+//                        EventBus.getDefault().post(new LockUpEvent());
+//                    }
+//
+//                    @Override
+//                    public void onError(Throwable e) {
+//
+//                    }
+//
+//                    @Override
+//                    public void onComplete() {
+//                    }
+//                });
     }
 
     @Override
@@ -197,88 +223,92 @@ public class HeBeiService extends Service implements ISwitchView {
 
     @Override
     public void onSwitchingText(String value) {
-//        if (value.startsWith("AAAAAA")) {
-//            if ((Last_Value == null || Last_Value.equals(""))) {
-//                Last_Value = value;
-//            }
-//            if (!value.equals(Last_Value)) {
-//                Last_Value = value;
-//                if (Last_Value.equals("AAAAAA000000000000")) {
-//                    if (Lock.getInstance().getState().equals(Lock.LockState.STATE_Lockup)) {
-//                        Lock.getInstance().doNext();
-//                        alarmRecord();
-//                    }
-//                }
-//            }
-//        }
         Lg.e("switchValue", value);
-        if ((Last_Value == null || Last_Value.equals(""))) {
+        if (AppInit.getInstrumentConfig().isHongWai()) {
             if (value.startsWith("AAAAAA")) {
-                Last_Value = value;
-                if (value.equals("AAAAAA000000000000")) {
-                    Door.getInstance().setMdoorState(Door.DoorState.State_Open);
-                    Door.getInstance().doNext();
-                    alarmRecord();
+                if ((Last_Value == null || Last_Value.equals(""))) {
+                    Last_Value = value;
                 }
-            }
-        } else {
-            if (value.startsWith("AAAAAA") && value.endsWith("000000")) {
                 if (!value.equals(Last_Value)) {
                     Last_Value = value;
                     if (Last_Value.equals("AAAAAA000000000000")) {
-                        if (Door.getInstance().getMdoorState().equals(Door.DoorState.State_Close)) {
-                            Door.getInstance().setMdoorState(Door.DoorState.State_Open);
-                            Door.getInstance().doNext();
-                            if (Lock.getInstance().getState().equals(Lock.LockState.STATE_Lockup)) {
-                                alarmRecord();
-                            }
-                        }
-                        if (unlock_noOpen != null) {
-                            unlock_noOpen.dispose();
-                        }
-                        if (rx_delay != null) {
-                            rx_delay.dispose();
-                        }
-                    } else if (Last_Value.equals("AAAAAA000001000000")) {
-                        if (Lock.getInstance().getState().equals(Lock.LockState.STATE_Unlock)) {
-                            final String closeDoorTime = formatter.format(new Date(System.currentTimeMillis()));
-                            Observable.timer(10, TimeUnit.SECONDS).subscribeOn(Schedulers.newThread())
-                                    .subscribe(new Observer<Long>() {
-                                        @Override
-                                        public void onSubscribe(Disposable d) {
-                                            rx_delay = d;
-                                        }
-
-                                        @Override
-                                        public void onNext(Long aLong) {
-                                            Lock.getInstance().setState(Lock.LockState.STATE_Lockup);
-                                            Door.getInstance().setMdoorState(Door.DoorState.State_Close);
-                                            sp.buzz(SwitchImpl.Hex.H2);
-                                            if (unlock_noOpen != null) {
-                                                unlock_noOpen.dispose();
-                                            }
-                                            CloseDoorRecord(closeDoorTime);
-                                            EventBus.getDefault().post(new LockUpEvent());
-                                        }
-
-                                        @Override
-                                        public void onError(Throwable e) {
-
-                                        }
-
-                                        @Override
-                                        public void onComplete() {
-
-                                        }
-                                    });
-                        } else {
-                            Door.getInstance().setMdoorState(Door.DoorState.State_Close);
+                        if (Lock.getInstance().getState().equals(Lock.LockState.STATE_Lockup)) {
+                            Lock.getInstance().doNext();
+                            alarmRecord();
                         }
                     }
                 }
+            }
+
+        } else {
+            if ((Last_Value == null || Last_Value.equals(""))) {
+                if (value.startsWith("AAAAAA")) {
+                    Last_Value = value;
+                    if (value.equals("AAAAAA000000000000")) {
+                        Door.getInstance().setMdoorState(Door.DoorState.State_Open);
+                        Door.getInstance().doNext();
+                        alarmRecord();
+                    }
+                }
             } else {
-                if (value.startsWith("BBBBBB") && value.endsWith("C1EF")) {
-                    THSwitchValue = value;
+                if (value.startsWith("AAAAAA") && value.endsWith("000000")) {
+                    if (!value.equals(Last_Value)) {
+                        Last_Value = value;
+                        if (Last_Value.equals("AAAAAA000000000000")) {
+                            if (Door.getInstance().getMdoorState().equals(Door.DoorState.State_Close)) {
+                                Door.getInstance().setMdoorState(Door.DoorState.State_Open);
+                                Door.getInstance().doNext();
+                                if (Lock.getInstance().getState().equals(Lock.LockState.STATE_Lockup)) {
+                                    alarmRecord();
+                                }
+                            }
+                            if (unlock_noOpen != null) {
+                                unlock_noOpen.dispose();
+                            }
+                            if (rx_delay != null) {
+                                rx_delay.dispose();
+                            }
+                        } else if (Last_Value.equals("AAAAAA000001000000")) {
+                            if (Lock.getInstance().getState().equals(Lock.LockState.STATE_Unlock)) {
+                                final String closeDoorTime = formatter.format(new Date(System.currentTimeMillis()));
+                                Observable.timer(10, TimeUnit.SECONDS).subscribeOn(Schedulers.newThread())
+                                        .subscribe(new Observer<Long>() {
+                                            @Override
+                                            public void onSubscribe(Disposable d) {
+                                                rx_delay = d;
+                                            }
+
+                                            @Override
+                                            public void onNext(Long aLong) {
+                                                Lock.getInstance().setState(Lock.LockState.STATE_Lockup);
+                                                Door.getInstance().setMdoorState(Door.DoorState.State_Close);
+                                                sp.buzz(SwitchImpl.Hex.H2);
+                                                if (unlock_noOpen != null) {
+                                                    unlock_noOpen.dispose();
+                                                }
+                                                CloseDoorRecord(closeDoorTime);
+                                                EventBus.getDefault().post(new LockUpEvent());
+                                            }
+
+                                            @Override
+                                            public void onError(Throwable e) {
+
+                                            }
+
+                                            @Override
+                                            public void onComplete() {
+
+                                            }
+                                        });
+                            } else {
+                                Door.getInstance().setMdoorState(Door.DoorState.State_Close);
+                            }
+                        }
+                    }
+                } else {
+                    if (value.startsWith("BBBBBB") && value.endsWith("C1EF")) {
+                        THSwitchValue = value;
+                    }
                 }
             }
         }
@@ -485,7 +515,7 @@ public class HeBeiService extends Service implements ISwitchView {
                             String[] idList = s.split("\\|");
                             if (idList.length > 0) {
                                 for (String id : idList) {
-                                    mdaoSession.insertOrReplace(new Employer(id, 3));
+                                    mdaoSession.insertOrReplace(new Employer(id.toUpperCase(), 3));
                                 }
                             }
                         } catch (Exception e) {
@@ -518,7 +548,7 @@ public class HeBeiService extends Service implements ISwitchView {
                                             String[] idList = s.split("\\|");
                                             if (idList.length > 0) {
                                                 for (String id : idList) {
-                                                    mdaoSession.insertOrReplace(new Employer(id, 2));
+                                                    mdaoSession.insertOrReplace(new Employer(id.toUpperCase(), 2));
                                                 }
                                             }
                                         } catch (Exception e) {
@@ -551,7 +581,7 @@ public class HeBeiService extends Service implements ISwitchView {
                                                             String[] idList = s.split("\\|");
                                                             if (idList.length > 0) {
                                                                 for (String id : idList) {
-                                                                    mdaoSession.insertOrReplace(new Employer(id, 1));
+                                                                    mdaoSession.insertOrReplace(new Employer(id.toUpperCase(), 1));
                                                                 }
                                                             }
                                                         } catch (Exception e) {

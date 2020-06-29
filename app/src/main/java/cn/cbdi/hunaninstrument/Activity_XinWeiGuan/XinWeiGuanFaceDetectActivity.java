@@ -153,7 +153,9 @@ public class XinWeiGuanFaceDetectActivity extends RxActivity implements IFaceVie
     @Override
     public void onUser(FacePresenter.FaceResultType resultType, User user) {
         if (resultType.equals(Reg_success)) {
-            EventBus.getDefault().post(new FaceDetectEvent(headBmp, user.getUserId()));
+//            EventBus.getDefault().post(new FaceDetectEvent(headBmp, user.getUserId()));
+            EventBus.getDefault().post(new FaceDetectEvent(fp.getBitmapData(), user.getUserId()));
+
         }
     }
 

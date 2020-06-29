@@ -13,7 +13,17 @@
 
 
         <activity
-            android:name=".Activity_XinWeiGuan.XinWeiGuanMainActivity"
+            android:name=".Activity_XinWeiGuan.XinWeiGuanMainActivity2"
+            android:launchMode="standard"
+            android:theme="@style/ImageTranslucentTheme"></activity>
+
+
+        <activity
+            android:name=".Activity_XinWeiGuan.XinWeiGuanAddActivity2"
+            android:launchMode="standard"
+            android:theme="@style/ImageTranslucentTheme"></activity>
+        <activity
+            android:name=".Activity_XinWeiGuan.XinWeiGuanFaceDetectActivity"
             android:launchMode="standard"
             android:theme="@style/ImageTranslucentTheme"></activity>
 
@@ -138,8 +148,8 @@
         <service android:name=".Service.AttendanceService"></service>
         <service android:name=".Service.HLJYZBService"></service>
         <service android:name=".Activity_LN.LNService"></service>
-        <service android:name=".Activity_XinWeiGuan.XinWeiGuanService"></service>
-
+        <service android:name=".Activity_XinWeiGuan.XinWeiGuanService2"></service>
+        <service android:name=".Service.UpdateService"></service>
         <receiver android:name=".BroadcastReceiver.BootBroadcastReceiver">
             <intent-filter>
                 <action android:name="android.intent.action.BOOT_COMPLETED" />

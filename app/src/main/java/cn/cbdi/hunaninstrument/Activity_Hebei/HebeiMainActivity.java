@@ -51,12 +51,15 @@ import cn.cbdi.hunaninstrument.Bean.Employer;
 import cn.cbdi.hunaninstrument.Bean.Keeper;
 import cn.cbdi.hunaninstrument.Bean.ReUploadWithBsBean;
 import cn.cbdi.hunaninstrument.Bean.SceneKeeper;
+import cn.cbdi.hunaninstrument.EventBus.LockUpEvent;
 import cn.cbdi.hunaninstrument.EventBus.PassEvent;
 import cn.cbdi.hunaninstrument.Function.Func_Face.mvp.presenter.FacePresenter;
 import cn.cbdi.hunaninstrument.Function.Func_Switch.mvp.module.ISwitching;
 import cn.cbdi.hunaninstrument.Function.Func_Switch.mvp.presenter.SwitchPresenter;
 import cn.cbdi.hunaninstrument.R;
 import cn.cbdi.hunaninstrument.Retrofit.RetrofitGenerator;
+import cn.cbdi.hunaninstrument.State.DoorState.Door;
+import cn.cbdi.hunaninstrument.State.LockState.Lock;
 import cn.cbdi.hunaninstrument.State.OperationState.DoorOpenOperation;
 import cn.cbdi.hunaninstrument.Tool.MediaHelper;
 import cn.cbdi.hunaninstrument.Tool.MyObserver;
@@ -70,6 +73,7 @@ import io.reactivex.Observable;
 import io.reactivex.Observer;
 import io.reactivex.android.schedulers.AndroidSchedulers;
 import io.reactivex.disposables.Disposable;
+import io.reactivex.functions.Consumer;
 import io.reactivex.schedulers.Schedulers;
 import okhttp3.ResponseBody;
 
@@ -77,6 +81,8 @@ import static cn.cbdi.hunaninstrument.Function.Func_Face.mvp.presenter.FacePrese
 import static cn.cbdi.hunaninstrument.Function.Func_Face.mvp.presenter.FacePresenter.FaceResultType.IMG_MATCH_IMG_Score;
 import static cn.cbdi.hunaninstrument.Function.Func_Face.mvp.presenter.FacePresenter.FaceResultType.Identify;
 import static cn.cbdi.hunaninstrument.Function.Func_Face.mvp.presenter.FacePresenter.FaceResultType.Identify_non;
+import static cn.cbdi.hunaninstrument.State.DoorState.Door.DoorState.State_Close;
+import static cn.cbdi.hunaninstrument.State.DoorState.Door.DoorState.State_Open;
 import static cn.cbdi.hunaninstrument.Tool.Update.UpdateConstant.SIGN_MD5;
 
 public class HebeiMainActivity extends BaseActivity implements NormalWindow.OptionTypeListener {
@@ -126,6 +132,9 @@ public class HebeiMainActivity extends BaseActivity implements NormalWindow.Opti
 
     String CompareScore;
 
+    SimpleDateFormat url_timeformatter = new SimpleDateFormat("yyyy-MM-dd%20HH:mm:ss");
+
+
     @Override
     public void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
@@ -169,7 +178,7 @@ public class HebeiMainActivity extends BaseActivity implements NormalWindow.Opti
         mapInit();
         setGestures();
         disposableTips = RxTextView.textChanges(tv_info)
-                .debounce(15, TimeUnit.SECONDS)
+                .debounce(3, TimeUnit.SECONDS)
                 .switchMap(charSequence -> Observable.just("等待用户操作..."))
                 .observeOn(AndroidSchedulers.mainThread())
                 .subscribe((s) -> tv_info.setText(s));
@@ -391,7 +400,16 @@ public class HebeiMainActivity extends BaseActivity implements NormalWindow.Opti
                             return;
                         }
                     } else if (DoorOpenOperation.getInstance().getmDoorOpenOperation().equals(DoorOpenOperation.DoorOpenState.TwoUnlock)) {
-                        tv_info.setText("仓库门已解锁");
+//                        tv_info.setText("仓库门已解锁");
+                        if (AppInit.getInstrumentConfig().isHongWai()) {
+                            Lock.getInstance().setState(Lock.LockState.STATE_Lockup);
+                            String closeDoorTime = formatter.format(new Date(System.currentTimeMillis()));
+                            CloseDoorRecord(closeDoorTime);
+                            EventBus.getDefault().post(new LockUpEvent());
+                            Door.getInstance().setMdoorState(State_Close);
+                        } else {
+                            tv_info.setText("仓库门已解锁");
+                        }
                     }
                 } else if (employer.getType() == 2) {
                     if (checkChange != null) {
@@ -447,10 +465,26 @@ public class HebeiMainActivity extends BaseActivity implements NormalWindow.Opti
             CompareScore = text;
             SwitchPresenter.getInstance().buzz(ISwitching.Hex.HA);
             sp.greenLight();
-            tv_info.setText("信息处理完毕,仓库门已解锁");
             DoorOpenOperation.getInstance().doNext();
             EventBus.getDefault().post(new PassEvent());
             iv_lock.setImageBitmap(BitmapFactory.decodeResource(getResources(), R.drawable.iv_mj1));
+            if (AppInit.getInstrumentConfig().isHongWai()) {
+                fp.FaceSetNoAction();
+                tv_info.setText("信息处理完毕,仓库门已解锁,20秒后才可重新上锁");
+                Door.getInstance().setMdoorState(State_Open);
+                Door.getInstance().doNext();
+                Observable.timer(20,TimeUnit.SECONDS)
+                        .compose(this.<Long>bindUntilEvent(ActivityEvent.PAUSE))
+                        .observeOn(AndroidSchedulers.mainThread())
+                        .subscribe(new Consumer<Long>() {
+                            @Override
+                            public void accept(Long aLong) throws Exception {
+                                fp.FaceIdentify_model();
+                            }
+                        });
+            }else{
+                tv_info.setText("信息处理完毕,仓库门已解锁");
+            }
         }
     }
 
@@ -558,6 +592,40 @@ public class HebeiMainActivity extends BaseActivity implements NormalWindow.Opti
                     }
                     cg_User1 = new SceneKeeper();
                     cg_User2 = new SceneKeeper();
+                });
+    }
+
+
+
+    private void CloseDoorRecord(String time) {
+        HashMap<String, String> map = (HashMap<String, String>) paramsMap.clone();
+        map.put("dataType", "closeDoor");
+        map.put("time", time);
+        RetrofitGenerator.getHebeiApi().GeneralUpdata(map)
+                .subscribeOn(Schedulers.io())
+                .unsubscribeOn(Schedulers.io())
+                .observeOn(AndroidSchedulers.mainThread())
+                .subscribe(new Observer<String>() {
+                    @Override
+                    public void onSubscribe(Disposable d) {
+
+                    }
+
+                    @Override
+                    public void onNext(String s) {
+
+                    }
+
+                    @Override
+                    public void onError(Throwable e) {
+                        mdaosession.insert(new ReUploadWithBsBean(null, "dataType=closeDoor" + "&time=" + url_timeformatter.format(new Date(System.currentTimeMillis())), null, 0));
+
+                    }
+
+                    @Override
+                    public void onComplete() {
+
+                    }
                 });
     }
 

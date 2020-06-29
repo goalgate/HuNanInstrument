@@ -56,10 +56,12 @@ import cn.cbdi.hunaninstrument.Function.Func_Switch.mvp.module.ISwitching;
 import cn.cbdi.hunaninstrument.Function.Func_Switch.mvp.presenter.SwitchPresenter;
 import cn.cbdi.hunaninstrument.R;
 import cn.cbdi.hunaninstrument.Retrofit.RetrofitGenerator;
+import cn.cbdi.hunaninstrument.State.DoorState.Door;
 import cn.cbdi.hunaninstrument.State.OperationState.DoorOpenOperation;
 import cn.cbdi.hunaninstrument.Tool.FileUtils;
 import cn.cbdi.hunaninstrument.Tool.MediaHelper;
 import cn.cbdi.hunaninstrument.Tool.MyObserver;
+import cn.cbdi.hunaninstrument.Tool.UDPState;
 import cn.cbdi.hunaninstrument.UI.NormalWindow;
 import cn.cbdi.log.Lg;
 import io.reactivex.Observable;
@@ -111,6 +113,10 @@ public class HuNanMainActivity3 extends BaseActivity implements NormalWindow.Opt
 
     String CompareScore;
 
+    int last_mTemperature = 0;
+
+    int last_mHumidity = 0;
+
     @BindView(R.id.gestures_overlay)
     GestureOverlayView gestures;
 
@@ -141,7 +147,20 @@ public class HuNanMainActivity3 extends BaseActivity implements NormalWindow.Opt
         UIReady();
         openService();
 //        syncTime();
+        Observable.interval(10, 300, TimeUnit.SECONDS)
+                .observeOn(Schedulers.io())
+                .subscribe((l) -> {
 
+                    UDPState udp = new UDPState();
+                    //设置通用参数：服务器地址，端口，设备ID，接口URL
+                    udp.setPar("124.172.232.89", 8059, config.getString("daid"), "http://129.204.110.143:8031/");
+                    if (Door.getInstance().getMdoorState().equals(Door.DoorState.State_Open)) {
+                        udp.setState(0, (float) last_mTemperature, (float) last_mHumidity);
+                    } else {
+                        udp.setState(1, (float) last_mTemperature, (float) last_mHumidity);
+                    }
+                    udp.send();
+                });
     }
 
     private void UIReady() {
@@ -225,7 +244,7 @@ public class HuNanMainActivity3 extends BaseActivity implements NormalWindow.Opt
         if (disposableTips != null) {
             disposableTips.dispose();
         }
-        stopService(intent);
+//        stopService(intent);
     }
 
     @Override
@@ -473,6 +492,8 @@ public class HuNanMainActivity3 extends BaseActivity implements NormalWindow.Opt
 
     @Subscribe(threadMode = ThreadMode.MAIN)
     public void onGetTemHumEvent(TemHumEvent event) {
+        last_mTemperature = event.getTem();
+        last_mHumidity = event.getHum();
         tv_temperature.setText(event.getTem() + "℃");
         tv_humidity.setText(event.getHum() + "%");
     }
@@ -667,6 +688,11 @@ public class HuNanMainActivity3 extends BaseActivity implements NormalWindow.Opt
                 .subscribe(new MyObserver<String>(this) {
 
                     @Override
+                    public void onSubscribe(Disposable d) {
+
+                    }
+
+                    @Override
                     public void onNext(String s) {
                         if (s.equals("true")) {
                             tv_info.setText("未知人员来访信息上传成功");
@@ -699,6 +725,11 @@ public class HuNanMainActivity3 extends BaseActivity implements NormalWindow.Opt
                                 mdaosession.delete(unknownUserList.get(i));
                             }
                         }
+
+                    }
+
+                    @Override
+                    public void onComplete() {
 
                     }
                 });

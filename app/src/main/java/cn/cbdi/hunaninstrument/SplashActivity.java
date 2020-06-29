@@ -3,6 +3,7 @@ package cn.cbdi.hunaninstrument;
 import android.content.ClipData;
 import android.content.ClipboardManager;
 import android.content.Context;
+import android.content.Intent;
 import android.os.Bundle;
 import android.os.Environment;
 import android.util.Log;
@@ -27,6 +28,7 @@ import java.util.concurrent.TimeUnit;
 
 import cn.cbdi.hunaninstrument.Function.Func_Face.mvp.presenter.FacePresenter;
 import cn.cbdi.hunaninstrument.Function.Func_Fingerprint.mvp.presenter.FingerPrintPresenter;
+import cn.cbdi.hunaninstrument.Service.UpdateService;
 import cn.cbdi.hunaninstrument.Tool.ActivityCollector;
 import cn.cbdi.hunaninstrument.Tool.AssetsUtils;
 import cn.cbdi.hunaninstrument.Tool.DESX;
@@ -52,6 +54,9 @@ public class SplashActivity extends RxActivity {
         setContentView(R.layout.activity_splash);
         ActivityCollector.addActivity(this);
 
+        Intent intent = new Intent(SplashActivity.this, UpdateService.class);
+        startService(intent);
+
         try {
             File key = new File(Environment.getExternalStorageDirectory() + File.separator + "key.txt");
             copyToClipboard(AppInit.getContext(), FileIOUtils.readFile2String(key));
@@ -60,225 +65,109 @@ public class SplashActivity extends RxActivity {
         }
         MediaHelper.mediaOpen();
 
-        Observable.timer(2, TimeUnit.SECONDS)
-                .observeOn(AndroidSchedulers.mainThread())
-                .compose(SplashActivity.this.<Long>bindUntilEvent(ActivityEvent.DESTROY))
-                .subscribe((l) -> {
-                    NetworkUtils.setWifiEnabled(false);
-                    Observable.timer(2, TimeUnit.SECONDS)
-                            .observeOn(AndroidSchedulers.mainThread())
-                            .compose(SplashActivity.this.<Long>bindUntilEvent(ActivityEvent.DESTROY))
-                            .subscribe((l1) -> {
-                                NetworkUtils.setWifiEnabled(true);
-                                FacePresenter.getInstance().FaceInit(this, new FaceSDKManager.SdkInitListener() {
-                                    @Override
-                                    public void initStart() {
-                                        Log.e(TAG, "sdk init start");
+        FacePresenter.getInstance().FaceInit(this, new FaceSDKManager.SdkInitListener() {
+            @Override
+            public void initStart() {
+                Log.e(TAG, "sdk init start");
+            }
+
+            @Override
+            public void initSuccess() {
+                Log.e(TAG, "sdk init success");
+                Observable.timer(3, TimeUnit.SECONDS)
+                        .observeOn(AndroidSchedulers.mainThread())
+                        .compose(SplashActivity.this.<Long>bindUntilEvent(ActivityEvent.DESTROY))
+                        .subscribe((l) -> {
+                            if (AppInit.getInstrumentConfig().getDev_prefix().startsWith("800")) {
+                                if (config.getBoolean("firstStart", true)) {
+                                    ActivityUtils.startActivity(getPackageName(), getPackageName() + ".StartActivity");
+                                    return;
+                                } else {
+                                    ActivityUtils.startActivity(getPackageName(), getPackageName() + AppInit.getInstrumentConfig().getMainActivity());
+                                    return;
+                                }
+                            }
+                            if (AppInit.getInstrumentConfig().fingerprint()) {
+                                FingerPrintPresenter.getInstance().fpInit();
+                                FingerPrintPresenter.getInstance().fpOpen();
+                            }
+
+                            if (config.getBoolean("firstStart", true)) {
+                                JSONObject jsonKey = new JSONObject();
+                                try {
+                                    jsonKey.put("daid", new NetInfo().getMacId());
+                                    jsonKey.put("check", DESX.encrypt(new NetInfo().getMacId()));
+//                                    jsonKey.put("daid", "024147-127051-090034");
+//                                    jsonKey.put("check", DESX.encrypt("024147-127051-090034"));
+//                                    jsonKey.put("daid", "024147-127050-205074");
+//                                    jsonKey.put("check", DESX.encrypt("024147-127050-205074"));
+                                } catch (JSONException e) {
+                                    e.printStackTrace();
+                                }
+                                config.put("firstStart", false);
+                                config.put("daid", new NetInfo().getMacId());
+//                                config.put("daid", "024147-127051-090034");
+//                                config.put("daid", "024147-127050-205074");
+                                config.put("key", DESX.encrypt(jsonKey.toString()));
+                                config.put("ServerId", AppInit.getInstrumentConfig().getServerId());
+                                AssetsUtils.getInstance(AppInit.getContext()).copyAssetsToSD("wltlib", "wltlib");
+                            }
+
+                            if (AppInit.getInstrumentConfig()
+                                    .DoorMonitorChosen() && config.getBoolean("SetDoorMonitor", true)) {
+                                new AlertView("选择门感应方式", null, null, new String[]{"门磁", "红外对射"}, null, SplashActivity.this, AlertView.Style.Alert, (o, position) -> {
+                                    if (position == 0) {
+                                        config.put("isHongWai", false);
+                                        AppInit.getInstrumentConfig().setHongWai(false);
+                                    } else if (position == 1) {
+                                        config.put("isHongWai", true);
+                                        AppInit.getInstrumentConfig().setHongWai(true);
                                     }
-
-                                    @Override
-                                    public void initSuccess() {
-                                        Log.e(TAG, "sdk init success");
-                                        Observable.timer(3, TimeUnit.SECONDS)
-                                                .observeOn(AndroidSchedulers.mainThread())
-                                                .compose(SplashActivity.this.<Long>bindUntilEvent(ActivityEvent.DESTROY))
-                                                .subscribe((l) -> {
-                                                    if (AppInit.getInstrumentConfig().getDev_prefix().startsWith("800")) {
-                                                        if (config.getBoolean("firstStart", true)) {
-                                                            ActivityUtils.startActivity(getPackageName(), getPackageName() + ".StartActivity");
-                                                            return;
-                                                        } else {
-                                                            ActivityUtils.startActivity(getPackageName(), getPackageName() + AppInit.getInstrumentConfig().getMainActivity());
-                                                            return;
-                                                        }
-                                                    }
-                                                    if (AppInit.getInstrumentConfig().fingerprint()) {
-                                                        FingerPrintPresenter.getInstance().fpInit();
-                                                        FingerPrintPresenter.getInstance().fpOpen();
-                                                    }
-
-                                                    if (config.getBoolean("firstStart", true)) {
-                                                        JSONObject jsonKey = new JSONObject();
-                                                        try {
-                                                            jsonKey.put("daid", new NetInfo().getMacId());
-                                                            jsonKey.put("check", DESX.encrypt(new NetInfo().getMacId()));
-//                                    jsonKey.put("daid", "024147-127051-027182");
-//                                    jsonKey.put("check", DESX.encrypt("024147-127051-027182"));
-                                                        } catch (JSONException e) {
-                                                            e.printStackTrace();
-                                                        }
-                                                        config.put("firstStart", false);
-                                                        config.put("daid", new NetInfo().getMacId());
-//                                config.put("daid", "024147-127051-027182");
-                                                        config.put("key", DESX.encrypt(jsonKey.toString()));
-//                                    config.put("key", "C13BE3F912863EDB71AF98E7FEC781F673C18B27229219445CE6079BDEF01F507B64D35EA7BB492DE1DC29C8FD3211B8335B0F17BCB77715AE846AFC34EBB1B275299C49FC6D73105467F8904D23673D3CC6CE9A5340EDBADD22FDA81CA9EF58");
-                                                        config.put("ServerId", AppInit.getInstrumentConfig().getServerId());
-                                                        AssetsUtils.getInstance(AppInit.getContext()).copyAssetsToSD("wltlib", "wltlib");
-//                                AppInit.getMyManager().setDhcpIpAddress(AppInit.getContext());
-                                                    }
-
-                                                    if (AppInit.getInstrumentConfig().DoorMonitorChosen() && config.getBoolean("SetDoorMonitor", true)) {
-                                                        new AlertView("选择门感应方式", null, null, new String[]{"门磁", "红外对射"}, null, SplashActivity.this, AlertView.Style.Alert, (o, position) -> {
-                                                            if (position == 0) {
-                                                                config.put("isHongWai", false);
-                                                                AppInit.getInstrumentConfig().setHongWai(false);
-                                                            } else if (position == 1) {
-                                                                config.put("isHongWai", true);
-                                                                AppInit.getInstrumentConfig().setHongWai(true);
-                                                            }
-                                                            config.put("SetDoorMonitor", false);
-                                                            ActivityUtils.startActivity(getPackageName(), getPackageName() + AppInit.getInstrumentConfig().getMainActivity());
-                                                        }).show();
-                                                    } else {
-                                                        if (config.getBoolean("isHongWai", true)) {
-                                                            AppInit.getInstrumentConfig().setHongWai(true);
-                                                        } else {
-                                                            AppInit.getInstrumentConfig().setHongWai(false);
-                                                        }
-                                                        Observable.timer(3, TimeUnit.SECONDS)
-                                                                .observeOn(AndroidSchedulers.mainThread())
-                                                                .compose(SplashActivity.this.<Long>bindUntilEvent(ActivityEvent.DESTROY))
-                                                                .subscribe(new Observer<Long>() {
-                                                                    @Override
-                                                                    public void onSubscribe(@NonNull Disposable d) {
-
-                                                                    }
-
-                                                                    @Override
-                                                                    public void onNext(@NonNull Long aLong) {
-                                                                        Log.e("key", config.getString("key"));
-                                                                        ActivityUtils.startActivity(getPackageName(), getPackageName() + AppInit.getInstrumentConfig().getMainActivity());
-
-                                                                    }
-
-                                                                    @Override
-                                                                    public void onError(@NonNull Throwable e) {
-
-                                                                    }
-
-                                                                    @Override
-                                                                    public void onComplete() {
-
-                                                                    }
-                                                                });
-                                                    }
-
-
-                                                });
+                                    config.put("SetDoorMonitor", false);
+                                    ActivityUtils.startActivity(getPackageName(), getPackageName() + AppInit.getInstrumentConfig().getMainActivity());
+                                }).show();
+                            } else {
+                                if (AppInit.getInstrumentConfig().DoorMonitorChosen()) {
+                                    if (config.getBoolean("isHongWai", true)) {
+                                        AppInit.getInstrumentConfig().setHongWai(true);
+                                    } else {
+                                        AppInit.getInstrumentConfig().setHongWai(false);
                                     }
+                                }
+                                Observable.timer(3, TimeUnit.SECONDS)
+                                        .observeOn(AndroidSchedulers.mainThread())
+                                        .compose(SplashActivity.this.<Long>bindUntilEvent(ActivityEvent.DESTROY))
+                                        .subscribe(new Observer<Long>() {
+                                            @Override
+                                            public void onSubscribe(@NonNull Disposable d) {
 
-                                    @Override
-                                    public void initFail(int errorCode, String msg) {
-                                        runOnUiThread(() -> ToastUtils.showLong("加载人脸算法失败,请联网重试"));
-                                    }
-                                });
+                                            }
 
-                            });
+                                            @Override
+                                            public void onNext(@NonNull Long aLong) {
+                                                Log.e("key", config.getString("key"));
+                                                ActivityUtils.startActivity(getPackageName(), getPackageName() + AppInit.getInstrumentConfig().getMainActivity());
+                                            }
 
-                });
+                                            @Override
+                                            public void onError(@NonNull Throwable e) {
 
-//        FacePresenter.getInstance().FaceInit(this, new FaceSDKManager.SdkInitListener() {
-//            @Override
-//            public void initStart() {
-//                Log.e(TAG, "sdk init start");
-//            }
-//
-//            @Override
-//            public void initSuccess() {
-//                Log.e(TAG, "sdk init success");
-//                Observable.timer(3, TimeUnit.SECONDS)
-//                        .observeOn(AndroidSchedulers.mainThread())
-//                        .compose(SplashActivity.this.<Long>bindUntilEvent(ActivityEvent.DESTROY))
-//                        .subscribe((l) -> {
-//                            if (AppInit.getInstrumentConfig().getDev_prefix().startsWith("800")) {
-//                                if (config.getBoolean("firstStart", true)) {
-//                                    ActivityUtils.startActivity(getPackageName(), getPackageName() + ".StartActivity");
-//                                    return;
-//                                } else {
-//                                    ActivityUtils.startActivity(getPackageName(), getPackageName() + AppInit.getInstrumentConfig().getMainActivity());
-//                                    return;
-//                                }
-//                            }
-//                            if (AppInit.getInstrumentConfig().fingerprint()) {
-//                                FingerPrintPresenter.getInstance().fpInit();
-//                                FingerPrintPresenter.getInstance().fpOpen();
-//                            }
-//
-//                            if (config.getBoolean("firstStart", true)) {
-//                                JSONObject jsonKey = new JSONObject();
-//                                try {
-//                                    jsonKey.put("daid", new NetInfo().getMacId());
-//                                    jsonKey.put("check", DESX.encrypt(new NetInfo().getMacId()));
-////                                    jsonKey.put("daid", "024147-127051-027182");
-////                                    jsonKey.put("check", DESX.encrypt("024147-127051-027182"));
-//                                } catch (JSONException e) {
-//                                    e.printStackTrace();
-//                                }
-//                                config.put("firstStart", false);
-//                                config.put("daid", new NetInfo().getMacId());
-////                                config.put("daid", "024147-127051-027182");
-//                                config.put("key", DESX.encrypt(jsonKey.toString()));
-////                                    config.put("key", "C13BE3F912863EDB71AF98E7FEC781F673C18B27229219445CE6079BDEF01F507B64D35EA7BB492DE1DC29C8FD3211B8335B0F17BCB77715AE846AFC34EBB1B275299C49FC6D73105467F8904D23673D3CC6CE9A5340EDBADD22FDA81CA9EF58");
-//                                config.put("ServerId", AppInit.getInstrumentConfig().getServerId());
-//                                AssetsUtils.getInstance(AppInit.getContext()).copyAssetsToSD("wltlib", "wltlib");
-////                                AppInit.getMyManager().setDhcpIpAddress(AppInit.getContext());
-//                            }
-//
-//                            if(AppInit.getInstrumentConfig().DoorMonitorChosen()&&config.getBoolean("SetDoorMonitor", true)){
-//                                new AlertView("选择门感应方式", null, null, new String[]{"门磁","红外对射"}, null, SplashActivity.this, AlertView.Style.Alert, (o,position)->{
-//                                    if (position == 0) {
-//                                        config.put("isHongWai",false);
-//                                        AppInit.getInstrumentConfig().setHongWai(false);
-//                                    }else if (position == 1){
-//                                        config.put("isHongWai",true);
-//                                        AppInit.getInstrumentConfig().setHongWai(true);
-//                                    }
-//                                    config.put("SetDoorMonitor", false);
-//                                    ActivityUtils.startActivity(getPackageName(), getPackageName() + AppInit.getInstrumentConfig().getMainActivity());
-//                                }).show();
-//                            }else {
-//                                if (config.getBoolean("isHongWai", true)) {
-//                                    AppInit.getInstrumentConfig().setHongWai(true);
-//                                } else {
-//                                    AppInit.getInstrumentConfig().setHongWai(false);
-//                                }
-//                                Observable.timer(3, TimeUnit.SECONDS)
-//                                        .observeOn(AndroidSchedulers.mainThread())
-//                                        .compose(SplashActivity.this.<Long>bindUntilEvent(ActivityEvent.DESTROY))
-//                                        .subscribe(new Observer<Long>() {
-//                                            @Override
-//                                            public void onSubscribe(@NonNull Disposable d) {
-//
-//                                            }
-//
-//                                            @Override
-//                                            public void onNext(@NonNull Long aLong) {
-//                                                Log.e("key", config.getString("key"));
-//                                                ActivityUtils.startActivity(getPackageName(), getPackageName() + AppInit.getInstrumentConfig().getMainActivity());
-//
-//                                            }
-//
-//                                            @Override
-//                                            public void onError(@NonNull Throwable e) {
-//
-//                                            }
-//
-//                                            @Override
-//                                            public void onComplete() {
-//
-//                                            }
-//                                        });
-//                            }
-//                        });
-//            }
-//
-//            @Override
-//            public void initFail(int errorCode, String msg) {
-//                runOnUiThread(() -> ToastUtils.showLong("加载人脸算法失败,请联网重试"));
-//            }
-//        });
+                                            }
 
+                                            @Override
+                                            public void onComplete() {
 
+                                            }
+                                        });
+                            }
+                        });
+            }
+
+            @Override
+            public void initFail(int errorCode, String msg) {
+                runOnUiThread(() -> ToastUtils.showLong("加载人脸算法失败,请联网重试"));
+            }
+        });
     }
 
     public static void copyToClipboard(Context context, String text) {
@@ -289,8 +178,6 @@ public class SplashActivity extends RxActivity {
     @Override
     protected void onDestroy() {
         super.onDestroy();
-
         ActivityCollector.removeActivity(this);
-
     }
 }

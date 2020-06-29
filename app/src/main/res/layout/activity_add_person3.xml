@@ -1,0 +1,135 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:background="@drawable/body_bg"
+    android:orientation="vertical">
+
+    <LinearLayout
+        android:layout_width="@dimen/y360"
+        android:layout_height="wrap_content"
+        android:layout_gravity="center_horizontal"
+        android:layout_marginTop="@dimen/x7"
+        android:layout_marginBottom="@dimen/x7"
+        android:background="@drawable/zt_box_bg"
+        android:focusable="true"
+        android:focusableInTouchMode="true"
+        android:orientation="vertical"
+        android:paddingLeft="@dimen/y24"
+        android:paddingRight="@dimen/y24">
+
+        <TextView
+            android:id="@+id/textView"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_centerHorizontal="true"
+            android:layout_gravity="center_horizontal"
+            android:layout_marginTop="@dimen/x33"
+            android:layout_marginBottom="@dimen/x7"
+            android:paddingLeft="@dimen/y3"
+            android:paddingTop="@dimen/x3"
+            android:paddingRight="@dimen/y3"
+            android:paddingBottom="@dimen/x3"
+            android:text="增加人员"
+            android:textAlignment="center"
+            android:textColor="@color/white"
+            android:textSize="12pt" />
+
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginBottom="@dimen/x7"
+            android:gravity="center"
+            android:orientation="horizontal">
+
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="@dimen/x7"
+                android:layout_weight="1">
+                <TextView
+                    android:textColor="@color/black"
+                    android:gravity="center"
+                    android:text="等待设备取回工作人员数据"
+                    android:textSize="10pt"
+                    android:id="@+id/tv_peopleTips"
+                    android:layout_width="match_parent"
+                    android:layout_height="@dimen/x28" />
+            </LinearLayout>
+
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="@dimen/x7"
+                android:layout_weight="1">
+
+                <Spinner
+                    android:visibility="invisible"
+                    android:gravity="center"
+                    android:id="@+id/peopleSpinner"
+                    android:layout_width="match_parent"
+                    android:layout_height="@dimen/x28" />
+            </LinearLayout>
+
+
+
+
+        </LinearLayout>
+
+        <RelativeLayout
+            android:layout_width="match_parent"
+            android:layout_height="match_parent">
+
+            <LinearLayout
+                android:layout_width="@dimen/y120"
+                android:layout_height="@dimen/x120"
+                android:layout_centerHorizontal="true">
+
+                <ImageView
+                    android:id="@+id/iv_userPic"
+                    android:layout_width="match_parent"
+                    android:layout_height="match_parent"
+                    android:src="@drawable/user_icon" />
+            </LinearLayout>
+        </RelativeLayout>
+
+
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="@dimen/x7"
+            android:orientation="horizontal">
+
+            <Button
+                android:id="@+id/btn_commit"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_gravity="center_horizontal"
+                android:layout_marginTop="@dimen/x10"
+                android:layout_marginRight="@dimen/y3"
+                android:layout_weight="1"
+                android:background="@drawable/tj_bg"
+                android:text="提  交"
+                android:textColor="@color/white"
+                android:textSize="24sp" />
+
+            <Button
+                android:id="@+id/btn_cancel"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_gravity="center_horizontal"
+                android:layout_marginLeft="@dimen/y3"
+                android:layout_marginTop="@dimen/x10"
+                android:layout_weight="1"
+                android:background="@drawable/tj_bg"
+                android:text="取  消"
+                android:textColor="@color/white"
+                android:textSize="24sp" />
+
+
+        </LinearLayout>
+
+    </LinearLayout>
+
+
+</LinearLayout>
